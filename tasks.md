@@ -56,7 +56,7 @@ _(nothing; next up: 43 Better people)_
 24. ✅ Hobby Quarter: painting easel (2D canvas painting app in the gallery)
 25. ⬜ Hobby Quarter: gallery of the owner's paintings, crochet toy, photo camera, library of "what I'm learning"
 26. ⬜ Horse riding in the park
-27. ⬜ Weather: rain / snow / fog toggle (instanced particles), wet look at night
+27. ✅ Weather: rain / snow / fog toggle in the HUD (particles follow the player, fog eases in); wet ground look still open
 28. ⬜ Driving: pick a car at a garage (Ecctrl vehicle), fast travel between districts
 29. ⬜ Ambient music per district (synthesized, mute-aware)
 

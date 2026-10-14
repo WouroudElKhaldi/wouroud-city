@@ -21,6 +21,7 @@ import { GIRL_OUTFITS, GUY_OUTFIT, NPC_LOOKS } from "@/world/outfits";
 import { Particles } from "./Particles";
 import { PlayerSpotlight } from "./PlayerSpotlight";
 import { WaypointGuide } from "./Guidance";
+import { Weather } from "./Weather";
 import { preloadCharacters } from "./Character";
 import { preloadFoliage } from "./Foliage";
 import { preloadPlaythings } from "./Playthings";
@@ -83,6 +84,7 @@ export default function CityCanvas() {
         <Particles />
         <PlayerSpotlight />
         <WaypointGuide />
+        <Weather />
         {effects && <Effects />}
       </Canvas>
     </KeyboardControls>

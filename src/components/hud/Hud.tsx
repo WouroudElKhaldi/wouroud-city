@@ -12,6 +12,8 @@ import { TouchControls } from "./TouchControls";
 
 export const CV_URL = "/cv/Wouroud_El_Khaldi-cv.pdf";
 
+const WEATHER_ICON = { clear: "🌤️", rain: "🌧️", snow: "❄️", fog: "☁️" } as const;
+
 /** On-screen controls over the 3D city. Phones get a compact bar, a menu sheet and touch controls. */
 export function Hud() {
   const {
@@ -25,6 +27,8 @@ export function Hud() {
     persona,
     waypoint,
     toggleTime,
+    weather,
+    cycleWeather,
     toggleMuted,
     interact,
     goTo,
@@ -128,6 +132,16 @@ export function Hud() {
               >
                 {timeMode === "day" ? "☀️" : "🌙"}
                 <span className="hidden sm:inline"> {timeMode === "day" ? "Day" : "Night"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={cycleWeather}
+                className="hud-panel hud-button pointer-events-auto"
+                aria-label={`Weather: ${weather}. Change weather`}
+                title="Change the weather"
+              >
+                {WEATHER_ICON[weather]}
+                <span className="hidden capitalize sm:inline"> {weather}</span>
               </button>
               <button
                 type="button"

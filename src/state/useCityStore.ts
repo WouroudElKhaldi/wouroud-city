@@ -6,6 +6,8 @@ import { setMuted } from "@/world/sfx";
 
 export type AvatarKind = "girl" | "guy" | "robot";
 export type TimeMode = "day" | "night";
+export type Weather = "clear" | "rain" | "snow" | "fog";
+export const WEATHERS: Weather[] = ["clear", "rain", "snow", "fog"];
 export type SceneId = "hub" | DistrictId;
 
 /** Something the player is standing next to and can activate with E or the on-screen prompt. */
@@ -41,6 +43,7 @@ type CityState = {
   hijabColor: string;
   outfit: GirlOutfit;
   timeMode: TimeMode;
+  weather: Weather;
   muted: boolean;
   scene: SceneId;
   /** The district the player last left, so the hub can respawn them at its door. */
@@ -56,6 +59,7 @@ type CityState = {
   setOutfit: (outfit: GirlOutfit) => void;
   setHijabColor: (color: string) => void;
   toggleTime: () => void;
+  cycleWeather: () => void;
   toggleMuted: () => void;
   setNearby: (nearby: Interactable) => void;
   clearNearby: (id: string) => void;
@@ -86,6 +90,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   hijabColor: "#c49cad",
   outfit: "dress",
   timeMode: "day",
+  weather: "clear",
   muted: false,
   scene: "hub",
   cameFrom: null,
@@ -99,6 +104,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   setOutfit: (outfit) => set({ outfit }),
   setHijabColor: (hijabColor) => set({ hijabColor }),
   toggleTime: () => set((s) => ({ timeMode: s.timeMode === "day" ? "night" : "day" })),
+  cycleWeather: () => set((s) => ({ weather: WEATHERS[(WEATHERS.indexOf(s.weather) + 1) % WEATHERS.length] })),
   toggleMuted: () => {
     const muted = !get().muted;
     setMuted(muted);
