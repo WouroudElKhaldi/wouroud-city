@@ -43,6 +43,8 @@ type CityState = {
   mapOpen: boolean;
   activity: Activity | null;
   driving: DrivingCar | null;
+  /** Bumped to ask the canvas for a photo of the current view. */
+  photoAt: number;
   /** Set by E while driving; the Player parks the car where it is and steps out. */
   exitCar: boolean;
   /** Where cars were left after a drive, by car id (they don't jump back to their old spot). */
@@ -86,6 +88,7 @@ type CityState = {
   setMapOpen: (open: boolean) => void;
   setActivity: (activity: Activity | null) => void;
   startDriving: (car: DrivingCar) => void;
+  takePhoto: () => void;
   stopDriving: (spot: CarSpot) => void;
 };
 
@@ -97,6 +100,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   mapOpen: false,
   activity: null,
   driving: null,
+  photoAt: 0,
   exitCar: false,
   parked: {},
   avatar: "girl",
@@ -165,6 +169,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   openPanel: (panel) => set({ panel, nearby: null }),
   setMapOpen: (mapOpen) => set({ mapOpen }),
   setActivity: (activity) => set({ activity, panel: null, nearby: null }),
+  takePhoto: () => set({ photoAt: Date.now(), panel: null }),
   startDriving: (driving) => set({ driving, nearby: null, seat: null, exitCar: false }),
   stopDriving: (spot) =>
     set((s) => ({ driving: null, exitCar: false, parked: s.driving ? { ...s.parked, [s.driving.id]: spot } : s.parked })),

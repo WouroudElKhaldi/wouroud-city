@@ -192,6 +192,15 @@ function PlayButton({ activity, label }: { activity: Activity; label: string }) 
   );
 }
 
+function PhotoButton() {
+  const takePhoto = useCityStore((s) => s.takePhoto);
+  return (
+    <button type="button" className="welcome-enter mt-5 w-full" onClick={takePhoto}>
+      📸 Take a photo of the city
+    </button>
+  );
+}
+
 function PanelBody({ district, id }: { district: string; id: string }) {
   const c = seedContent;
   switch (district) {
@@ -254,9 +263,26 @@ function PanelBody({ district, id }: { district: string; id: string }) {
           <p className="panel-kicker">Hobby</p>
           <h2 className="panel-title">{h.name}</h2>
           <p className="mt-3">{h.description}</p>
+          {h.id === "learning" && (
+            <>
+              <p className="mt-4 text-sm font-semibold text-white">On the desk right now</p>
+              <ul className="mt-2 space-y-2">
+                {c.trainings
+                  .filter((t) => t.status === "in-progress")
+                  .map((t) => (
+                    <li key={t.id} className="rounded-lg bg-white/5 px-3 py-2">
+                      <p className="font-semibold text-white">📖 {t.name}</p>
+                      <p className="text-sm text-violet-200">{t.provider} · {t.summary}</p>
+                    </li>
+                  ))}
+              </ul>
+            </>
+          )}
           {h.id === "painting" || h.id === "digital-drawing" ? (
             <PlayButton activity="paint" label="🎨 Paint on the easel" />
-          ) : (
+          ) : h.id === "photography" ? (
+            <PhotoButton />
+          ) : h.id === "learning" ? null : (
             <p className="panel-plaque">✨ Coming soon inside: {h.interaction}</p>
           )}
         </>

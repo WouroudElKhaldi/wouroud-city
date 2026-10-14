@@ -93,6 +93,9 @@ export function Hud() {
           📄 Download CV
         </a>
       )}
+      <button type="button" className="hud-panel hud-button pointer-events-auto" onClick={() => useCityStore.getState().takePhoto()}>
+        📸 Photo
+      </button>
       <a href="/resume" className="hud-panel hud-button pointer-events-auto">
         Résumé page
       </a>

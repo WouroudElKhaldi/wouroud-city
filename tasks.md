@@ -54,7 +54,7 @@ _(nothing; next up: 43 Better people)_
 ### D. Play
 23. ✅ Arcade Pier game "Full Stack": one-tap block stacking with tech labels (HTML → CSS → JS → React → Node → MongoDB…), local best score
 24. ✅ Hobby Quarter: painting easel (2D canvas painting app in the gallery)
-25. ⬜ Hobby Quarter: gallery of the owner's paintings, crochet toy, photo camera, library of "what I'm learning"
+25. 🔄 Hobby Quarter: ✅ photo camera (📸 Photo in the HUD and the Photo Studio, saves a captioned PNG), ✅ library shows what she is learning now; ⬜ gallery of her paintings (needs uploads), ⬜ crochet toy
 26. ✅ Horse riding: a horse waits by the stables in the Hobby Quarter; ride, gallop with Shift, the camera follows behind
 27. ✅ Weather: rain / snow / fog toggle in the HUD (particles follow the player, fog eases in); wet ground look still open
 28. ✅ Driving: get into any parked car (hub lot + one by every district gate), W/S/A/D or joystick, Shift boost, Space brake, E to get out; the car stays where you park it (fast travel still open)
