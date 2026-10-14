@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { type AvatarKind, useCityStore } from "@/state/useCityStore";
 import { districtById } from "@/world/districts";
-import { GIRL_OUTFITS, type GirlOutfit } from "@/world/outfits";
+import { GIRL_OUTFITS, type GirlOutfit, HIJAB_COLORS } from "@/world/outfits";
 
 const avatars: { kind: AvatarKind; label: string }[] = [
   { kind: "girl", label: "Girl" },
@@ -16,6 +16,7 @@ export function Hud() {
   const {
     avatar,
     hijab,
+    hijabColor,
     outfit,
     timeMode,
     muted,
@@ -27,6 +28,7 @@ export function Hud() {
     setAvatar,
     setHijab,
     setOutfit,
+    setHijabColor,
     toggleTime,
     toggleMuted,
     interact,
@@ -107,6 +109,22 @@ export function Hud() {
                     {GIRL_OUTFITS[key].label}
                   </button>
                 ))}
+                {hijab && (
+                  <div className="ml-1 flex items-center gap-1 border-l border-violet-300/30 pl-2">
+                    {HIJAB_COLORS.map((h) => (
+                      <button
+                        key={h.color}
+                        type="button"
+                        title={`${h.label} hijab`}
+                        aria-label={`${h.label} hijab`}
+                        aria-pressed={hijabColor === h.color}
+                        onClick={() => setHijabColor(h.color)}
+                        className="hud-swatch"
+                        style={{ background: h.color }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             <div className="flex w-72 flex-col gap-2">

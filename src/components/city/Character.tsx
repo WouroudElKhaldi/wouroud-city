@@ -3,8 +3,9 @@
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
-import { addLongDress } from "./garments";
+import { addModestLayers } from "./garments";
 import { buildHijab } from "./hijab";
 
 /** The animations our scenes ask for; each model maps them to its own clip names. */
@@ -67,27 +68,28 @@ export function Character({
   hijab = false,
   hijabColor = "#c49cad",
   colors,
-  longDress,
+  modest,
 }: {
   file: PersonFile;
   animation: CharacterAnimation;
   hijab?: boolean;
   hijabColor?: string;
   colors?: Record<string, string>;
-  /** Color for added long sleeves and an ankle-length skirt (modest long dress). */
-  longDress?: string;
+  /** Extra coverage: sleeves to the wrists and/or an ankle-length skirt, in these colors. */
+  modest?: { sleeves?: string; skirt?: string };
 }) {
   const { scene, animations } = useGLTF(characterUrl(file));
   const root = useRef<THREE.Group>(null);
 
   const { model, scale } = useMemo(() => {
+    smoothOnce(scene);
     const m = cloneSkinned(scene);
     m.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       mesh.castShadow = true;
       mesh.frustumCulled = false;
-      mesh.material = (mesh.material as THREE.MeshStandardMaterial).clone();
+      mesh.material = upgradeMaterial(mesh.material as THREE.MeshStandardMaterial);
     });
     m.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(m, true);
@@ -102,7 +104,6 @@ export function Character({
       const material = mesh.material as THREE.MeshStandardMaterial;
       const color = colors?.[material.name];
       if (color) material.color.set(color);
-      material.roughness = 0.75;
     });
   }, [model, colors]);
 
@@ -124,11 +125,13 @@ export function Character({
     };
   }, [model, hijab, hijabColor]);
 
-  // Long sleeves and skirt.
+  // Modest layers: sleeves to the wrists and an ankle-length skirt.
+  const sleeves = modest?.sleeves;
+  const skirt = modest?.skirt;
   useLayoutEffect(() => {
-    if (!longDress) return;
-    return addLongDress(model, longDress);
-  }, [model, longDress]);
+    if (!sleeves && !skirt) return;
+    return addModestLayers(model, { sleeves, skirt });
+  }, [model, sleeves, skirt]);
 
   const { actions, names } = useAnimations(animations, root);
 
@@ -152,6 +155,46 @@ export function Character({
       <primitive object={model} />
     </group>
   );
+}
+
+const smoothed = new WeakSet<THREE.Object3D>();
+
+/**
+ * The source models are flat-shaded (every face shows). Welding shared vertices and
+ * recomputing normals gives soft, rounded shading, which reads as far more natural
+ * on faces and skin. Done once per loaded file; every clone shares the result.
+ */
+function smoothOnce(scene: THREE.Object3D) {
+  if (smoothed.has(scene)) return;
+  smoothed.add(scene);
+  scene.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const geometry = mesh.geometry.clone();
+    geometry.deleteAttribute("normal");
+    const welded = mergeVertices(geometry, 1e-4);
+    welded.computeVertexNormals();
+    mesh.geometry = welded;
+  });
+}
+
+/** Skin gets a soft, warm physical material; clothes a fabric-like finish. */
+function upgradeMaterial(source: THREE.MeshStandardMaterial) {
+  if (/^Skin/.test(source.name)) {
+    return new THREE.MeshPhysicalMaterial({
+      name: source.name,
+      color: source.color,
+      roughness: 0.55,
+      sheen: 0.6,
+      sheenRoughness: 0.6,
+      sheenColor: new THREE.Color("#ffd2bf"),
+      emissive: new THREE.Color("#5a2414"),
+      emissiveIntensity: 0.06,
+    });
+  }
+  const m = source.clone();
+  m.roughness = /^Eye/.test(source.name) ? 0.3 : 0.78;
+  return m;
 }
 
 export function preloadCharacters(files: string[]) {

@@ -21,6 +21,7 @@ let toastId = 0;
 type CityState = {
   avatar: AvatarKind;
   hijab: boolean;
+  hijabColor: string;
   outfit: GirlOutfit;
   timeMode: TimeMode;
   muted: boolean;
@@ -36,6 +37,7 @@ type CityState = {
   setAvatar: (avatar: AvatarKind) => void;
   setHijab: (hijab: boolean) => void;
   setOutfit: (outfit: GirlOutfit) => void;
+  setHijabColor: (color: string) => void;
   toggleTime: () => void;
   toggleMuted: () => void;
   setNearby: (nearby: Interactable) => void;
@@ -51,6 +53,7 @@ type CityState = {
 export const useCityStore = create<CityState>((set, get) => ({
   avatar: "girl",
   hijab: true,
+  hijabColor: "#c49cad",
   outfit: "dress",
   timeMode: "day",
   muted: false,
@@ -64,6 +67,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   setAvatar: (avatar) => set({ avatar }),
   setHijab: (hijab) => set({ hijab }),
   setOutfit: (outfit) => set({ outfit }),
+  setHijabColor: (hijabColor) => set({ hijabColor }),
   toggleTime: () => set((s) => ({ timeMode: s.timeMode === "day" ? "night" : "day" })),
   toggleMuted: () => {
     const muted = !get().muted;

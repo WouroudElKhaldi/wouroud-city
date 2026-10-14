@@ -1,15 +1,13 @@
 import * as THREE from "three";
 
 /**
- * Extra clothing pieces added on top of a Quaternius character, attached to its
- * bones so they follow every animation:
- *  - long sleeves down to the wrists,
- *  - an ankle-length A-line skirt from the waist.
- * Together with the short dress model they make a long, modest dress.
+ * Extra clothing layered onto a Quaternius character and attached to its bones,
+ * so it follows every animation:
+ *  - sleeves down to the wrists, sized from the character's own arms,
+ *  - an ankle-length A-line skirt with soft folds.
  * Returns a function that removes everything it added.
  */
-export function addLongDress(model: THREE.Object3D, color: string) {
-  const material = new THREE.MeshStandardMaterial({ color, roughness: 0.75, side: THREE.DoubleSide });
+export function addModestLayers(model: THREE.Object3D, options: { sleeves?: string; skirt?: string }) {
   const added: THREE.Object3D[] = [];
   model.updateMatrixWorld(true);
   const toModel = new THREE.Matrix4().copy(model.matrixWorld).invert();
@@ -17,60 +15,129 @@ export function addLongDress(model: THREE.Object3D, color: string) {
     const bone = model.getObjectByName(name);
     return bone ? new THREE.Vector3().setFromMatrixPosition(bone.matrixWorld).applyMatrix4(toModel) : null;
   };
-
-  // Sleeves: a tapered tube along each arm segment.
-  const segments: [string, string, number, number][] = [
-    ["UpperArmL", "LowerArmL", 0.24, 0.2],
-    ["LowerArmL", "PalmL", 0.2, 0.17],
-    ["UpperArmR", "LowerArmR", 0.24, 0.2],
-    ["LowerArmR", "PalmR", 0.2, 0.17],
-  ];
-  for (const [from, to, r0, r1] of segments) {
-    const bone = model.getObjectByName(from);
-    const a = at(from);
-    const b = at(to);
-    if (!bone || !a || !b) continue;
-    const length = a.distanceTo(b);
-    const geometry = new THREE.CylinderGeometry(length * r1, length * r0, length * 1.04, 14, 1, true);
-    const sleeve = new THREE.Mesh(geometry, material);
-    sleeve.position.copy(a).lerp(b, 0.5);
-    sleeve.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
-    sleeve.castShadow = true;
-    model.add(sleeve);
+  const attach = (mesh: THREE.Mesh, boneName: string) => {
+    const bone = model.getObjectByName(boneName);
+    if (!bone) return;
+    mesh.castShadow = true;
+    model.add(mesh);
     model.updateMatrixWorld(true);
-    bone.attach(sleeve);
-    added.push(sleeve);
+    bone.attach(mesh);
+    added.push(mesh);
+  };
+  const fabric = (color: string) =>
+    new THREE.MeshPhysicalMaterial({
+      color,
+      roughness: 0.8,
+      sheen: 0.8,
+      sheenRoughness: 0.5,
+      sheenColor: new THREE.Color(color).lerp(new THREE.Color("#ffffff"), 0.45),
+      side: THREE.DoubleSide,
+    });
+
+  if (options.sleeves) {
+    const material = fabric(options.sleeves);
+    const segments: [string, string][] = [
+      ["UpperArmL", "LowerArmL"],
+      ["LowerArmL", "PalmL"],
+      ["UpperArmR", "LowerArmR"],
+      ["LowerArmR", "PalmR"],
+    ];
+    for (const [from, to] of segments) {
+      const a = at(from);
+      const b = at(to);
+      if (!a || !b) continue;
+      const length = a.distanceTo(b);
+      const radius = armRadius(model, from, a, b, toModel) ?? length * 0.2;
+      const isForearm = from.startsWith("Lower");
+      // Overlap at the elbow and reach just past the wrist.
+      const extra = length * (isForearm ? 0.12 : 0.08);
+      const geometry = new THREE.CylinderGeometry(radius * (isForearm ? 1.12 : 1.1), radius * 1.14, length + extra, 18, 1, true);
+      const sleeve = new THREE.Mesh(geometry, material);
+      const dir = b.clone().sub(a).normalize();
+      sleeve.position.copy(a).addScaledVector(dir, (length + extra) / 2 - (isForearm ? extra * 0.3 : extra * 0.5));
+      sleeve.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+      attach(sleeve, from);
+      if (isForearm) {
+        // A soft cuff at the wrist.
+        const cuff = new THREE.Mesh(new THREE.TorusGeometry(radius * 1.14, radius * 0.18, 8, 20), material);
+        cuff.position.copy(a).addScaledVector(dir, length + extra * 0.7);
+        cuff.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+        attach(cuff, from);
+      }
+    }
   }
 
-  // Skirt: from the waist down to just above the ankles, flaring out.
-  const hipsBone = model.getObjectByName("Hips");
-  const hips = at("Hips");
-  const legL = at("UpperLegL");
-  const legR = at("UpperLegR");
-  const foot = at("FootL");
-  if (hipsBone && hips && legL && legR && foot) {
-    const hipWidth = legL.distanceTo(legR);
-    const top = hips.y + (hips.y - foot.y) * 0.08;
-    const bottom = foot.y + (hips.y - foot.y) * 0.06;
-    const height = top - bottom;
-    const rTop = hipWidth * 0.95;
-    const rBottom = hipWidth * 1.75;
-    const profile = [
-      new THREE.Vector2(rTop * 0.92, top),
-      new THREE.Vector2(rTop, top - height * 0.08),
-      new THREE.Vector2(rTop * 1.12, top - height * 0.35),
-      new THREE.Vector2(rBottom * 0.92, top - height * 0.8),
-      new THREE.Vector2(rBottom, bottom),
-    ];
-    const skirt = new THREE.Mesh(new THREE.LatheGeometry(profile, 36), material);
-    skirt.position.set(hips.x, 0, hips.z);
-    skirt.scale.set(1, 1, 0.82);
-    skirt.castShadow = true;
-    model.add(skirt);
-    model.updateMatrixWorld(true);
-    hipsBone.attach(skirt);
-    added.push(skirt);
+  if (options.skirt) {
+    const hips = at("Hips");
+    const legL = at("UpperLegL");
+    const legR = at("UpperLegR");
+    const foot = at("FootL");
+    if (hips && legL && legR && foot) {
+      const hipWidth = legL.distanceTo(legR);
+      const top = hips.y + (hips.y - foot.y) * 0.08;
+      const bottom = foot.y + (hips.y - foot.y) * 0.04;
+      const height = top - bottom;
+      const rTop = hipWidth * 0.98;
+      const rBottom = hipWidth * 1.8;
+      const profile = [
+        new THREE.Vector2(rTop * 0.9, top),
+        new THREE.Vector2(rTop, top - height * 0.08),
+        new THREE.Vector2(rTop * 1.12, top - height * 0.35),
+        new THREE.Vector2(rBottom * 0.9, top - height * 0.8),
+        new THREE.Vector2(rBottom, bottom),
+      ];
+      const geometry = new THREE.LatheGeometry(profile, 64);
+      addFolds(geometry, top, height, 10, 0.06);
+      const skirt = new THREE.Mesh(geometry, fabric(options.skirt));
+      skirt.position.set(hips.x, 0, hips.z);
+      skirt.scale.set(1, 1, 0.84);
+      attach(skirt, "Hips");
+    }
   }
 
   return () => added.forEach((o) => o.removeFromParent());
+}
+
+/** Largest distance from the arm bone's axis among the vertices it moves, so a sleeve covers the arm. */
+function armRadius(model: THREE.Object3D, boneName: string, a: THREE.Vector3, b: THREE.Vector3, toModel: THREE.Matrix4) {
+  const bone = model.getObjectByName(boneName);
+  let best = 0;
+  const v = new THREE.Vector3();
+  const axis = b.clone().sub(a);
+  const lengthSq = axis.lengthSq();
+  model.traverse((o) => {
+    const mesh = o as THREE.SkinnedMesh;
+    if (!mesh.isSkinnedMesh || !bone) return;
+    const index = mesh.skeleton.bones.indexOf(bone as THREE.Bone);
+    if (index < 0) return;
+    const position = mesh.geometry.attributes.position;
+    const skinIndex = mesh.geometry.attributes.skinIndex;
+    const skinWeight = mesh.geometry.attributes.skinWeight;
+    for (let i = 0; i < position.count; i++) {
+      let w = 0;
+      for (let k = 0; k < 4; k++) if (skinIndex.getComponent(i, k) === index) w += skinWeight.getComponent(i, k);
+      if (w < 0.5) continue;
+      v.fromBufferAttribute(position, i);
+      mesh.applyBoneTransform(i, v);
+      v.applyMatrix4(mesh.matrixWorld).applyMatrix4(toModel);
+      const t = THREE.MathUtils.clamp(v.clone().sub(a).dot(axis) / lengthSq, 0, 1);
+      const d = v.distanceTo(a.clone().addScaledVector(axis, t));
+      if (d > best) best = d;
+    }
+  });
+  return best > 0 ? best : null;
+}
+
+/** Ripple the radius around the lathe to suggest fabric folds, stronger toward the hem. */
+export function addFolds(geometry: THREE.BufferGeometry, top: number, height: number, folds: number, amount: number) {
+  const pos = geometry.attributes.position;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const angle = Math.atan2(v.z, v.x);
+    const depth = THREE.MathUtils.clamp((top - v.y) / height, 0, 1);
+    const k = 1 + Math.sin(angle * folds) * amount * depth;
+    pos.setXYZ(i, v.x * k, v.y, v.z * k);
+  }
+  geometry.computeVertexNormals();
 }

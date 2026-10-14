@@ -105,3 +105,15 @@ kbd {
   font-weight: 700;
   color: #7c3aed;
 }
+
+.hud-swatch {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  border: 2px solid rgb(255 255 255 / 0.5);
+  cursor: pointer;
+}
+.hud-swatch[aria-pressed="true"] {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px #9f7aea;
+}

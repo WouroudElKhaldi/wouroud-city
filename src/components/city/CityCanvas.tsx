@@ -16,6 +16,7 @@ import { HubScene } from "./HubScene";
 import { keyboardMap, Player } from "./Player";
 import { GIRL_OUTFITS, GUY_OUTFIT, NPC_LOOKS } from "@/world/outfits";
 import { Particles } from "./Particles";
+import { PlayerSpotlight } from "./PlayerSpotlight";
 import { preloadCharacters } from "./Character";
 import { preloadFoliage } from "./Foliage";
 import { preloadPlaythings } from "./Playthings";
@@ -73,6 +74,7 @@ export default function CityCanvas() {
           </Physics>
         </Suspense>
         <Particles />
+        <PlayerSpotlight />
         {effects && <Effects />}
       </Canvas>
     </KeyboardControls>

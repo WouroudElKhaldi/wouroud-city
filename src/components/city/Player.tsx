@@ -54,9 +54,11 @@ export function Player({
   const avatar = useCityStore((s) => s.avatar);
   const hijab = useCityStore((s) => s.hijab);
   const outfitKey = useCityStore((s) => s.outfit);
+  const hijabColor = useCityStore((s) => s.hijabColor);
   const seat = useCityStore((s) => s.seat);
   const [animation, setAnimation] = useState<CharacterAnimation>("idle");
   const outfit = avatar === "guy" ? GUY_OUTFIT : GIRL_OUTFITS[outfitKey];
+  const wearsHijab = avatar === "girl" && hijab;
   const seatQuat = useMemo(() => new THREE.Quaternion(), []);
 
   useEffect(() => {
@@ -129,9 +131,11 @@ export function Player({
               <Character
                 file={outfit.file}
                 colors={outfit.colors}
-                longDress={outfit.longDress}
+                // Wearing a hijab always means a fully covering outfit.
+                modest={wearsHijab || outfit.alwaysModest ? outfit.modest : undefined}
                 animation={animation}
-                hijab={avatar === "girl" && hijab}
+                hijab={wearsHijab}
+                hijabColor={hijabColor}
               />
             </Suspense>
           )}

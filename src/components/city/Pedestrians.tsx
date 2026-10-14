@@ -18,6 +18,8 @@ export type Walker = {
   name: string;
   file: PersonFile;
   colors: Record<string, string>;
+  hijab?: string;
+  modest?: { sleeves?: string; skirt?: string };
   /** Closed loop of waypoints on the ground */
   path: [number, number][];
   speed: number;
@@ -117,7 +119,14 @@ function Pedestrian({ walker }: { walker: Walker }) {
         <CapsuleCollider args={[0.45, 0.35]} />
       </RigidBody>
       <group ref={visual}>
-        <Character file={walker.file} colors={walker.colors} animation={animation} />
+        <Character
+          file={walker.file}
+          colors={walker.colors}
+          hijab={Boolean(walker.hijab)}
+          hijabColor={walker.hijab}
+          modest={walker.modest}
+          animation={animation}
+        />
         {line && (
           <Html position={[0, 2.25, 0]} center distanceFactor={9} zIndexRange={[20, 0]}>
             <div className="npc-bubble">
