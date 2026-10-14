@@ -6,7 +6,8 @@ import { seedContent } from "@/content/seed";
 import type { Experience, Language, Project, SkillCategory } from "@/content/schema";
 
 export const metadata: Metadata = {
-  title: "Résumé · Wouroud El Khaldi",
+  title: "Résumé",
+  alternates: { canonical: "/resume" },
   description: "Wouroud El Khaldi, Mid-Senior Full Stack Software Engineer: experience, skills, projects and certificates.",
 };
 

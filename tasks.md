@@ -43,8 +43,8 @@ _(nothing; next up: 43 Better people)_
 
 ### B. First impression
 17. ✅ Loading screen with real progress while models load behind the welcome screen
-18. ⬜ SEO and sharing: Open Graph / Twitter image, metadata, sitemap, robots, JSON-LD Person
-19. ⬜ README rewrite (what it is, how to run, controls, credits)
+18. ✅ SEO and sharing: Open Graph / Twitter image, metadata, sitemap, robots, JSON-LD Person
+19. ✅ README rewrite (what it is, how to run, controls, credits)
 
 ### C. Content inside buildings
 20. 🔄 Richer info panels: ✅ "used in" links between skills ↔ projects ↔ jobs, ✅ next/previous building; ⬜ project media gallery (needs screenshots from the owner / admin)

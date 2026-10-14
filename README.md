@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Wouroud's City
 
-## Getting Started
+The 3D portfolio of **Wouroud El Khaldi**, Mid-Senior Full Stack Software Engineer (Tripoli, Lebanon).
 
-First, run the development server:
+Instead of scrolling a page, you walk a small city. Central Plaza connects eight districts, and every
+building in them is generated from portfolio data:
+
+| District | What's inside |
+| --- | --- |
+| Business District | Work experience: floors = months worked, glass HQ towers |
+| Skill Downtown | One tower per skill, height = level, each with its own shape and 3D logo |
+| Project Harbor | One warehouse per project, tinted in its brand color |
+| Campus | Studies |
+| Training Park | Certificates, bootcamp and scholarship pavilions |
+| Polyglot Quarter | Arabic, English, French |
+| Hobby Quarter | Art studios, and an easel where you can paint and save your picture |
+| Arcade Pier | **Full Stack**, a block-stacking game (HTML → CSS → JS → React → Node…) |
+
+Recruiters can skip straight to the 2D résumé at `/resume` or download the PDF CV.
+
+## Features
+
+- Third-person character (girl with optional hijab and modest outfits, guy, or robot)
+- Welcome screen with personas: recruiter, developer or visitor, each with its own guided tour
+- Round districts: central plaza and fountain, park, ring road with traffic, clustered buildings, market stalls
+- Every building is unique: rooftop emblem, brand color and silhouette per skill / project / job
+- Info panels with cross-links (tech → skill tower → projects and jobs that use it)
+- Minimap and full map with click-to-navigate waypoints
+- Day / night, rain / snow / fog, night spotlight
+- Lots to play with: trees, flowers, balls, cones, pigeons, cars, lamps, fountain coins, benches, NPC chat
+- Phones: joystick, jump and action buttons, compact HUD, lighter graphics preset
+- SEO: Open Graph image, sitemap, robots, JSON-LD
+
+## Controls
+
+| Desktop | Phone |
+| --- | --- |
+| `W A S D` / arrows: walk, `Shift`: run, `Space`: jump | Joystick (push to the edge to run), jump button |
+| `E`: interact, `M`: map, `Esc`: close | Action button, tap the minimap |
+| Drag: look, scroll: zoom | Drag: look, pinch: zoom |
+
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+npx tsc --noEmit   # type-check
+npx eslint src     # lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Set `NEXT_PUBLIC_SITE_URL` in production so share links and the sitemap use the real domain.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Next.js 16 (App Router) · TypeScript · React Three Fiber · drei · Rapier physics · Ecctrl character
+controller · Zustand · Zod · @react-three/postprocessing · Tailwind CSS 4.
 
-## Learn More
+All content lives in `src/content/seed.ts`, validated by `src/content/schema.ts`. The world is pure
+data → layout (`src/world/`) → components (`src/components/city/`). See `HANDOFF.md` for the
+architecture and `tasks.md` for the roadmap.
 
-To learn more about Next.js, take a look at the following resources:
+## Credits
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Characters: [Quaternius](https://quaternius.com) (CC0)
+- Nature and cars: [Kenney](https://kenney.nl) Nature Kit and Car Kit (CC0)
+- Everything else (landmarks, buildings, emblems, hijab, sounds) is generated in code.
