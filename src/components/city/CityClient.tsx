@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Hud } from "@/components/hud/Hud";
+import { Ambience } from "@/components/hud/Ambience";
 import { InfoPanel } from "@/components/hud/InfoPanel";
 import { PaintStudio } from "@/components/hud/PaintStudio";
 import { StackGame } from "@/components/hud/StackGame";
@@ -25,6 +26,7 @@ export function CityClient() {
       {started ? (
         <>
           <Hud />
+          <Ambience />
           <InfoPanel />
           {activity === "stack" && <StackGame />}
           {activity === "paint" && <PaintStudio />}

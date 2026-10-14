@@ -10,7 +10,7 @@ export function setMuted(value: boolean) {
   muted = value;
 }
 
-function audio() {
+export function audio() {
   if (muted || typeof window === "undefined") return null;
   ctx ??= new AudioContext();
   if (ctx.state === "suspended") void ctx.resume();

@@ -156,6 +156,18 @@ Key ideas:
 - **Phones**: `world/touch.ts` (`touchInput`, `useIsTouch`), `components/hud/TouchControls.tsx` (joystick + jump +
   action), compact HUD with a menu sheet, bottom-sheet info panel, mobile DPR/effects preset.
 - Welcome screen enter button shows real loading progress (drei `useProgress`).
+- **Activities** (`useCityStore.activity`, full-screen overlays in `CityClient`): `hud/StackGame.tsx` (Arcade Pier
+  "Full Stack", canvas game, best score in localStorage; E at the arcade door starts it) and `hud/PaintStudio.tsx`
+  (Hobby Quarter easel, save as PNG; opened from the Painting / Digital Drawing panels). Player freezes while open.
+- **Info panels**: tech chips link to skill towers (`skillFor()` name matching), skills link back to projects and jobs,
+  ←/→ step through a district's buildings, Private Vault shows `profile.privateWorkNote`.
+- **Weather** (`city/Weather.tsx`, HUD button): rain streaks / snow points follow the player, fog eases in.
+- **Traffic and market** (`city/Traffic.tsx`): cars circle the ring road and stop for the player; stalls in the park.
+- **Music** (`world/music.ts`, `hud/Ambience.tsx`): generative Web Audio music per place, follows mute.
+- **SEO**: `app/opengraph-image.tsx` (generated share image with the photo), `sitemap.ts`, `robots.ts`,
+  `site.ts` (`SITE_URL` from `NEXT_PUBLIC_SITE_URL`, JSON-LD Person). `next build` passes.
+- Dev handle `window.__store` (the Zustand store) makes testing quick: `__store.getState().goTo("skills")`,
+  `setActivity("stack")`, `setState({ weather: "snow" })`.
 ## 4. Status
 
 Done:

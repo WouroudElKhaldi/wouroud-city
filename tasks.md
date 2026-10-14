@@ -58,7 +58,7 @@ _(nothing; next up: 43 Better people)_
 26. ⬜ Horse riding in the park
 27. ✅ Weather: rain / snow / fog toggle in the HUD (particles follow the player, fog eases in); wet ground look still open
 28. ⬜ Driving: pick a car at a garage (Ecctrl vehicle), fast travel between districts
-29. ⬜ Ambient music per district (synthesized, mute-aware)
+29. ✅ Ambient music per district (synthesized, mute-aware, slower at night, rain hiss) — runs without errors, not yet listened to by a human
 
 ### E. Data and admin (needs free accounts created by the owner)
 30. ⛔ Admin dashboard `/admin` (Auth.js, only the owner's Google account)
