@@ -20,6 +20,7 @@ export function TouchControls() {
   const nearby = useCityStore((s) => s.nearby);
   const seat = useCityStore((s) => s.seat);
   const interact = useCityStore((s) => s.interact);
+  const driving = useCityStore((s) => s.driving);
 
   const move = (clientX: number, clientY: number) => {
     let dx = clientX - center.current.x;
@@ -70,21 +71,26 @@ export function TouchControls() {
       </div>
 
       <div className="pointer-events-auto flex items-end gap-3">
-        {(nearby || seat) && (
-          <button type="button" className="touch-button touch-action" onClick={interact} aria-label={seat ? "Stand up" : nearby?.label}>
-            {seat ? "Stand" : "E"}
+        {(nearby || seat || driving) && (
+          <button
+            type="button"
+            className="touch-button touch-action"
+            onClick={interact}
+            aria-label={seat ? "Stand up" : driving ? "Get out of the car" : nearby?.label}
+          >
+            {seat ? "Stand" : driving ? "Exit" : "E"}
           </button>
         )}
         <button
           type="button"
           className="touch-button"
-          aria-label="Jump"
+          aria-label={driving ? "Brake" : "Jump"}
           onPointerDown={() => (touchInput.jump = true)}
           onPointerUp={() => (touchInput.jump = false)}
           onPointerCancel={() => (touchInput.jump = false)}
           onPointerLeave={() => (touchInput.jump = false)}
         >
-          ⤒
+          {driving ? "■" : "⤒"}
         </button>
       </div>
     </div>

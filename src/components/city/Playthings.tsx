@@ -5,9 +5,11 @@ import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { BallCollider, CuboidCollider, type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useCityStore } from "@/state/useCityStore";
 import { playerState } from "@/world/env";
 import { sfx } from "@/world/sfx";
 import { emitBurst } from "./Particles";
+import { useProximity } from "./useProximity";
 
 /** Ignore clicks that were really the end of a camera drag. */
 function isClick(e: ThreeEvent<MouseEvent>) {
@@ -331,20 +333,43 @@ export function Pigeons({ center, radius, count = 10 }: { center: [number, numbe
 // Parked cars
 // ---------------------------------------------------------------------------
 
-export type ParkedCar = { model: string; x: number; z: number; rot: number };
+export type ParkedCar = { id: string; model: string; x: number; z: number; rot: number };
 
-/** Parked cars: click one and it honks, flashes its lights and bounces on its suspension. */
+const CAR_NAMES: Record<string, string> = {
+  sedan: "sedan",
+  taxi: "taxi",
+  suv: "SUV",
+  police: "police car",
+  "hatchback-sports": "sports car",
+  van: "van",
+};
+
+/**
+ * Parked cars: click one and it honks, flashes its lights and bounces on its
+ * suspension. Walk up to one and press E to drive it; it stays where you park it.
+ */
 export function ParkedCars({ cars }: { cars: ParkedCar[] }) {
+  const driving = useCityStore((s) => s.driving);
+  const parked = useCityStore((s) => s.parked);
   return (
     <group>
-      {cars.map((c, i) => (
-        <Car key={i} {...c} />
-      ))}
+      {cars.map((c) =>
+        driving?.id === c.id ? null : <Car key={c.id} {...c} {...parked[c.id]} />,
+      )}
     </group>
   );
 }
 
-function Car({ model, x, z, rot }: ParkedCar) {
+function Car({ id, model, x, z, rot }: ParkedCar) {
+  const startDriving = useCityStore((s) => s.startDriving);
+  const where = useMemo(() => new THREE.Vector3(x, 0, z), [x, z]);
+  useProximity({
+    id: `car-${id}`,
+    label: `Drive the ${CAR_NAMES[model] ?? "car"}`,
+    radius: 3.4,
+    where,
+    run: () => startDriving({ id, model, from: { x, z, rot } }),
+  });
   const { scene } = useGLTF(`/models/cars/${model}.glb`);
   const object = useMemo(() => {
     const m = scene.clone(true);

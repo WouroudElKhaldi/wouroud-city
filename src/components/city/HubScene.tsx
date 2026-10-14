@@ -161,7 +161,7 @@ const HUB_CARS: ParkedCar[] = (() => {
   const a = -Math.PI / 2 + Math.PI / 8;
   return models.map((model, i) => {
     const r = 30 + i * 4.2;
-    return { model, x: Math.cos(a) * r, z: Math.sin(a) * r, rot: -a };
+    return { id: `hub-${model}`, model, x: Math.cos(a) * r, z: Math.sin(a) * r, rot: -a };
   });
 })();
 

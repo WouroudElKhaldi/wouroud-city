@@ -24,6 +24,10 @@ export type Waypoint = { x: number; z: number; label: string };
 /** Which building's info panel is open. */
 export type Panel = { district: DistrictId; id: string };
 
+/** The car the player is driving; `id` matches a parked car, which is hidden meanwhile. */
+export type DrivingCar = { id: string; model: string; from: { x: number; z: number; rot: number } };
+export type CarSpot = { x: number; z: number; rot: number };
+
 /** A full-screen mini activity: the arcade game or the painting easel. */
 export type Activity = "stack" | "paint";
 
@@ -38,6 +42,11 @@ type CityState = {
   panel: Panel | null;
   mapOpen: boolean;
   activity: Activity | null;
+  driving: DrivingCar | null;
+  /** Set by E while driving; the Player parks the car where it is and steps out. */
+  exitCar: boolean;
+  /** Where cars were left after a drive, by car id (they don't jump back to their old spot). */
+  parked: Record<string, CarSpot>;
   avatar: AvatarKind;
   hijab: boolean;
   hijabColor: string;
@@ -76,6 +85,8 @@ type CityState = {
   openPanel: (panel: Panel | null) => void;
   setMapOpen: (open: boolean) => void;
   setActivity: (activity: Activity | null) => void;
+  startDriving: (car: DrivingCar) => void;
+  stopDriving: (spot: CarSpot) => void;
 };
 
 export const useCityStore = create<CityState>((set, get) => ({
@@ -85,6 +96,9 @@ export const useCityStore = create<CityState>((set, get) => ({
   panel: null,
   mapOpen: false,
   activity: null,
+  driving: null,
+  exitCar: false,
+  parked: {},
   avatar: "girl",
   hijab: true,
   hijabColor: "#c49cad",
@@ -117,7 +131,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   goTo: (scene) => {
     if (get().fading || get().scene === scene) return;
     const from = get().scene;
-    set({ fading: true, nearby: null, seat: null, panel: null, mapOpen: false });
+    set({ fading: true, nearby: null, seat: null, panel: null, mapOpen: false, driving: null, exitCar: false });
     // Fade to black, swap the scene while the screen is covered, then fade back in.
     window.setTimeout(() => {
       set({ scene, cameFrom: from === "hub" ? null : from, waypoint: null });
@@ -128,6 +142,10 @@ export const useCityStore = create<CityState>((set, get) => ({
     if (!get().started || get().panel || get().activity) return;
     if (get().seat) {
       get().stand();
+      return;
+    }
+    if (get().driving) {
+      set({ exitCar: true });
       return;
     }
     get().nearby?.run();
@@ -147,6 +165,9 @@ export const useCityStore = create<CityState>((set, get) => ({
   openPanel: (panel) => set({ panel, nearby: null }),
   setMapOpen: (mapOpen) => set({ mapOpen }),
   setActivity: (activity) => set({ activity, panel: null, nearby: null }),
+  startDriving: (driving) => set({ driving, nearby: null, seat: null, exitCar: false }),
+  stopDriving: (spot) =>
+    set((s) => ({ driving: null, exitCar: false, parked: s.driving ? { ...s.parked, [s.driving.id]: spot } : s.parked })),
 }));
 
 // Handy when debugging in the browser console.

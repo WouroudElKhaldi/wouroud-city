@@ -16,11 +16,23 @@ import { GrassField } from "./GrassField";
 import { WorldGround } from "./HubScene";
 import { useGlowMaterial } from "./materials";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
-import { Balls, Knockables, Pigeons } from "./Playthings";
+import { Balls, Knockables, ParkedCars, Pigeons } from "./Playthings";
 import { Portal } from "./Portal";
 import { CodeBillboards, Fountain, Seats } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 import { MarketStalls, Traffic } from "./Traffic";
+
+/** A car waiting by each district's gate, ready to drive around the ring. */
+const DISTRICT_CAR: Record<DistrictId, string> = {
+  business: "suv",
+  skills: "hatchback-sports",
+  projects: "van",
+  campus: "sedan",
+  training: "taxi",
+  languages: "sedan",
+  hobbies: "hatchback-sports",
+  arcade: "police",
+};
 
 /**
  * One district on its own: a round neighborhood. A plaza with a fountain in the
@@ -168,6 +180,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       <Balls spots={toys.balls} />
       <Knockables spots={toys.cones} />
       <MarketStalls spots={toys.stalls} />
+      <ParkedCars cars={[{ id: `${id}-car`, model: DISTRICT_CAR[id], x: -RING.roadHalfWidth + 1.6, z: gateZ - 14, rot: Math.PI }]} />
       <Traffic radius={ringRadius} count={Math.max(4, Math.round(ringRadius / 7))} />
     </group>
   );

@@ -56,7 +56,8 @@ export function Hud() {
   }, [touch]);
 
   const place = scene === "hub" ? "Central Plaza" : districtById(scene).name;
-  const prompt = seat ? "Stand up" : nearby?.label;
+  const driving = useCityStore((st) => st.driving);
+  const prompt = seat ? "Stand up" : driving ? "Get out of the car" : nearby?.label;
   const p = persona ? PERSONAS[persona] : null;
 
   /** Guided tour: in the hub, point to the next recommended district; in a district, back to the plaza. */
@@ -186,6 +187,13 @@ export function Hud() {
               Joystick to walk, push to the edge to run · drag to look · pinch to zoom · tap trees, cars and buildings
             </div>
           )
+        ) : driving ? (
+          <div className="hud-panel max-w-sm self-start text-violet-100">
+            <p>
+              🚗 <kbd>W</kbd>/<kbd>S</kbd> drive · <kbd>A</kbd>/<kbd>D</kbd> steer · <kbd>Shift</kbd> boost · <kbd>Space</kbd> brake ·{" "}
+              <kbd>E</kbd> get out
+            </p>
+          </div>
         ) : (
           <div className="hud-panel max-w-sm self-start text-violet-100">
             <p>

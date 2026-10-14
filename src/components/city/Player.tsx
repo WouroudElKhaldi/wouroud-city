@@ -1,6 +1,7 @@
 "use client";
 
-import { useKeyboardControls } from "@react-three/drei";
+import { useGLTF, useKeyboardControls } from "@react-three/drei";
+import { CuboidCollider } from "@react-three/rapier";
 import { useFrame } from "@react-three/fiber";
 import { Ecctrl, type EcctrlHandle } from "ecctrl";
 import { EcctrlCameraControls, type EcctrlCameraControlsHandle } from "ecctrl/camera";
@@ -58,6 +59,9 @@ export function Player({
   const outfitKey = useCityStore((s) => s.outfit);
   const hijabColor = useCityStore((s) => s.hijabColor);
   const seat = useCityStore((s) => s.seat);
+  const driving = useCityStore((s) => s.driving);
+  /** The car's own speed and heading while driving (m/s, radians). */
+  const car = useRef({ speed: 0, heading: 0 });
   const [animation, setAnimation] = useState<CharacterAnimation>("idle");
   const outfit = avatar === "guy" ? GUY_OUTFIT : GIRL_OUTFITS[outfitKey];
   const wearsHijab = avatar === "girl" && hijab;
@@ -72,6 +76,26 @@ export function Player({
     const [x, y, z] = spawn;
     camera.current?.setLookAt(x - fx * 8, y + 3, z - fz * 8, x + fx * 4, y, z + fz * 4, false);
   }, [spawn, facing]);
+
+  // Seated: kinematic body. Otherwise dynamic again.
+  useEffect(() => {
+    const body = controller.current?.body;
+    if (!body) return;
+    body.setBodyType(seat ? 2 : 0, true);
+  }, [seat]);
+
+  // Getting into a car: start from the car's heading, pull the camera back for a wider view.
+  useEffect(() => {
+    if (driving) {
+      // Sit in the car where it's parked, facing the way it's parked.
+      const { x, z, rot } = driving.from;
+      car.current = { speed: 0, heading: rot };
+      controller.current?.body?.setTranslation({ x, y: 1, z }, true);
+      void camera.current?.dollyTo(11, true);
+    } else {
+      void camera.current?.dollyTo(7, true);
+    }
+  }, [driving]);
 
   useEffect(() => {
     // Lets the browser console move the player while debugging.
@@ -96,10 +120,37 @@ export function Player({
       // Any movement gets you up again.
       if (moving || keys.jump) store.stand();
       const s = store.seat;
-      c.body.setTranslation({ x: s.x, y: s.y + FEET_OFFSET, z: s.z }, true);
-      c.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
-      c.body.setRotation(seatQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, s.facing), true);
+      // Kinematic while seated: the bench can't push the body and gravity can't pull it, so no shaking.
+      c.body.setNextKinematicTranslation({ x: s.x, y: s.y + FEET_OFFSET, z: s.z });
+      c.body.setNextKinematicRotation(seatQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, s.facing));
       c.setMovement(STILL);
+    } else if (store.driving && c.body) {
+      // Arcade car: throttle and steering from the keyboard or the joystick, brake with Space.
+      const throttle = (k.forward ? 1 : 0) - (k.backward ? 1 : 0) + touchInput.y;
+      const steer = (k.leftward ? 1 : 0) - (k.rightward ? 1 : 0) - touchInput.x;
+      const st = car.current;
+      const top = keys.run ? 26 : 17;
+      if (keys.jump) st.speed = THREE.MathUtils.damp(st.speed, 0, 4, delta);
+      else if (throttle) st.speed = THREE.MathUtils.clamp(st.speed + throttle * (throttle * st.speed < 0 ? 22 : 9) * delta, -7, top);
+      else st.speed = THREE.MathUtils.damp(st.speed, 0, 0.9, delta);
+      // Steering needs speed, and reverses when backing up.
+      st.heading += steer * 1.6 * delta * THREE.MathUtils.clamp(st.speed / 7, -1, 1);
+      // Bumping into something takes the speed away.
+      const lv = c.body.linvel();
+      const actual = Math.hypot(lv.x, lv.z);
+      if (Math.abs(st.speed) > 4 && actual < Math.abs(st.speed) * 0.3) st.speed *= 0.5;
+      c.body.setLinvel({ x: Math.sin(st.heading) * st.speed, y: Math.min(lv.y, 0), z: Math.cos(st.heading) * st.speed }, true);
+      c.body.setRotation(seatQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, st.heading), true);
+      c.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      if (store.exitCar) {
+        // Park where we are and step out to the driver's side.
+        const p = c.body.translation();
+        store.stopDriving({ x: p.x, z: p.z, rot: st.heading });
+        const side = st.heading + Math.PI / 2;
+        c.body.setTranslation({ x: p.x + Math.sin(side) * 2.4, y: p.y + 0.6, z: p.z + Math.cos(side) * 2.4 }, true);
+        c.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        st.speed = 0;
+      }
     } else if (!store.started || store.panel || store.mapOpen || store.activity) {
       // Welcome screen, info panel or big map open: stand still.
       c.setMovement(STILL);
@@ -116,11 +167,13 @@ export function Player({
       c.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
     }
 
-    const p = c.currPos;
+    // Ecctrl only updates currPos while it is enabled; in a car or on a bench read the body.
+    const p = (store.driving || store.seat) && c.body ? c.body.translation() : c.currPos;
     position.current?.copy(p);
     playerState.position.set(p.x, p.y - FEET_OFFSET, p.z);
-    playerState.speed = c.isOnGround ? c.moveSpeed : 0;
-    if (c.moveSpeed > 0.3) playerState.heading = Math.atan2(c.currLinVel.x, c.currLinVel.z);
+    playerState.speed = store.driving ? Math.abs(car.current.speed) : c.isOnGround ? c.moveSpeed : 0;
+    if (store.driving) playerState.heading = car.current.heading;
+    else if (c.moveSpeed > 0.3) playerState.heading = Math.atan2(c.currLinVel.x, c.currLinVel.z);
     camera.current?.moveTo(p.x, p.y + 0.6, p.z, true);
 
     airborne.current = c.isOnGround ? 0 : airborne.current + delta;
@@ -143,7 +196,7 @@ export function Player({
         ref={controller}
         position={spawn}
         rotation={[0, facing, 0]}
-        enable={!seat}
+        enable={!seat && !driving}
         capsuleHalfHeight={CAPSULE_HALF_HEIGHT}
         capsuleRadius={CAPSULE_RADIUS}
         floatHeight={FLOAT_HEIGHT}
@@ -151,7 +204,12 @@ export function Player({
         maxRunVel={8}
         jumpVel={5.5}
       >
-        <group position={[0, -FEET_OFFSET + (seat ? 0.05 : 0), seat ? -0.1 : 0]}>
+        {driving && (
+          <Suspense fallback={null}>
+            <DrivenCar model={driving.model} />
+          </Suspense>
+        )}
+        <group position={[0, -FEET_OFFSET + (seat ? 0.05 : 0), seat ? -0.1 : 0]} visible={!driving}>
           {avatar === "robot" ? (
             <Avatar kind="robot" hijab={false} controller={controller} />
           ) : (
@@ -180,5 +238,33 @@ export function Player({
         maxPolarAngle={Math.PI / 2 - 0.08}
       />
     </>
+  );
+}
+
+const CAR_SCALE = 2.2;
+
+/** The car around the player while driving: the model, a car-sized collider and headlights. */
+function DrivenCar({ model }: { model: string }) {
+  const { scene } = useGLTF(`/models/cars/${model}.glb`);
+  const object = useMemo(() => {
+    const m = scene.clone(true);
+    m.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) o.castShadow = true;
+    });
+    return m;
+  }, [scene]);
+  // The capsule rests on the ground while driving, its center 0.7 m up.
+  const ground = -(CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS);
+  return (
+    <group position={[0, ground, 0]}>
+      <CuboidCollider args={[0.75 * CAR_SCALE, 0.45 * CAR_SCALE, 1.2 * CAR_SCALE]} position={[0, 0.75 * CAR_SCALE, 0]} />
+      <primitive object={object} scale={CAR_SCALE} position={[0, 0.3 * CAR_SCALE, 0]} />
+      {[-0.45, 0.45].map((hx) => (
+        <mesh key={hx} position={[hx * CAR_SCALE, 0.55 * CAR_SCALE, 1.28 * CAR_SCALE]}>
+          <sphereGeometry args={[0.16, 10, 10]} />
+          <meshStandardMaterial color="#fef9c3" emissive="#fef08a" emissiveIntensity={3} toneMapped={false} />
+        </mesh>
+      ))}
+    </group>
   );
 }

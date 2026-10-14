@@ -20,7 +20,7 @@ export function BuildingDoors({ district, buildings }: { district: DistrictId; b
     const store = useCityStore.getState();
     let best: BuildingSpec | null = null;
     let bestD = RADIUS * RADIUS;
-    if (store.started && !store.seat && !store.fading && !store.panel && !store.activity) {
+    if (store.started && !store.seat && !store.fading && !store.panel && !store.activity && !store.driving) {
       for (const b of buildings) {
         if (b.filler) continue;
         const door = doorPoint(b);

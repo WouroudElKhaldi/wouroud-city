@@ -36,7 +36,7 @@ export function useProximity({
     const point = typeof where === "function" ? where() : where;
     const dx = point.x - playerState.position.x;
     const dz = point.z - playerState.position.z;
-    const near = enabled && !store.seat && !store.fading && dx * dx + dz * dz < radius * radius;
+    const near = enabled && !store.seat && !store.driving && !store.fading && dx * dx + dz * dz < radius * radius;
     if (near && (!inside.current || !store.nearby)) {
       store.setNearby({ id, label: latest.current.label, run: () => latest.current.run() });
     } else if (!near && inside.current) {
