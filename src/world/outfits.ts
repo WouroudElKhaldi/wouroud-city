@@ -17,6 +17,8 @@ export type Outfit = {
   modest: ModestLayers;
   /** Apply the modest layers even without a hijab (e.g. a long dress is always long) */
   alwaysModest?: boolean;
+  /** A fitted hairstyle from the base-characters kit instead of the model's own hair */
+  hair?: { style: "long" | "buns" | "buzzed" | "parted"; color: string; beard?: boolean };
 };
 
 /** Natural, warm skin tones. */
@@ -62,6 +64,7 @@ export const GUY_OUTFIT: Outfit = {
   file: "male-shirt",
   colors: { Shirt: "#6b46c1", Shirt2: "#f5f0ff", Pants: "#2d2a4a", Shoes: "#1a103d", Socks: "#f6c453", Skin: "#e3b593" },
   modest: {},
+  hair: { style: "parted", color: "#3b2a20" },
 };
 
 export type NpcLook = {

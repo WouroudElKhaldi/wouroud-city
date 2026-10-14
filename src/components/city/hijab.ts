@@ -68,7 +68,7 @@ export function buildHijab(model: THREE.Object3D, color: string): { removeFromPa
 }
 
 /** Bounds (in model space) of the skin vertices that move with the head bone. */
-function measureHeadSkin(model: THREE.Object3D, headBone: THREE.Object3D) {
+export function measureHeadSkin(model: THREE.Object3D, headBone: THREE.Object3D) {
   model.updateMatrixWorld(true);
   const toModel = new THREE.Matrix4().copy(model.matrixWorld).invert();
   const box = new THREE.Box3();

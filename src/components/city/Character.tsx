@@ -10,6 +10,7 @@ import { playerState } from "@/world/env";
 import { addFaceFeatures, shapeCurvy } from "./body";
 import { addModestLayers, type ModestLayers } from "./garments";
 import { buildHijab } from "./hijab";
+import { Brows, Hair, type HairStyle } from "./Hair";
 
 /** The animations our scenes ask for; each model maps them to its own clip names. */
 export type CharacterAnimation =
@@ -73,7 +74,10 @@ export function Character({
   colors,
   modest,
   matchPlayerSpeed = false,
+  hair,
 }: {
+  /** Replace the model's hair with a fitted hairstyle from the base-characters kit (ignored under a hijab). */
+  hair?: { style: HairStyle; color: string; beard?: boolean };
   /** Play walk / run faster or slower to match the player's real speed, so feet don't slide. */
   matchPlayerSpeed?: boolean;
   file: PersonFile;
@@ -185,6 +189,9 @@ export function Character({
   return (
     <group ref={root} scale={scale}>
       <primitive object={model} />
+      {hair && !hijab && <Hair model={model} style={hair.style} color={hair.color} beard={hair.beard} />}
+      {/* Women keep their current look until their new brows are checked up close. */}
+      {!file.startsWith("female") && <Brows model={model} kind="male" color={hair?.color ?? "#3a2419"} />}
     </group>
   );
 }

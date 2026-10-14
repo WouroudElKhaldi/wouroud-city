@@ -247,6 +247,7 @@ export function Player({
                 modest={wearsHijab || outfit.alwaysModest ? outfit.modest : undefined}
                 animation={animation}
                 matchPlayerSpeed
+                hair={outfit.hair}
                 hijab={wearsHijab}
                 hijabColor={hijabColor}
               />
