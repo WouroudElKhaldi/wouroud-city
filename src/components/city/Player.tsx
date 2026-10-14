@@ -62,6 +62,8 @@ export function Player({
   const outfit = avatar === "guy" ? GUY_OUTFIT : GIRL_OUTFITS[outfitKey];
   const wearsHijab = avatar === "girl" && hijab;
   const seatQuat = useMemo(() => new THREE.Quaternion(), []);
+  /** Seconds the controller has been off the ground; tiny bumps don't count as falling. */
+  const airborne = useRef(0);
 
   useEffect(() => {
     // Start behind the player, looking the way they face.
@@ -76,7 +78,7 @@ export function Player({
     if (process.env.NODE_ENV === "development") Object.assign(window, { __player: controller });
   }, []);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     const c = controller.current;
     if (!c) return;
     const k = getKeys();
@@ -105,6 +107,15 @@ export function Player({
       c.setMovement(keys);
     }
 
+    // Safety net: if a collision ever tips the capsule over, stand it back up, keeping its heading.
+    const q = c.body.rotation();
+    const tilt = 1 - 2 * (q.x * q.x + q.z * q.z);
+    if (tilt < 0.82) {
+      const yaw = Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.y * q.y + q.x * q.x));
+      c.body.setRotation(seatQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, yaw), true);
+      c.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    }
+
     const p = c.currPos;
     position.current?.copy(p);
     playerState.position.set(p.x, p.y - FEET_OFFSET, p.z);
@@ -112,13 +123,16 @@ export function Player({
     if (c.moveSpeed > 0.3) playerState.heading = Math.atan2(c.currLinVel.x, c.currLinVel.z);
     camera.current?.moveTo(p.x, p.y + 0.6, p.z, true);
 
+    airborne.current = c.isOnGround ? 0 : airborne.current + delta;
     let next: CharacterAnimation;
     const gesture = store.gesture;
     if (store.seat) next = "sit";
     else if (gesture && performance.now() - gesture.at < GESTURE_SECONDS * 1000 && c.moveSpeed < 0.5) next = gesture.name;
-    else if (!c.isOnGround) next = c.verticalSpeed > 0.5 ? "jump" : "fall";
-    else if (c.moveSpeed > 4.6) next = "sprint";
-    else if (c.moveSpeed > 0.35) next = "walk";
+    else if (airborne.current > 0.18) next = c.verticalSpeed > 0.5 ? "jump" : "fall";
+    // Hysteresis: a clip only changes when the speed clearly crosses a threshold,
+    // so the walk cycle isn't restarted every few frames.
+    else if (c.moveSpeed > (animation === "sprint" ? 4.2 : 4.8)) next = "sprint";
+    else if (c.moveSpeed > (animation === "walk" || animation === "sprint" ? 0.25 : 0.5)) next = "walk";
     else next = "idle";
     if (next !== animation) setAnimation(next);
   });
@@ -148,6 +162,7 @@ export function Player({
                 // Wearing a hijab always means a fully covering outfit.
                 modest={wearsHijab || outfit.alwaysModest ? outfit.modest : undefined}
                 animation={animation}
+                matchPlayerSpeed
                 hijab={wearsHijab}
                 hijabColor={hijabColor}
               />

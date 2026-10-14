@@ -1,10 +1,12 @@
 "use client";
 
 import { useAnimations, useGLTF } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
+import { playerState } from "@/world/env";
 import { addFaceFeatures, shapeCurvy } from "./body";
 import { addModestLayers, type ModestLayers } from "./garments";
 import { buildHijab } from "./hijab";
@@ -70,7 +72,10 @@ export function Character({
   hijabColor = "#c49cad",
   colors,
   modest,
+  matchPlayerSpeed = false,
 }: {
+  /** Play walk / run faster or slower to match the player's real speed, so feet don't slide. */
+  matchPlayerSpeed?: boolean;
   file: PersonFile;
   animation: CharacterAnimation;
   hijab?: boolean;
@@ -140,7 +145,16 @@ export function Character({
     return addFaceFeatures(model);
   }, [model, feminine]);
 
-  const { actions, names } = useAnimations(animations, root);
+  const { actions, names, mixer } = useAnimations(animations, root);
+
+  useEffect(() => {
+    // Lets the browser console inspect which clips are playing while debugging.
+    if (process.env.NODE_ENV !== "development") return;
+    const w = window as unknown as { __characters?: Map<THREE.Object3D, unknown> };
+    w.__characters ??= new Map();
+    w.__characters.set(model, { file, actions, mixer });
+    return () => void w.__characters?.delete(model);
+  }, [model, file, actions, mixer]);
 
   useEffect(() => {
     const suffix = CLIP_SUFFIX[animation];
@@ -148,7 +162,9 @@ export function Character({
     const action = clip ? actions[clip] : undefined;
     if (!action) return;
     const once = ONE_SHOT.includes(animation);
-    action.reset();
+    // One-shot gestures start over; loops (walk, run, idle) carry on from where they are.
+    if (once) action.reset();
+    else action.enabled = true;
     action.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, once ? 1 : Infinity);
     action.clampWhenFinished = once;
     action.fadeIn(0.2).play();
@@ -156,6 +172,15 @@ export function Character({
       action.fadeOut(0.2);
     };
   }, [actions, names, animation]);
+
+  // Stride speed: the clips cover about 1.5 m/s walking and 5 m/s running.
+  useFrame(() => {
+    if (!matchPlayerSpeed || (animation !== "walk" && animation !== "sprint")) return;
+    const suffix = CLIP_SUFFIX[animation];
+    const clip = names.find((n) => n.endsWith(`_${suffix}`));
+    const action = clip ? actions[clip] : undefined;
+    if (action) action.timeScale = THREE.MathUtils.clamp(playerState.speed / (animation === "walk" ? 1.5 : 5), 0.7, 2.3);
+  });
 
   return (
     <group ref={root} scale={scale}>
