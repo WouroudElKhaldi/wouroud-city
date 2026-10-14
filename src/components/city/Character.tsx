@@ -215,8 +215,17 @@ function upgradeMaterial(source: THREE.MeshStandardMaterial) {
       emissiveIntensity: 0.06,
     });
   }
+  if (/brow/i.test(source.name)) {
+    const brows = source.clone();
+    brows.color.set("#4a2f25");
+    brows.roughness = 0.9;
+    return brows;
+  }
+  if (/^Eye/.test(source.name)) {
+    return new THREE.MeshPhysicalMaterial({ name: source.name, color: "#2e1d16", roughness: 0.2, clearcoat: 1 });
+  }
   const m = source.clone();
-  m.roughness = /^Eye/.test(source.name) ? 0.3 : 0.78;
+  m.roughness = 0.78;
   return m;
 }
 

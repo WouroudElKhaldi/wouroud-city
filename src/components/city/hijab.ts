@@ -13,7 +13,7 @@ import * as THREE from "three";
  */
 
 /** The face opening on the unit sphere: an oval on the front (+z). */
-const FACE = { rx: 0.64, ry: 0.58, cy: -0.08 };
+const FACE = { rx: 0.76, ry: 0.68, cy: -0.06 };
 
 export function buildHijab(model: THREE.Object3D, color: string): { removeFromParent: () => void } | null {
   const headBone = model.getObjectByName("Head");
@@ -37,8 +37,9 @@ export function buildHijab(model: THREE.Object3D, color: string): { removeFromPa
   lining.color = new THREE.Color(color).multiplyScalar(0.78);
 
   // Head-sized ellipsoid frame, a little roomier than the head itself.
-  const radii = new THREE.Vector3(size.x * 0.6, size.y * 0.64, size.z * 0.62);
-  const hoodCenter = new THREE.Vector3(center.x, center.y + size.y * 0.02, center.z - size.z * 0.05);
+  // Close-fitting: just a little roomier than the head, so it reads as fabric, not a helmet.
+  const radii = new THREE.Vector3(size.x * 0.56, size.y * 0.57, size.z * 0.57);
+  const hoodCenter = new THREE.Vector3(center.x, center.y + size.y * 0.04, center.z - size.z * 0.04);
 
   const outer = new THREE.Mesh(makeHoodGeometry(), fabric);
   outer.scale.copy(radii);
@@ -135,5 +136,5 @@ function makeRimGeometry(radii: THREE.Vector3) {
     points.push(new THREE.Vector3(x * radii.x, y * radii.y, z * radii.z * 0.98));
   }
   const curve = new THREE.CatmullRomCurve3(points, true, "centripetal");
-  return new THREE.TubeGeometry(curve, 120, Math.min(radii.x, radii.y) * 0.075, 12, true);
+  return new THREE.TubeGeometry(curve, 120, Math.min(radii.x, radii.y) * 0.05, 12, true);
 }

@@ -42,7 +42,7 @@ export function addModestLayers(model: THREE.Object3D, options: ModestLayers) {
       new THREE.Vector2(rBottom, bottom),
     ];
     const geometry = new THREE.LatheGeometry(profile, 64);
-    addFolds(geometry, top, height, folds, 0.05);
+    addFolds(geometry, top, height, folds, 0.035);
     const material = new THREE.MeshPhysicalMaterial({
       color,
       roughness: 0.8,
@@ -62,7 +62,7 @@ export function addModestLayers(model: THREE.Object3D, options: ModestLayers) {
   };
 
   if (options.skirt) {
-    lathe(options.skirt, hips.y + legLength * 0.08, foot.y + legLength * 0.04, hipWidth * 1.02, hipWidth * 1.8, 10);
+    lathe(options.skirt, hips.y + legLength * 0.08, foot.y + legLength * 0.04, hipWidth * 0.94, hipWidth * 1.45, 8);
   }
   if (options.tunic) {
     // Just a little longer than the original top: from the waist to the upper thigh.

@@ -5,7 +5,7 @@ import * as THREE from "three";
  *  - `shapeCurvy` gently reshapes a female figure (fuller hips and bust, a defined waist),
  *  - `addSkinLayer` copies part of the character's own skin as a thin fabric layer, so
  *    sleeves and high necklines fit exactly and bend with the skeleton,
- *  - `addFaceFeatures` adds lashes, lips and a soft blush.
+ *  - `addFaceFeatures` adds soft lips and a light blush.
  */
 
 const HAND_BONES = /Palm|Fingers|Thumb|MiddleHand/;
@@ -34,6 +34,7 @@ function dominantBone(skinIndex: THREE.BufferAttribute, skinWeight: THREE.Buffer
  * same way so they still fit. Arms are left alone.
  */
 export function shapeCurvy(scene: THREE.Object3D) {
+  thinEyebrows(scene);
   const meshes: THREE.SkinnedMesh[] = [];
   scene.traverse((o) => {
     if ((o as THREE.SkinnedMesh).isSkinnedMesh) meshes.push(o as THREE.SkinnedMesh);
@@ -69,10 +70,10 @@ export function shapeCurvy(scene: THREE.Object3D) {
       const x = pos.getX(i) - cx;
       const z = pos.getZ(i) - cz;
       const h = (pos.getY(i) - box.min.y) / height;
-      const hips = bump(h, 0.5, 0.06) * 0.13;
+      const hips = bump(h, 0.5, 0.06) * 0.11;
       const waist = bump(h, 0.615, 0.035) * -0.07;
       const bust = bump(h, 0.725, 0.035) * (z > 0 ? 0.16 : 0.04);
-      const sx = 1 + hips + waist + bust * 0.35;
+      const sx = 1 + hips + waist + bust * 0.12;
       const sz = 1 + hips * 0.8 + waist + bust;
       pos.setX(i, cx + x * sx);
       pos.setZ(i, cz + z * sz);
@@ -131,7 +132,7 @@ export function addSkinLayer(model: THREE.Object3D, regions: SkinRegion[], color
     if (!keep.length) return;
     geometry.computeBoundingBox();
     const size = geometry.boundingBox!.getSize(new THREE.Vector3());
-    const offset = Math.max(size.x, size.y, size.z) * 0.006;
+    const offset = Math.max(size.x, size.y, size.z) * 0.0035;
     const layer = geometry.clone();
     const pos = layer.attributes.position;
     const normal = layer.attributes.normal;
@@ -163,7 +164,7 @@ export function addSkinLayer(model: THREE.Object3D, regions: SkinRegion[], color
 // ---------------------------------------------------------------------------
 
 /**
- * Lashes over each eye, rosy lips and a soft blush on the cheeks, placed from the
+ * Soft rosy lips and a light blush on the cheeks, placed from the
  * character's own eye and head geometry and attached to the head bone.
  */
 export function addFaceFeatures(model: THREE.Object3D) {
@@ -202,7 +203,6 @@ export function addFaceFeatures(model: THREE.Object3D) {
   if (!left.length || !right.length) return () => {};
   const leftBox = new THREE.Box3().setFromPoints(left);
   const rightBox = new THREE.Box3().setFromPoints(right);
-  const eyeSize = leftBox.getSize(new THREE.Vector3());
   const eyeY = (leftBox.max.y + rightBox.max.y) / 2;
   const eyeSpan = leftBox.getCenter(new THREE.Vector3()).x - rightBox.getCenter(new THREE.Vector3()).x;
   const chinY = headBox.min.y;
@@ -216,31 +216,15 @@ export function addFaceFeatures(model: THREE.Object3D) {
   const pieces: THREE.Object3D[] = [];
   const band = (eyeY - chinY) * 0.08;
 
-  // Lashes: a dark arc over each eye with a little outward flick.
-  const lashMaterial = new THREE.MeshStandardMaterial({ color: "#1c1220", roughness: 0.6 });
-  for (const box of [leftBox, rightBox]) {
-    const c = box.getCenter(new THREE.Vector3());
-    const r = Math.max(eyeSize.x, eyeSize.y) * 0.72;
-    const arc = new THREE.Mesh(new THREE.TorusGeometry(r, r * 0.26, 6, 16, Math.PI * 0.85), lashMaterial);
-    arc.position.set(c.x, c.y + eyeSize.y * 0.05, box.max.z + r * 0.15);
-    arc.rotation.z = Math.PI * 0.075;
-    pieces.push(arc);
-    const outward = c.x > cx ? 1 : -1;
-    const flick = new THREE.Mesh(new THREE.ConeGeometry(r * 0.14, r * 0.55, 6), lashMaterial);
-    flick.position.set(c.x + outward * r * 1.05, c.y + r * 0.35, box.max.z + r * 0.15);
-    flick.rotation.z = -outward * 1.0;
-    pieces.push(flick);
-  }
-
   // Lips.
   const lipY = eyeY - (eyeY - chinY) * 0.64;
   const lipZ = surfaceZ(lipY, cx, band);
-  const lipMaterial = new THREE.MeshPhysicalMaterial({ color: "#c45a72", roughness: 0.35, clearcoat: 0.6 });
+  const lipMaterial = new THREE.MeshPhysicalMaterial({ color: "#c9707f", roughness: 0.4, clearcoat: 0.4 });
   const upper = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), lipMaterial);
-  upper.scale.set(eyeSpan * 0.3, eyeSpan * 0.07, eyeSpan * 0.06);
+  upper.scale.set(eyeSpan * 0.26, eyeSpan * 0.055, eyeSpan * 0.045);
   upper.position.set(cx, lipY + eyeSpan * 0.04, lipZ);
   const lower = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), lipMaterial);
-  lower.scale.set(eyeSpan * 0.26, eyeSpan * 0.085, eyeSpan * 0.065);
+  lower.scale.set(eyeSpan * 0.22, eyeSpan * 0.07, eyeSpan * 0.05);
   lower.position.set(cx, lipY - eyeSpan * 0.05, lipZ);
   pieces.push(upper, lower);
 
@@ -248,7 +232,7 @@ export function addFaceFeatures(model: THREE.Object3D) {
   const blushMaterial = new THREE.MeshBasicMaterial({
     color: "#f0849a",
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.28,
     depthWrite: false,
     map: makeSoftDot(),
   });
@@ -277,4 +261,19 @@ function makeSoftDot() {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   return new THREE.CanvasTexture(canvas);
+}
+
+/** Makes thick block eyebrows slimmer and lifts them a touch, for a softer look. */
+function thinEyebrows(scene: THREE.Object3D) {
+  scene.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh || !/brow/i.test((mesh.material as THREE.Material).name)) return;
+    const pos = mesh.geometry.attributes.position;
+    mesh.geometry.computeBoundingBox();
+    const box = mesh.geometry.boundingBox!;
+    const cy = (box.min.y + box.max.y) / 2;
+    const lift = (box.max.y - box.min.y) * 0.15;
+    for (let i = 0; i < pos.count; i++) pos.setY(i, cy + (pos.getY(i) - cy) * 0.5 + lift);
+    pos.needsUpdate = true;
+  });
 }
