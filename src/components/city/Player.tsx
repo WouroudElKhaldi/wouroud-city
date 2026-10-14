@@ -13,6 +13,7 @@ import { touchInput } from "@/world/touch";
 import { Avatar } from "./Avatar";
 import { GIRL_OUTFITS, GUY_OUTFIT } from "@/world/outfits";
 import { Character, type CharacterAnimation } from "./Character";
+import { HorseModel, SADDLE_HEIGHT } from "./Horse";
 
 export const keyboardMap = [
   { name: "forward", keys: ["ArrowUp", "KeyW"] },
@@ -60,6 +61,7 @@ export function Player({
   const hijabColor = useCityStore((s) => s.hijabColor);
   const seat = useCityStore((s) => s.seat);
   const driving = useCityStore((s) => s.driving);
+  const riding = driving?.model === "horse";
   /** The car's own speed and heading while driving (m/s, radians). */
   const car = useRef({ speed: 0, heading: 0 });
   const [animation, setAnimation] = useState<CharacterAnimation>("idle");
@@ -91,7 +93,7 @@ export function Player({
       const { x, z, rot } = driving.from;
       car.current = { speed: 0, heading: rot };
       controller.current?.body?.setTranslation({ x, y: 1, z }, true);
-      void camera.current?.dollyTo(11, true);
+      void camera.current?.dollyTo(driving.model === "horse" ? 8 : 11, true);
     } else {
       void camera.current?.dollyTo(7, true);
     }
@@ -129,12 +131,13 @@ export function Player({
       const throttle = (k.forward ? 1 : 0) - (k.backward ? 1 : 0) + touchInput.y;
       const steer = (k.leftward ? 1 : 0) - (k.rightward ? 1 : 0) - touchInput.x;
       const st = car.current;
-      const top = keys.run ? 26 : 17;
+      const horse = store.driving.model === "horse";
+      const top = horse ? (keys.run ? 13 : 6.5) : keys.run ? 26 : 17;
       if (keys.jump) st.speed = THREE.MathUtils.damp(st.speed, 0, 4, delta);
-      else if (throttle) st.speed = THREE.MathUtils.clamp(st.speed + throttle * (throttle * st.speed < 0 ? 22 : 9) * delta, -7, top);
+      else if (throttle) st.speed = THREE.MathUtils.clamp(st.speed + throttle * (throttle * st.speed < 0 ? 22 : horse ? 6 : 9) * delta, horse ? -2 : -7, top);
       else st.speed = THREE.MathUtils.damp(st.speed, 0, 0.9, delta);
       // Steering needs speed, and reverses when backing up.
-      st.heading += steer * 1.6 * delta * THREE.MathUtils.clamp(st.speed / 7, -1, 1);
+      st.heading += steer * (horse ? 2.4 : 1.6) * delta * (horse ? 1 : THREE.MathUtils.clamp(st.speed / 7, -1, 1));
       // Bumping into something takes the speed away.
       const lv = c.body.linvel();
       const actual = Math.hypot(lv.x, lv.z);
@@ -142,6 +145,15 @@ export function Player({
       c.body.setLinvel({ x: Math.sin(st.heading) * st.speed, y: Math.min(lv.y, 0), z: Math.cos(st.heading) * st.speed }, true);
       c.body.setRotation(seatQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, st.heading), true);
       c.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      // The camera swings around behind the car (or horse) once it gets going.
+      if (Math.abs(st.speed) > 1.5) {
+        const cam = camera.current;
+        if (cam) {
+          const behind = st.heading + Math.PI;
+          const diff = Math.atan2(Math.sin(behind - cam.azimuthAngle), Math.cos(behind - cam.azimuthAngle));
+          void cam.rotateAzimuthTo(cam.azimuthAngle + diff * Math.min(1, delta * 2.5), false);
+        }
+      }
       if (store.exitCar) {
         // Park where we are and step out to the driver's side.
         const p = c.body.translation();
@@ -179,7 +191,7 @@ export function Player({
     airborne.current = c.isOnGround ? 0 : airborne.current + delta;
     let next: CharacterAnimation;
     const gesture = store.gesture;
-    if (store.seat) next = "sit";
+    if (store.seat || store.driving?.model === "horse") next = "sit";
     else if (gesture && performance.now() - gesture.at < GESTURE_SECONDS * 1000 && c.moveSpeed < 0.5) next = gesture.name;
     else if (airborne.current > 0.18) next = c.verticalSpeed > 0.5 ? "jump" : "fall";
     // Hysteresis: a clip only changes when the speed clearly crosses a threshold,
@@ -204,12 +216,26 @@ export function Player({
         maxRunVel={8}
         jumpVel={5.5}
       >
-        {driving && (
-          <Suspense fallback={null}>
-            <DrivenCar model={driving.model} />
-          </Suspense>
+        {driving?.model === "horse" ? (
+          <group position={[0, -(CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS), 0]}>
+            <CuboidCollider args={[0.35, 0.6, 1.1]} position={[0, 0.9, 0]} />
+            <HorseModel ridden />
+          </group>
+        ) : (
+          driving && (
+            <Suspense fallback={null}>
+              <DrivenCar model={driving.model} />
+            </Suspense>
+          )
         )}
-        <group position={[0, -FEET_OFFSET + (seat ? 0.05 : 0), seat ? -0.1 : 0]} visible={!driving}>
+        <group
+          position={
+            riding
+              ? [0, -(CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS) + SADDLE_HEIGHT + 0.27 - 0.48, -0.15]
+              : [0, -FEET_OFFSET + (seat ? 0.05 : 0), seat ? -0.1 : 0]
+          }
+          visible={!driving || riding}
+        >
           {avatar === "robot" ? (
             <Avatar kind="robot" hijab={false} controller={controller} />
           ) : (

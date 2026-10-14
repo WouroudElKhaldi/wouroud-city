@@ -7,12 +7,13 @@ import { seedContent } from "@/content/seed";
 import type { Seat } from "@/state/useCityStore";
 import { useCityStore } from "@/state/useCityStore";
 import { type DistrictId, districtById } from "@/world/districts";
-import { computeDistrictLayout, districtLawn, RING, SPOKES } from "@/world/layout";
+import { computeDistrictLayout, districtLawn, doorPoint, RING, SPOKES } from "@/world/layout";
 import { accents, palette } from "@/world/palette";
 import { Building, DARK } from "./Building";
 import { BuildingDoors } from "./BuildingDoors";
 import { Foliage } from "./Foliage";
 import { GrassField } from "./GrassField";
+import { ParkedHorse } from "./Horse";
 import { WorldGround } from "./HubScene";
 import { useGlowMaterial } from "./materials";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
@@ -47,6 +48,14 @@ export function DistrictScene({ id }: { id: DistrictId }) {
   const { ringRadius, innerRadius, gateZ } = layout;
   const parkEdge = ringRadius - RING.roadHalfWidth;
   const lawn = useMemo(() => districtLawn(layout), [layout]);
+  // The horse waits beside the stables, facing along the sidewalk.
+  const horseSpot = useMemo(() => {
+    const stables = layout.buildings.find((b) => b.id === "horse-riding");
+    if (!stables) return null;
+    const door = doorPoint(stables, 2.2);
+    const side = stables.rotY;
+    return { x: door.x + Math.sin(side) * (stables.depth / 2 + 1.5), z: door.z + Math.cos(side) * (stables.depth / 2 + 1.5), rot: side };
+  }, [layout]);
 
   const walkers = useMemo(
     () =>
@@ -180,6 +189,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       <Balls spots={toys.balls} />
       <Knockables spots={toys.cones} />
       <MarketStalls spots={toys.stalls} />
+      {horseSpot && <ParkedHorse id={`${id}-horse`} {...horseSpot} />}
       <ParkedCars cars={[{ id: `${id}-car`, model: DISTRICT_CAR[id], x: -RING.roadHalfWidth + 1.6, z: gateZ - 14, rot: Math.PI }]} />
       <Traffic radius={ringRadius} count={Math.max(4, Math.round(ringRadius / 7))} />
     </group>

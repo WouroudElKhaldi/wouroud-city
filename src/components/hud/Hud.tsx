@@ -57,7 +57,8 @@ export function Hud() {
 
   const place = scene === "hub" ? "Central Plaza" : districtById(scene).name;
   const driving = useCityStore((st) => st.driving);
-  const prompt = seat ? "Stand up" : driving ? "Get out of the car" : nearby?.label;
+  const riding = driving?.model === "horse";
+  const prompt = seat ? "Stand up" : riding ? "Get off the horse" : driving ? "Get out of the car" : nearby?.label;
   const p = persona ? PERSONAS[persona] : null;
 
   /** Guided tour: in the hub, point to the next recommended district; in a district, back to the plaza. */
@@ -190,8 +191,8 @@ export function Hud() {
         ) : driving ? (
           <div className="hud-panel max-w-sm self-start text-violet-100">
             <p>
-              🚗 <kbd>W</kbd>/<kbd>S</kbd> drive · <kbd>A</kbd>/<kbd>D</kbd> steer · <kbd>Shift</kbd> boost · <kbd>Space</kbd> brake ·{" "}
-              <kbd>E</kbd> get out
+              {riding ? "🐴" : "🚗"} <kbd>W</kbd>/<kbd>S</kbd> {riding ? "ride" : "drive"} · <kbd>A</kbd>/<kbd>D</kbd> steer ·{" "}
+              <kbd>Shift</kbd> {riding ? "gallop" : "boost"} · <kbd>Space</kbd> {riding ? "stop" : "brake"} · <kbd>E</kbd> get {riding ? "off" : "out"}
             </p>
           </div>
         ) : (
