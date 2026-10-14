@@ -102,3 +102,40 @@ export const NPC_LOOKS: NpcLook[] = [
   },
   { file: "male-casual", colors: { Shirt: "#5eead4", Pants: "#4c1d95", Skin: SKIN_TONES[5] } },
 ];
+
+// ---------------------------------------------------------------------------
+// Base-character looks (Universal Base Characters + clothes.ts)
+// ---------------------------------------------------------------------------
+
+import type { PersonLook } from "@/components/city/Person";
+
+/** Her skin on the light texture: a warm, barely-there tint. */
+const HER_SKIN = "#fff1e6";
+
+/** The visitor's avatar as a base character, from the welcome-screen choices. */
+export function playerLook(avatar: "girl" | "guy", outfit: GirlOutfit, hijab: boolean, hijabColor: string): PersonLook {
+  if (avatar === "guy") {
+    return {
+      body: "male",
+      outfit: "shirt",
+      colors: { top: "#6b46c1", bottom: "#2d2a4a", shoes: "#1a103d" },
+      skin: "#f6dcc8",
+      hair: { style: "parted", color: "#3b2a20" },
+      brows: "#3b2a20",
+    };
+  }
+  const o = GIRL_OUTFITS[outfit].colors;
+  const look: Record<GirlOutfit, Pick<PersonLook, "outfit" | "colors">> = {
+    dress: { outfit: "abaya", colors: { top: o.Dress, bottom: o.Dress, shoes: o.Shoes } },
+    blazer: { outfit: "blazer-modest", colors: { top: o.Jacket, bottom: o.Pants, shoes: o.Shoes } },
+    casual: { outfit: "tunic", colors: { top: o.Shirt, bottom: o.Pants, shoes: o.Shoes } },
+  };
+  return {
+    body: "female",
+    ...look[outfit],
+    skin: HER_SKIN,
+    hijab: hijab ? hijabColor : undefined,
+    hair: hijab ? undefined : { style: "long", color: "#2b1a14" },
+    brows: "#2b1a14",
+  };
+}

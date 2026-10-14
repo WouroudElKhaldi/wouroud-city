@@ -5,6 +5,65 @@ Last updated: 2026-10-15. Task list with status: `tasks.md` (keep it updated aft
 
 ---
 
+## 0. STATUS AT HANDOFF (2026-10-15, end of session) — read this first
+
+Everything below is committed on `master` (not pushed). `tasks.md` has the full task list with statuses.
+Type-check, lint and `next build` pass.
+
+### Done this session
+- Phones: joystick, jump/action buttons, compact HUD + menu sheet, readable map, mobile preset.
+- Loading progress on the welcome screen; SEO (OG image, sitemap, robots, JSON-LD); README.
+- Round districts (plaza, park, ring road, clustered buildings, shops); every building unique (rooftop
+  emblem + brand color + tower shape); district architecture; **buildings are the color of what they
+  represent** (owner's new rule — not all violet); colorful nature + swaying grass (`GrassField.tsx`).
+- Games: Arcade "Full Stack" (`StackGame.tsx`), painting easel (`PaintStudio.tsx`), photo mode.
+- Weather, traffic that stops for you, market stalls, ambient music, accessibility.
+- Driving (parked cars, E to get in/out) and horse riding (Hobby Quarter stables).
+- Fixes: feet sinking into landmark platforms, guy's legs (walk restarting), player tipping over,
+  bench shaking (kinematic seat), long dress shows no skin at full stride.
+- Guy: new fitted hair + eyebrows from Quaternius Universal Base Characters (`Hair.tsx`).
+
+### IN PROGRESS — new character bodies (owner asked for this; NOT live yet)
+Goal: replace the Quaternius low-poly people with **Universal Base Characters** bodies (CC0, in
+`public/models/people2/female.glb`, `male.glb`) animated by the **Universal Animation Library**
+(CC0, `public/models/people2/animations.glb`, same UE-style rig: pelvis, spine_01..03, upperarm_l, thigh_l,
+Head...). The bodies come in underwear only, so clothes are generated in code.
+- `src/components/city/Person.tsx`: new character component (body + shared clips + skin tint + clothes +
+  hijab via existing `buildHijab` + kit hair). Animation name map in `CLIPS`.
+- `src/components/city/clothes.ts`: `addLayer` (copies body triangles of regions, smooths, inflates;
+  skinned to the same skeleton), `addFlare` (lathe skirt / long top on pelvis), `dressUp(kind)` outfits:
+  abaya, blazer-modest, tunic (hers, always with hijab = fully covering, LOOSE), shirt, tee, suit.
+- `src/world/outfits.ts` → `playerLook()` maps the welcome-screen choices to a PersonLook.
+- Conversion script: `.assets-src/tools/convert.mjs` (git-ignored; run with `node convert.mjs` there).
+  Source zips are in the owner's Downloads and unpacked in `.assets-src/ubc`, `.assets-src/ual`.
+- **Player.tsx still uses the old `Character`** (reverted on purpose). To test: in Player, render
+  `<Person look={playerLook(...)} animation={animation} matchPlayerSpeed />` instead of `<Character …/>`.
+
+**Open bugs found in the first test (must fix before switching her over):**
+1. Clothes have big holes on the chest/belly and the console throws
+   `applyBoneTransform … reading 'matrixWorld'` from `SkinnedMesh.computeBoundingSphere`: the fabric
+   layers are bound to the skeleton but likely need `layer.boundingSphere` set (or the clone's
+   `skeleton` is wrong) — probably both issues share a cause in `addLayer` (check `body.skeleton`
+   after `SkeletonUtils.clone`, and set `frustumCulled = false` + precompute the bounding sphere).
+2. Skin: base texture is now lightened in `convert.mjs` (fair base, tint for darker NPCs) — re-check.
+3. The kit body is "Superhero" (muscular/curvy). Her outfits must stay LOOSE (smooth more, add the
+   flare from higher up), and the hijab must cover down to the top of the neck. **Check her up close
+   from the front after every change; never leave her immodest on screen.**
+4. Then: NPCs (`Pedestrians.tsx` uses `Character` + `NPC_LOOKS`) → move to `Person` with varied looks.
+
+### Not started
+Walk-in interiors (22), paintings gallery (needs owner's images), crochet toy, label batching / LOD /
+KTX2 (35–36), new robot avatar (39), admin + MongoDB + R2 + Vercel (30–34, need the owner's accounts).
+
+### Testing tips (dev only)
+`window.__store` (Zustand), `window.__player.current` (Ecctrl handle; `body.setTranslation`),
+`window.__city.state.get()` (camera/controls; `controls.setLookAt(...)` for close-ups, narrow
+`camera.fov` to zoom because min camera distance is 3 m), `window.__characters` (animation actions).
+The browser pane renders very few frames when it is in the background — trust state reads over
+screenshots for motion, and bring the tab to the front for screenshots.
+
+---
+
 ## 1. What this is
 
 A 3D, walkable portfolio for **Wouroud El Khaldi** (Mid-Senior Full Stack Software Engineer,

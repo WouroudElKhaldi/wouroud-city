@@ -32,7 +32,7 @@ _(nothing; next up: 43 Better people)_
 40. ✅ District layout redesign: no more one long street. Each district is a round neighborhood: a central square, ring road, buildings grouped in clusters (by category / company / project type), parks, plazas and decor between groups
 41. ✅ Unique building per item: every building gets its own design from its data (CSS tower ≠ JS tower, Jamrex ≠ FitSync ≠ Hyperfocus). Signature shapes, roofs, colors, rooftop props and logos per skill / project / job
 42. ✅ District-specific architecture: Business = glass towers, Skills = neon downtown, Projects = harbor warehouses and ships, Campus = brick and clock tower, Training = park pavilions, Polyglot = old-town houses, Hobbies = art studios, Arcade = pier with rides
-43. ⬜ Better people: higher-quality CC0 characters (more detail, nicer faces), more variety for NPCs, better hijab and outfit fit
+43. 🔄 Better people: guy has new kit hair + brows (live). New bodies (Universal Base Characters + Universal Animation Library, CC0) converted and wired in Person.tsx / clothes.ts but NOT live yet: clothes have holes, see HANDOFF section 0
 44. ✅ More life: cars driving the ring road (they stop for you and honk), market stalls, fountain plaza, benches, tree groves, pigeons, walkers (statues and kids playing still open)
 
 ### A. Phones and tablets
