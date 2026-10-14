@@ -666,7 +666,7 @@ export const seedContent: Content = {
   npcLines: [
     { id: "n1", district: "any", text: "Wouroud landed a first developer job at 19, mostly self-taught." },
     { id: "n2", district: "any", text: "Fun fact: the self-declared #1 perfectionist in the world built this city anyway." },
-    { id: "n3", district: "any", text: "Psst, everything here is violet because it's Wouroud's favorite color." },
+    { id: "n3", district: "any", text: "Psst, violet is Wouroud's favorite color. Gold and mint are just its best friends." },
     { id: "n4", district: "training", text: "Wouroud gave the graduation speech at the Coursera scholarship ceremony!" },
     { id: "n5", district: "projects", text: "Wouroud built an AI bot that picks the day's tech news and writes LinkedIn posts." },
     { id: "n6", district: "business", text: "25+ payment providers, one engineer who keeps them all in line." },

@@ -1,4 +1,5 @@
 import { DISTRICTS, HUB, landmarkPlacement } from "./districts";
+import { type FoliageItem, type FoliageKey, type LeafPalette, pick, seeded, undergrowth } from "./foliage";
 import type { LampSpot } from "./layout";
 
 /**
@@ -11,7 +12,7 @@ export type Road = { x: number; z: number; rotationY: number; length: number };
 export type HubLayout = {
   roads: Road[];
   lamps: LampSpot[];
-  trees: [number, number][];
+  foliage: FoliageItem[];
 };
 
 export const WORLD_HALF = 200;
@@ -54,12 +55,14 @@ export function computeHubLayout(): HubLayout {
     lamps.push({ x: Math.cos(a) * r, z: Math.sin(a) * r, rot: Math.atan2(Math.sin(a), -Math.cos(a)) });
   }
 
-  return { roads, lamps, trees: scatterTrees() };
+  return { roads, lamps, foliage: [...scatterTrees(), ...flowerBeds()] };
 }
 
 /** Deterministic tree scatter that keeps clear of the plaza, the roads and the landmarks. */
-function scatterTrees(): [number, number][] {
+function scatterTrees(): FoliageItem[] {
   const trees: [number, number][] = [];
+  const out: FoliageItem[] = [];
+  const decor = seeded(29);
   const spokes = DISTRICTS.map((d) => landmarkPlacement(d.id));
   let seed = 11;
   const random = () => {
@@ -82,6 +85,52 @@ function scatterTrees(): [number, number][] {
     if (nearRoad || nearLandmark) continue;
     if (trees.some(([tx, tz]) => Math.hypot(tx - x, tz - z) < 4.5)) continue;
     trees.push([x, z]);
+    const { key, palette } = treeFor(x, z, r, decor);
+    out.push({ key, x, z, rot: decor() * Math.PI * 2, size: 0.85 + decor() * 0.45, palette });
+    if (decor() < 0.45) out.push(...undergrowth(decor, x, z, 1 + Math.floor(decor() * 3)));
   }
-  return trees;
+  return out;
+}
+
+/**
+ * Tree families by area: cherry blossoms near the plaza, lilac broadleaves in the
+ * middle ring, deep violet pines on the outskirts, palms around the harbor and the
+ * arcade pier, and a sprinkle of golden autumn trees for contrast.
+ */
+function treeFor(x: number, z: number, r: number, random: () => number): { key: FoliageKey; palette: LeafPalette } {
+  const harbor = landmarkPlacement("projects");
+  const arcade = landmarkPlacement("arcade");
+  const nearCoast = [harbor, arcade].some((p) => Math.hypot(x - p.x, z - p.z) < 36);
+  if (nearCoast && random() < 0.7) return { key: pick(random, ["palm", "palmBend", "palmShort"] as const), palette: "mint" };
+  if (random() < 0.1) return { key: pick(random, ["oak", "fat", "round"] as const), palette: "autumn" };
+  if (r < 48) return { key: pick(random, ["oak", "fat", "round", "detailed", "small"] as const), palette: "blossom" };
+  if (r < 105)
+    return {
+      key: pick(random, ["round", "detailed", "plateau", "blocks", "cone", "simple", "tall", "thin"] as const),
+      palette: pick(random, ["lilac", "lilac", "mint", "blossom", "lilac", "mint"] as const),
+    };
+  return { key: pick(random, ["pineRound", "pineRoundC", "pineTall", "pineSmall", "pine"] as const), palette: "deep" };
+}
+
+/** Flower beds and hedges around the plaza, between the road openings. */
+function flowerBeds(): FoliageItem[] {
+  const random = seeded(5);
+  const out: FoliageItem[] = [];
+  const spokes = DISTRICTS.map((d) => landmarkPlacement(d.id).angle);
+  const flowers: FoliageKey[] = ["flowerPurpleA", "flowerPurpleB", "flowerPurpleC", "flowerRed", "flowerYellowA", "flowerYellowB"];
+  for (let i = 0; i < 220; i++) {
+    const a = random() * Math.PI * 2;
+    const gap = Math.min(...spokes.map((s) => Math.abs(Math.atan2(Math.sin(a - s), Math.cos(a - s)))));
+    if (gap < 0.32) continue;
+    const r = HUB.plazaRadius + 2 + random() * 4.5;
+    out.push({
+      key: random() < 0.82 ? pick(random, flowers) : pick(random, ["bushSmall", "bush", "bushDetailed"] as const),
+      x: Math.cos(a) * r,
+      z: Math.sin(a) * r,
+      rot: random() * Math.PI * 2,
+      size: 0.9 + random() * 0.5,
+      palette: "mint",
+    });
+  }
+  return out;
 }

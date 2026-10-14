@@ -2,18 +2,18 @@
 
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { type Interactable, useCityStore } from "@/state/useCityStore";
 import { useGlowMaterial } from "./materials";
+import { useProximity } from "./useProximity";
 
 /**
- * A glowing doorway with a sensor in front of it. Standing in the sensor shows
- * the "Press E" prompt; leaving it hides the prompt.
+ * A glowing doorway. Standing in front of it shows the "Press E" prompt.
  */
 export function Portal({
-  action,
+  id,
+  prompt,
+  onEnter,
   label,
   color,
   width = 4,
@@ -21,7 +21,9 @@ export function Portal({
   position = [0, 0, 0],
   rotationY = 0,
 }: {
-  action: Interactable;
+  id: string;
+  prompt: string;
+  onEnter: () => void;
   label: string;
   color: string;
   width?: number;
@@ -29,8 +31,15 @@ export function Portal({
   position?: [number, number, number];
   rotationY?: number;
 }) {
-  const setNearby = useCityStore((s) => s.setNearby);
-  const clearNearby = useCityStore((s) => s.clearNearby);
+  const group = useRef<THREE.Group>(null);
+  const doorstep = useMemo(() => new THREE.Vector3(), []);
+  useProximity({
+    id,
+    label: prompt,
+    run: onEnter,
+    radius: width / 2 + 1.2,
+    where: () => (group.current ? group.current.localToWorld(doorstep.set(0, 0, 1.4)) : doorstep),
+  });
   const frame = useGlowMaterial(color, 0.8, 3);
   const veil = useMemo(
     () =>
@@ -51,7 +60,7 @@ export function Portal({
   });
 
   return (
-    <group position={position} rotation-y={rotationY}>
+    <group ref={group} position={position} rotation-y={rotationY}>
       {/* Frame */}
       {[-1, 1].map((side) => (
         <mesh key={side} position={[(side * width) / 2, height / 2, 0]} material={frame}>
@@ -75,15 +84,6 @@ export function Portal({
       >
         {label}
       </Text>
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider
-          sensor
-          args={[width / 2 + 0.6, 1.5, 2.2]}
-          position={[0, 1.5, 1.6]}
-          onIntersectionEnter={() => setNearby(action)}
-          onIntersectionExit={() => clearNearby(action)}
-        />
-      </RigidBody>
     </group>
   );
 }

@@ -9,6 +9,7 @@ import { type DistrictDef, HUB } from "@/world/districts";
 import { Antenna, DARK, EdgeGlow, STONE } from "./Building";
 import { useFacade, useGlowMaterial } from "./materials";
 import { Portal } from "./Portal";
+import { useCityStore } from "@/state/useCityStore";
 
 /**
  * One landmark per district, standing on the ring around Central Plaza.
@@ -16,6 +17,7 @@ import { Portal } from "./Portal";
  */
 export function Landmark({ district }: { district: DistrictDef }) {
   const Model = MODELS[district.id];
+  const goTo = useCityStore((s) => s.goTo);
   return (
     <group>
       <Platform district={district} />
@@ -24,7 +26,9 @@ export function Landmark({ district }: { district: DistrictDef }) {
       </RigidBody>
       <Model district={district} />
       <Portal
-        action={{ kind: "enter", district: district.id }}
+        id={`enter-${district.id}`}
+        prompt={`Enter ${district.name}`}
+        onEnter={() => goTo(district.id)}
         label={`Enter ${district.name}`}
         color={district.accent}
         position={[0, 0.4, 6.4]}

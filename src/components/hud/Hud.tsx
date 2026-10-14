@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { type AvatarKind, useCityStore } from "@/state/useCityStore";
 import { districtById } from "@/world/districts";
+import { GIRL_OUTFITS, type GirlOutfit } from "@/world/outfits";
 
 const avatars: { kind: AvatarKind; label: string }[] = [
   { kind: "girl", label: "Girl" },
@@ -12,8 +13,25 @@ const avatars: { kind: AvatarKind; label: string }[] = [
 
 /** On-screen controls over the 3D city. */
 export function Hud() {
-  const { avatar, hijab, timeMode, scene, nearby, fading, setAvatar, setHijab, toggleTime, interact, goTo } =
-    useCityStore();
+  const {
+    avatar,
+    hijab,
+    outfit,
+    timeMode,
+    muted,
+    scene,
+    nearby,
+    seat,
+    fading,
+    toasts,
+    setAvatar,
+    setHijab,
+    setOutfit,
+    toggleTime,
+    toggleMuted,
+    interact,
+    goTo,
+  } = useCityStore();
 
   // E or Enter activates whatever the player is standing next to.
   useEffect(() => {
@@ -25,8 +43,7 @@ export function Hud() {
   }, [interact]);
 
   const place = scene === "hub" ? "Central Plaza" : districtById(scene).name;
-  const prompt =
-    nearby?.kind === "enter" ? `Enter ${districtById(nearby.district).name}` : nearby?.kind === "exit" ? "Back to Central Plaza" : null;
+  const prompt = seat ? "Stand up" : nearby?.label;
 
   return (
     <>
@@ -45,9 +62,19 @@ export function Hud() {
           </div>
 
           <div className="flex flex-col items-end gap-2">
-            <button type="button" onClick={toggleTime} className="hud-panel hud-button pointer-events-auto">
-              {timeMode === "day" ? "☀️ Day" : "🌙 Night"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={toggleMuted}
+                className="hud-panel hud-button pointer-events-auto"
+                aria-label={muted ? "Turn sound on" : "Mute sound"}
+              >
+                {muted ? "🔇" : "🔊"}
+              </button>
+              <button type="button" onClick={toggleTime} className="hud-panel hud-button pointer-events-auto">
+                {timeMode === "day" ? "☀️ Day" : "🌙 Night"}
+              </button>
+            </div>
             <div className="hud-panel pointer-events-auto flex flex-wrap items-center justify-end gap-1">
               {avatars.map((a) => (
                 <button
@@ -67,6 +94,29 @@ export function Hud() {
                 </label>
               )}
             </div>
+            {avatar === "girl" && (
+              <div className="hud-panel pointer-events-auto flex flex-wrap items-center justify-end gap-1">
+                {(Object.keys(GIRL_OUTFITS) as GirlOutfit[]).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setOutfit(key)}
+                    aria-pressed={outfit === key}
+                    className="hud-chip"
+                  >
+                    {GIRL_OUTFITS[key].label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex w-72 flex-col gap-2">
+              {toasts.map((t) => (
+                <div key={t.id} className="hud-panel hud-toast">
+                  {t.title && <p className="font-semibold text-fuchsia-200">{t.title}</p>}
+                  <p>{t.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -78,11 +128,11 @@ export function Hud() {
           </div>
         )}
 
-        <div className="hud-panel max-w-xs self-start text-violet-100">
+        <div className="hud-panel max-w-sm self-start text-violet-100">
           <p>
-            <kbd>W A S D</kbd> or arrows to walk · <kbd>Shift</kbd> to run · <kbd>Space</kbd> to jump
+            <kbd>W A S D</kbd> walk · <kbd>Shift</kbd> run · <kbd>Space</kbd> jump · <kbd>E</kbd> interact
           </p>
-          <p>Drag to look around · scroll to zoom</p>
+          <p>Drag to look · scroll to zoom · click trees, lamps, balls, flowers and cars</p>
         </div>
       </div>
 

@@ -14,6 +14,15 @@ import { DayNight } from "./DayNight";
 import { DISTRICT_SPAWN, DistrictScene } from "./DistrictScene";
 import { HubScene } from "./HubScene";
 import { keyboardMap, Player } from "./Player";
+import { GIRL_OUTFITS, GUY_OUTFIT, NPC_LOOKS } from "@/world/outfits";
+import { Particles } from "./Particles";
+import { preloadCharacters } from "./Character";
+import { preloadFoliage } from "./Foliage";
+import { preloadPlaythings } from "./Playthings";
+
+preloadFoliage();
+preloadPlaythings();
+preloadCharacters([...new Set([...Object.values(GIRL_OUTFITS).map((o) => o.file), GUY_OUTFIT.file, ...NPC_LOOKS.map((l) => l.file)])]);
 
 const HUB_SPAWN: [number, number, number] = [0, 2, 12];
 
@@ -63,6 +72,7 @@ export default function CityCanvas() {
             <Player position={playerPosition} spawn={spawn.position} facing={spawn.facing} />
           </Physics>
         </Suspense>
+        <Particles />
         {effects && <Effects />}
       </Canvas>
     </KeyboardControls>

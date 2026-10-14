@@ -10,8 +10,12 @@ import { Building, DARK } from "./Building";
 import { WorldGround } from "./HubScene";
 import { useGlowMaterial } from "./materials";
 import { Portal } from "./Portal";
+import { useCityStore } from "@/state/useCityStore";
 import { CodeBillboards, Curbs, StreetFurniture } from "./StreetDetails";
-import { StreetLamps, Trees } from "./StreetProps";
+import { Foliage } from "./Foliage";
+import { makeWalkers, Pedestrians } from "./Pedestrians";
+import { Balls, Knockables, Pigeons } from "./Playthings";
+import { StreetLamps } from "./StreetProps";
 
 /** Spawn point inside a district: just past the entry gate, facing down the street. */
 export const DISTRICT_SPAWN: [number, number, number] = [0, 2, STREET.startZ + 6];
@@ -20,10 +24,29 @@ export const DISTRICT_SPAWN: [number, number, number] = [0, 2, STREET.startZ + 6
 export function DistrictScene({ id }: { id: DistrictId }) {
   const layout = useMemo(() => computeDistrictLayout(seedContent, id), [id]);
   const district = districtById(id);
+  const goTo = useCityStore((s) => s.goTo);
   const roadTopZ = STREET.startZ + 28;
   const length = roadTopZ - layout.streetEndZ;
   const centerZ = (roadTopZ + layout.streetEndZ) / 2;
   const sidewalkX = STREET.roadHalfWidth + STREET.sidewalkWidth / 2;
+  const walkers = useMemo(
+    () =>
+      makeWalkers(id, id, [], [
+        [
+          [-sidewalkX + 0.4, STREET.startZ - 6],
+          [-sidewalkX + 0.4, layout.streetEndZ + 14],
+        ],
+        [
+          [sidewalkX - 0.4, layout.streetEndZ + 20],
+          [sidewalkX - 0.4, STREET.startZ - 10],
+        ],
+        [
+          [-sidewalkX + 0.4, (STREET.startZ + layout.streetEndZ) / 2],
+          [-sidewalkX + 0.4, STREET.startZ - 8],
+        ],
+      ]),
+    [id, sidewalkX, layout.streetEndZ],
+  );
 
   return (
     <group>
@@ -49,7 +72,9 @@ export function DistrictScene({ id }: { id: DistrictId }) {
 
       <DistrictArch name={district.name} tagline={district.tagline} accent={district.accent} color={district.color} />
       <Portal
-        action={{ kind: "exit" }}
+        id="exit-district"
+        prompt="Back to Central Plaza"
+        onEnter={() => goTo("hub")}
         label="Back to Central Plaza"
         color={district.accent}
         position={[0, 0, STREET.startZ + 22]}
@@ -65,7 +90,13 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       ))}
 
       <StreetLamps points={layout.lamps} />
-      <Trees points={layout.trees} />
+      <Foliage items={layout.foliage} />
+      <Pedestrians walkers={walkers} />
+      <Pigeons center={[0, STREET.startZ - 4]} radius={4} count={6} />
+      <Balls spots={[{ x: 2.5, z: layout.streetEndZ + 6, kind: "soccer" }, { x: -2.5, z: layout.streetEndZ + 8, kind: "beach" }]} />
+      <Knockables
+        spots={[-3, -1, 1, 3].map((x) => ({ x, z: layout.streetEndZ + 12, kind: "cone" as const }))}
+      />
       <StreetFurniture lamps={layout.lamps} />
       <CodeBillboards spots={layout.billboards} />
 

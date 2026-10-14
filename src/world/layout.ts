@@ -1,5 +1,6 @@
 import type { Content, Experience, Project, Training } from "@/content/schema";
 import { type DistrictId, districtById } from "./districts";
+import { type FoliageItem, type FoliageKey, type LeafPalette, pick, seeded, undergrowth } from "./foliage";
 import { palette } from "./palette";
 
 /** A lamp on the ground; its arm reaches along local +x after rotating by `rot` around y. */
@@ -56,7 +57,7 @@ export type DistrictLayout = {
   signposts: Signpost[];
   streetEndZ: number;
   lamps: LampSpot[];
-  trees: [number, number][];
+  foliage: FoliageItem[];
   billboards: Billboard[];
 };
 
@@ -316,13 +317,28 @@ export function computeDistrictLayout(content: Content, id: DistrictId): Distric
   }
 
   const streetEndZ = Math.min(cursor[-1], cursor[1], -40) - 12;
-  return { id, buildings, signposts, streetEndZ, ...streetDecor(streetEndZ) };
+  return { id, buildings, signposts, streetEndZ, ...streetDecor(streetEndZ, id) };
 }
 
-/** Lamps, trees and holographic billboards along a district street. */
-function streetDecor(streetEndZ: number) {
+/** Which trees line each district street. */
+const STREET_TREES: Record<DistrictId, { keys: FoliageKey[]; palettes: LeafPalette[] }> = {
+  business: { keys: ["round", "detailed", "plateau"], palettes: ["lilac", "lilac", "blossom"] },
+  skills: { keys: ["cone", "tall", "thin", "blocks"], palettes: ["deep", "lilac"] },
+  projects: { keys: ["palm", "palmBend", "palmShort"], palettes: ["mint"] },
+  campus: { keys: ["oak", "fat", "round"], palettes: ["autumn", "lilac", "autumn"] },
+  training: { keys: ["oak", "small", "round"], palettes: ["blossom", "mint"] },
+  languages: { keys: ["detailed", "oak", "plateau"], palettes: ["blossom", "lilac"] },
+  hobbies: { keys: ["oak", "fat", "small", "round"], palettes: ["blossom"] },
+  arcade: { keys: ["palm", "palmShort", "palmBend"], palettes: ["mint"] },
+};
+
+/** Lamps, trees, flowers and holographic billboards along a district street. */
+function streetDecor(streetEndZ: number, id: DistrictId) {
   const lamps: LampSpot[] = [];
   const trees: [number, number][] = [];
+  const foliage: FoliageItem[] = [];
+  const random = seeded(id.length * 97 + 13);
+  const theme = STREET_TREES[id];
   const billboards: Billboard[] = [];
   const curb = STREET.roadHalfWidth + 0.8;
   let slot = 0;
@@ -335,7 +351,48 @@ function streetDecor(streetEndZ: number) {
       else trees.push([s * (curb + 2.4), z - 7]);
     }
   }
-  return { lamps, trees, billboards };
+  for (const [x, z] of trees) {
+    foliage.push({
+      key: pick(random, theme.keys),
+      x,
+      z,
+      rot: random() * Math.PI * 2,
+      size: 0.85 + random() * 0.3,
+      palette: pick(random, theme.palettes),
+    });
+    foliage.push(...undergrowth(random, x, z, 2).map((u) => ({ ...u, x: x + (u.x - x) * 0.35, z: z + (u.z - z) * 0.6 })));
+  }
+  // Flowers on top of the planters (StreetFurniture puts a planter 10.5 m past each lamp).
+  for (const lamp of lamps) {
+    const side = Math.sign(lamp.x);
+    const px = side * (STREET.roadHalfWidth + STREET.sidewalkWidth - 0.7);
+    for (let k = 0; k < 3; k++) {
+      foliage.push({
+        key: pick(random, ["flowerPurpleA", "flowerPurpleB", "flowerPurpleC", "flowerRed", "flowerYellowA"] as const),
+        x: px + (random() - 0.5) * 0.8,
+        y: 0.7,
+        z: lamp.z - 10.5 + (random() - 0.5) * 0.8,
+        rot: random() * Math.PI * 2,
+        size: 0.8,
+        palette: "mint",
+      });
+    }
+  }
+  // A wild meadow behind the buildings, so the district edges are not bare.
+  for (let i = 0; i < 70; i++) {
+    const side = random() < 0.5 ? -1 : 1;
+    const x = side * (40 + random() * 60);
+    const z = STREET.startZ + 20 - random() * (STREET.startZ + 40 - streetEndZ);
+    foliage.push({
+      key: random() < 0.6 ? pick(random, theme.keys) : pick(random, ["pineRound", "pineTall", "pine"] as const),
+      x,
+      z,
+      rot: random() * Math.PI * 2,
+      size: 0.9 + random() * 0.5,
+      palette: pick(random, [...theme.palettes, "deep"] as LeafPalette[]),
+    });
+  }
+  return { lamps, foliage, billboards };
 }
 
 export function districtTitle(id: DistrictId) {
