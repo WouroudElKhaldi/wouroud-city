@@ -1,143 +1,268 @@
 "use client";
 
 import { Text } from "@react-three/drei";
+import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useMemo } from "react";
 import { seedContent } from "@/content/seed";
+import type { Seat } from "@/state/useCityStore";
+import { useCityStore } from "@/state/useCityStore";
 import { type DistrictId, districtById } from "@/world/districts";
-import { computeDistrictLayout, STREET } from "@/world/layout";
-import { palette } from "@/world/palette";
+import { computeDistrictLayout, RING, SPOKES } from "@/world/layout";
+import { accents, palette } from "@/world/palette";
 import { Building, DARK } from "./Building";
 import { BuildingDoors } from "./BuildingDoors";
+import { Foliage } from "./Foliage";
 import { WorldGround } from "./HubScene";
 import { useGlowMaterial } from "./materials";
-import { Portal } from "./Portal";
-import { useCityStore } from "@/state/useCityStore";
-import { CodeBillboards, Curbs, StreetFurniture } from "./StreetDetails";
-import { Foliage } from "./Foliage";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Balls, Knockables, Pigeons } from "./Playthings";
+import { Portal } from "./Portal";
+import { CodeBillboards, Fountain, Seats } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 
-/** Spawn point inside a district: just past the entry gate, facing down the street. */
-export const DISTRICT_SPAWN: [number, number, number] = [0, 2, STREET.startZ + 6];
-
-/** One district on its own: a street lined with the buildings generated from its content. */
+/**
+ * One district on its own: a round neighborhood. A plaza with a fountain in the
+ * middle, a park around it, a ring road, and the content buildings in clusters
+ * outside the ring, all facing the center. The entry avenue comes in from the south.
+ */
 export function DistrictScene({ id }: { id: DistrictId }) {
   const layout = useMemo(() => computeDistrictLayout(seedContent, id), [id]);
   const district = districtById(id);
   const goTo = useCityStore((s) => s.goTo);
   const openPanel = useCityStore((s) => s.openPanel);
-  const roadTopZ = STREET.startZ + 28;
-  const length = roadTopZ - layout.streetEndZ;
-  const centerZ = (roadTopZ + layout.streetEndZ) / 2;
-  const sidewalkX = STREET.roadHalfWidth + STREET.sidewalkWidth / 2;
+  const { ringRadius, innerRadius, gateZ } = layout;
+  const parkEdge = ringRadius - RING.roadHalfWidth;
+
   const walkers = useMemo(
     () =>
-      makeWalkers(id, id, [], [
-        [
-          [-sidewalkX + 0.4, STREET.startZ - 6],
-          [-sidewalkX + 0.4, layout.streetEndZ + 14],
-        ],
-        [
-          [sidewalkX - 0.4, layout.streetEndZ + 20],
-          [sidewalkX - 0.4, STREET.startZ - 10],
-        ],
-        [
-          [-sidewalkX + 0.4, (STREET.startZ + layout.streetEndZ) / 2],
-          [-sidewalkX + 0.4, STREET.startZ - 8],
-        ],
+      makeWalkers(id, id, [
+        { center: [0, 0], radius: RING.plazaRadius - 2.5, count: 2 },
+        { center: [0, 0], radius: parkEdge - 1, count: 2 },
+        { center: [0, 0], radius: innerRadius - RING.sidewalk / 2, count: 3 },
       ]),
-    [id, sidewalkX, layout.streetEndZ],
+    [id, parkEdge, innerRadius],
   );
+
+  const benches = useMemo<Seat[]>(
+    () =>
+      SPOKES.map((s) => s + Math.PI / 4).flatMap((a, i) =>
+        [-0.22, 0.22].map((d, k) => {
+          const r = RING.plazaRadius - 1.6;
+          const b = a + d;
+          return { id: `${id}-bench-${i}-${k}`, x: Math.sin(b) * r, y: 0, z: Math.cos(b) * r, facing: b + Math.PI };
+        }),
+      ),
+    [id],
+  );
+
+  const toys = useMemo(() => {
+    const at = (a: number, r: number) => ({ x: Math.sin(a) * r, z: Math.cos(a) * r });
+    const mid = (RING.plazaRadius + parkEdge) / 2;
+    return {
+      balls: [
+        { ...at(Math.PI / 4, mid), kind: "soccer" as const },
+        { ...at((Math.PI * 5) / 4, mid), kind: "beach" as const },
+      ],
+      cones: [-3, -1, 1, 3].map((x) => ({ x, z: ringRadius + RING.roadHalfWidth + 3, kind: "cone" as const })),
+    };
+  }, [parkEdge, ringRadius]);
 
   return (
     <group>
       <WorldGround />
 
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, centerZ]} receiveShadow>
-        <planeGeometry args={[STREET.roadHalfWidth * 2, length]} />
+      {/* Outer sidewalk in front of the buildings, then the ring road */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.015, 0]} receiveShadow>
+        <ringGeometry args={[ringRadius + RING.roadHalfWidth, innerRadius + 1, 128]} />
+        <meshStandardMaterial color={palette.sidewalk} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, 0]} receiveShadow>
+        <ringGeometry args={[ringRadius - RING.roadHalfWidth, ringRadius + RING.roadHalfWidth, 128]} />
         <meshStandardMaterial color={palette.road} roughness={0.9} />
       </mesh>
-      {Array.from({ length: Math.floor(length / 6) }, (_, k) => (
-        <mesh key={k} rotation-x={-Math.PI / 2} position={[0, 0.02, roadTopZ - 3 - k * 6]}>
-          <planeGeometry args={[0.25, 2.6]} />
-          <meshStandardMaterial color={palette.roadLine} />
-        </mesh>
-      ))}
-      {[-1, 1].map((side) => (
-        <mesh key={side} rotation-x={-Math.PI / 2} position={[side * sidewalkX, 0.02, centerZ]} receiveShadow>
-          <planeGeometry args={[STREET.sidewalkWidth, length]} />
+      <RoadDashes radius={ringRadius} />
+      {/* Inner curb ring around the park */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.03, 0]}>
+        <ringGeometry args={[parkEdge - 0.5, parkEdge, 128]} />
+        <meshStandardMaterial color="#e9dcc6" />
+      </mesh>
+
+      {/* Entry avenue from the gate to the ring */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, (ringRadius + gateZ + 8) / 2]} receiveShadow>
+        <planeGeometry args={[RING.roadHalfWidth * 2, gateZ + 8 - ringRadius]} />
+        <meshStandardMaterial color={palette.road} roughness={0.9} />
+      </mesh>
+      {[-1, 1].map((s) => (
+        <mesh key={s} rotation-x={-Math.PI / 2} position={[s * (RING.roadHalfWidth + 1.5), 0.015, (innerRadius + gateZ + 8) / 2]} receiveShadow>
+          <planeGeometry args={[3, gateZ + 8 - innerRadius]} />
           <meshStandardMaterial color={palette.sidewalk} />
         </mesh>
       ))}
-      <Curbs avenueEndZ={layout.streetEndZ} />
 
-      <DistrictArch name={district.name} tagline={district.tagline} accent={district.accent} color={district.color} />
+      {/* Paved paths from the plaza through the park to the ring */}
+      {SPOKES.map((a) => (
+        <mesh
+          key={a}
+          rotation={[-Math.PI / 2, 0, a]}
+          position={[Math.sin(a) * (RING.plazaRadius + parkEdge) * 0.5, 0.025, Math.cos(a) * (RING.plazaRadius + parkEdge) * 0.5]}
+          receiveShadow
+        >
+          <planeGeometry args={[3.2, parkEdge - RING.plazaRadius]} />
+          <meshStandardMaterial color={palette.sidewalk} />
+        </mesh>
+      ))}
+
+      <CentralPlaza color={district.color} accent={district.accent} name={district.name} />
+      <Fountain />
+      <Seats seats={benches} />
+      {benches.map((seat) => (
+        <Bench key={seat.id} seat={seat} />
+      ))}
+
+      <DistrictArch name={district.name} tagline={district.tagline} accent={district.accent} color={district.color} z={gateZ - 2} />
       <Portal
         id="exit-district"
         prompt="Back to Central Plaza"
         onEnter={() => goTo("hub")}
         label="Back to Central Plaza"
         color={district.accent}
-        position={[0, 0, STREET.startZ + 22]}
+        position={[layout.exit.x, 0, layout.exit.z]}
         rotationY={Math.PI}
         width={5}
       />
 
-      {layout.buildings.map((spec) => (
-        <group
-          key={spec.id}
-          onClick={(e) => {
-            if (e.delta > 6) return;
-            e.stopPropagation();
-            openPanel({ district: id, id: spec.id });
-          }}
-        >
-          <Building spec={spec} />
-        </group>
-      ))}
+      {layout.buildings.map((spec) =>
+        spec.filler ? (
+          <Building key={spec.id} spec={spec} />
+        ) : (
+          <group
+            key={spec.id}
+            onClick={(e) => {
+              if (e.delta > 6) return;
+              e.stopPropagation();
+              openPanel({ district: id, id: spec.id });
+            }}
+          >
+            <Building spec={spec} />
+          </group>
+        ),
+      )}
       <BuildingDoors district={id} buildings={layout.buildings} />
       {layout.signposts.map((s) => (
-        <Signpost key={`${s.side}${s.z}`} label={s.label} x={s.x} z={s.z} side={s.side} />
+        <Signpost key={s.label} label={s.label} x={s.x} z={s.z} rot={s.rot} color={district.color} />
       ))}
 
       <StreetLamps points={layout.lamps} />
       <Foliage items={layout.foliage} />
-      <Pedestrians walkers={walkers} />
-      <Pigeons center={[0, STREET.startZ - 4]} radius={4} count={6} />
-      <Balls spots={[{ x: 2.5, z: layout.streetEndZ + 6, kind: "soccer" }, { x: -2.5, z: layout.streetEndZ + 8, kind: "beach" }]} />
-      <Knockables
-        spots={[-3, -1, 1, 3].map((x) => ({ x, z: layout.streetEndZ + 12, kind: "cone" as const }))}
-      />
-      <StreetFurniture lamps={layout.lamps} />
       <CodeBillboards spots={layout.billboards} />
-
-      {/* Closing the street: a planted roundabout */}
-      <group position={[0, 0, layout.streetEndZ - 2]}>
-        <mesh position={[0, 0.3, 0]} receiveShadow castShadow>
-          <cylinderGeometry args={[5, 5.3, 0.6, 40]} />
-          <meshStandardMaterial color="#4c1d95" />
-        </mesh>
-        <mesh position={[0, 0.62, 0]} rotation-x={-Math.PI / 2}>
-          <circleGeometry args={[4.6, 40]} />
-          <meshStandardMaterial color="#8fb98a" />
-        </mesh>
-      </group>
+      <Pedestrians walkers={walkers} />
+      <Pigeons center={[0, RING.plazaRadius - 4]} radius={3} count={7} />
+      <Balls spots={toys.balls} />
+      <Knockables spots={toys.cones} />
     </group>
   );
 }
 
-/** The district's name over the street, seen as you walk in. */
-function DistrictArch({ name, tagline, accent, color }: { name: string; tagline: string; accent: string; color: string }) {
-  const glow = useGlowMaterial(accent, 0.6, 2.8);
-  const w = STREET.roadHalfWidth * 2 + 3;
+/** Dashed center line around the ring road. */
+function RoadDashes({ radius }: { radius: number }) {
+  const count = Math.round((Math.PI * 2 * radius) / 6);
   return (
-    <group position={[0, 0, STREET.startZ + 1]}>
-      {[-1, 1].map((side) => (
-        <mesh key={side} position={[(side * w) / 2, 3.6, 0]} castShadow>
-          <boxGeometry args={[0.6, 7.2, 0.6]} />
-          <meshStandardMaterial color={color} />
+    <group>
+      {Array.from({ length: count }, (_, k) => {
+        const a = (k / count) * Math.PI * 2;
+        return (
+          <mesh key={k} rotation={[-Math.PI / 2, 0, a]} position={[Math.sin(a) * radius, 0.03, Math.cos(a) * radius]}>
+            <planeGeometry args={[2.6, 0.22]} />
+            <meshStandardMaterial color={palette.roadLine} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+/** The paved plaza in the middle with a glowing ring and the district's colors. */
+function CentralPlaza({ color, accent, name }: { color: string; accent: string; name: string }) {
+  const glow = useGlowMaterial(accent, 0.5, 2.2);
+  return (
+    <group>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.03, 0]} receiveShadow>
+        <circleGeometry args={[RING.plazaRadius, 64]} />
+        <meshStandardMaterial color={palette.plaza} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.04, 0]} receiveShadow>
+        <ringGeometry args={[RING.plazaRadius - 3.6, RING.plazaRadius - 3, 64]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.045, 0]} material={glow}>
+        <ringGeometry args={[RING.plazaRadius - 0.35, RING.plazaRadius, 96]} />
+      </mesh>
+      {/* Four obelisks with the district name, at the plaza's diagonals */}
+      {SPOKES.map((s) => s + Math.PI / 4).map((a) => (
+        <group key={a} position={[Math.sin(a) * (RING.plazaRadius + 1.2), 0, Math.cos(a) * (RING.plazaRadius + 1.2)]} rotation-y={a + Math.PI}>
+          <RigidBody type="fixed" colliders={false}>
+            <CuboidCollider args={[0.5, 2, 0.5]} position={[0, 2, 0]} />
+          </RigidBody>
+          <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
+            <boxGeometry args={[1.4, 0.6, 1.4]} />
+            <meshStandardMaterial color={DARK} />
+          </mesh>
+          <mesh position={[0, 2.3, 0]} castShadow>
+            <cylinderGeometry args={[0.28, 0.5, 3.6, 4]} />
+            <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 4.35, 0]} material={glow}>
+            <octahedronGeometry args={[0.38]} />
+          </mesh>
+          <Text position={[0, 0.32, 0.71]} fontSize={0.16} maxWidth={1.3} color={accents.honey} anchorX="center" anchorY="middle">
+            {name}
+          </Text>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function Bench({ seat }: { seat: Seat }) {
+  return (
+    <group position={[seat.x, 0, seat.z]} rotation-y={seat.facing}>
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider args={[1.1, 0.5, 0.35]} position={[0, 0.5, -0.45]} />
+      </RigidBody>
+      <mesh position={[0, 0.48, -0.25]} castShadow receiveShadow>
+        <boxGeometry args={[2.2, 0.1, 0.55]} />
+        <meshStandardMaterial color={palette.bench} roughness={0.6} />
+      </mesh>
+      <mesh position={[0, 0.85, -0.52]} castShadow>
+        <boxGeometry args={[2.2, 0.55, 0.08]} />
+        <meshStandardMaterial color={palette.bench} roughness={0.6} />
+      </mesh>
+      {[-0.9, 0.9].map((x) => (
+        <mesh key={x} position={[x, 0.24, -0.3]} castShadow>
+          <boxGeometry args={[0.1, 0.48, 0.5]} />
+          <meshStandardMaterial color={palette.lampPole} metalness={0.5} roughness={0.4} />
         </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** The district's name over the entry avenue, seen as you walk in. */
+function DistrictArch({ name, tagline, accent, color, z }: { name: string; tagline: string; accent: string; color: string; z: number }) {
+  const glow = useGlowMaterial(accent, 0.6, 2.8);
+  const w = RING.roadHalfWidth * 2 + 5;
+  return (
+    <group position={[0, 0, z]}>
+      {[-1, 1].map((side) => (
+        <group key={side}>
+          <RigidBody type="fixed" colliders={false}>
+            <CuboidCollider args={[0.3, 3.6, 0.3]} position={[(side * w) / 2, 3.6, 0]} />
+          </RigidBody>
+          <mesh position={[(side * w) / 2, 3.6, 0]} castShadow>
+            <boxGeometry args={[0.6, 7.2, 0.6]} />
+            <meshStandardMaterial color={color} />
+          </mesh>
+        </group>
       ))}
       <mesh position={[0, 7.6, 0]} castShadow>
         <boxGeometry args={[w + 1, 1.8, 0.5]} />
@@ -160,28 +285,38 @@ function DistrictArch({ name, tagline, accent, color }: { name: string; tagline:
   );
 }
 
-function Signpost({ label, x, z, side }: { label: string; x: number; z: number; side: 1 | -1 }) {
+/** A cluster's name board on the sidewalk, facing the ring road. */
+function Signpost({ label, x, z, rot, color }: { label: string; x: number; z: number; rot: number; color: string }) {
   return (
-    <group position={[x, 0, z]}>
-      <mesh position={[0, 1.3, 0]} castShadow>
-        <boxGeometry args={[0.14, 2.6, 0.14]} />
-        <meshStandardMaterial color={palette.lampPole} />
-      </mesh>
+    <group position={[x, 0, z]} rotation-y={rot + Math.PI}>
+      {[-1.5, 1.5].map((px) => (
+        <mesh key={px} position={[px, 1.3, 0]} castShadow>
+          <boxGeometry args={[0.14, 2.6, 0.14]} />
+          <meshStandardMaterial color={palette.lampPole} />
+        </mesh>
+      ))}
       <mesh position={[0, 2.75, 0]} castShadow>
-        <boxGeometry args={[0.1, 0.6, 3]} />
-        <meshStandardMaterial color="#4c1d95" />
+        <boxGeometry args={[3.6, 0.7, 0.12]} />
+        <meshStandardMaterial color={color} />
       </mesh>
-      <Text
-        position={[side * -0.07, 2.75, 0]}
-        rotation-y={side === -1 ? Math.PI / 2 : -Math.PI / 2}
-        fontSize={0.3}
-        maxWidth={2.8}
-        color="#ffffff"
-        anchorX="center"
-        anchorY="middle"
-      >
-        {label}
-      </Text>
+      <mesh position={[0, 3.14, 0]}>
+        <boxGeometry args={[3.6, 0.06, 0.14]} />
+        <meshStandardMaterial color={accents.gold} emissive={accents.gold} emissiveIntensity={0.4} />
+      </mesh>
+      {[0.07, -0.07].map((dz) => (
+        <Text
+          key={dz}
+          position={[0, 2.75, dz]}
+          rotation-y={dz > 0 ? 0 : Math.PI}
+          fontSize={0.32}
+          maxWidth={3.3}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {label}
+        </Text>
+      ))}
     </group>
   );
 }

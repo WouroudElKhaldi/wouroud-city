@@ -25,7 +25,7 @@ export const STONE = "#3b2d63";
 export function Building({ spec }: { spec: BuildingSpec }) {
   const { width, depth, height } = spec;
   return (
-    <group position={[spec.x, 0, spec.z]}>
+    <group position={[spec.x, 0, spec.z]} rotation-y={spec.rotY}>
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider args={[width / 2 + 0.3, height / 2, depth / 2 + 0.3]} position={[0, height / 2, 0]} />
       </RigidBody>

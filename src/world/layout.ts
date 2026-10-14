@@ -10,17 +10,16 @@ export type LampSpot = { x: number; z: number; rot: number };
  * Turns content into world-space placements for one district. Pure and
  * deterministic, so the 3D scene, the minimap and the admin preview agree.
  *
- * Every district is a street: the entry gate is at z ≈ 0 and the street runs
- * toward -z, with buildings alternating left (x < 0) and right (x > 0).
+ * Every district is a round neighborhood; see `computeDistrictLayout`.
  */
 
+/** Street furniture sizes (curbs, benches) shared with StreetDetails. */
 export const STREET = {
   roadHalfWidth: 6,
   sidewalkWidth: 4,
   startZ: 2,
 };
 
-const FRONT_X = STREET.roadHalfWidth + STREET.sidewalkWidth + 2;
 const FLOOR_HEIGHT = 3.2;
 
 /** Architectural style: every content type gets its own silhouette. */
@@ -36,33 +35,48 @@ export type BuildingSpec = {
   /** Center of the footprint on the ground */
   x: number;
   z: number;
-  /** Extent along x (away from the street) */
+  /** Extent along local x (away from the road, the entrance is on the +x side) */
   width: number;
-  /** Extent along z (the street-facing side) */
+  /** Extent along local z (the side facing the road) */
   depth: number;
   height: number;
   floors: number;
   color: string;
-  /** Which way the entrance faces: +1 = toward +x, -1 = toward -x */
+  /** Which way the entrance faces in local space: +1 = toward +x, -1 = toward -x */
   facing: 1 | -1;
+  /** Yaw of the whole building around y */
+  rotY: number;
   crown: boolean;
+  /** A neighborhood shop that fills the ring; no info panel */
+  filler?: boolean;
 };
 
-export type Signpost = { label: string; x: number; z: number; side: 1 | -1 };
-export type Billboard = { x: number; z: number; side: 1 | -1 };
+/** A cluster's name board; `rot` is the angle it stands at, the board faces the center. */
+export type Signpost = { label: string; x: number; z: number; rot: number };
+/** A code billboard; the screen faces local +z after rotating by `rot`. */
+export type Billboard = { x: number; z: number; rot: number };
 
 export type DistrictLayout = {
   id: DistrictId;
   buildings: BuildingSpec[];
   signposts: Signpost[];
-  streetEndZ: number;
+  /** Radius of the ring road's center line */
+  ringRadius: number;
+  /** Radius of the first building row's inner face */
+  innerRadius: number;
+  outerRadius: number;
+  /** z of the entry gate on the south avenue */
+  gateZ: number;
+  spawn: [number, number, number];
+  /** Where the exit portal back to the plaza stands */
+  exit: { x: number; z: number };
   lamps: LampSpot[];
   foliage: FoliageItem[];
   billboards: Billboard[];
 };
 
 /** What a district needs to know about each building before it is placed. */
-type Item = Omit<BuildingSpec, "x" | "z" | "facing" | "height"> & { group?: string };
+type Item = Omit<BuildingSpec, "x" | "z" | "facing" | "rotY" | "height"> & { group?: string };
 
 function toMonths(date: string): number {
   const [y, m] = date.split("-").map(Number);
@@ -281,47 +295,181 @@ const itemsFor: Record<DistrictId, (c: Content) => Item[]> = {
 };
 
 // ---------------------------------------------------------------------------
-// Placement
+// Placement: a round neighborhood
 // ---------------------------------------------------------------------------
 
-export function computeDistrictLayout(content: Content, id: DistrictId): DistrictLayout {
-  const items = itemsFor[id](content);
-  const buildings: BuildingSpec[] = [];
-  const signposts: Signpost[] = [];
-  const cursor = { [-1]: STREET.startZ - 8, [1]: STREET.startZ - 8 } as Record<1 | -1, number>;
-  let side: 1 | -1 = -1;
-  let lastGroup: string | undefined;
-  const gap = items.every((i) => i.depth <= 6) ? 3 : 7;
+/**
+ * Every district is a round neighborhood around a central plaza with a fountain
+ * and a park. A ring road circles the park; the buildings stand outside the ring
+ * in clusters (one per group: skill category, project tier...), all facing the
+ * center. Big districts get a second row behind the first. Small districts are
+ * filled out with neighborhood shops so they never feel empty. The entry avenue
+ * comes in from the south (+z), where the gate and the exit portal are.
+ */
+export const RING = {
+  plazaRadius: 13,
+  roadHalfWidth: 4,
+  sidewalk: 3,
+  /** Smallest radius of the building row's inner face */
+  minInner: 38,
+  /** Space between neighbors in a row */
+  gap: 3,
+  /** Extra space between two clusters */
+  groupPad: 9,
+  /** Districts with fewer real buildings get neighborhood shops to fill the ring */
+  minBuildings: 12,
+};
 
-  for (const item of items) {
-    if (item.group && item.group !== lastGroup) {
-      // Start each group on a fresh row on both sides, with a signpost.
-      const z = Math.min(cursor[-1], cursor[1]) - (lastGroup ? 5 : 0);
-      cursor[-1] = cursor[1] = z - 3;
-      signposts.push({ label: item.group, x: -(STREET.roadHalfWidth + 1.2), z, side: -1 });
-      signposts.push({ label: item.group, x: STREET.roadHalfWidth + 1.2, z, side: 1 });
-      side = -1;
-      lastGroup = item.group;
-    }
-    const z = cursor[side];
-    const rest: Omit<Item, "group"> = item;
-    buildings.push({
-      ...rest,
-      x: side * (FRONT_X + item.width / 2),
-      z: z - item.depth / 2,
-      height: item.floors * FLOOR_HEIGHT,
-      facing: side === -1 ? 1 : -1,
-    });
-    cursor[side] = z - item.depth - gap;
-    side = side === -1 ? 1 : -1;
-  }
+const FILLERS: { label: string; sublabel: string; variant: BuildingVariant; color: string }[] = [
+  { label: "Café Byte", sublabel: "Coffee & cardamom", variant: "lowrise", color: "#c0883a" },
+  { label: "Corner Bakery", sublabel: "Fresh manakish", variant: "lowrise", color: "#d69e2e" },
+  { label: "Bookshop", sublabel: "Tech & poetry", variant: "studio", color: "#2c7a7b" },
+  { label: "Co-working Hub", sublabel: "Hot desks · fast Wi-Fi", variant: "studio", color: "#6b46c1" },
+  { label: "Flower Shop", sublabel: "Lilacs & jasmine", variant: "lowrise", color: "#b794f4" },
+  { label: "Tea House", sublabel: "Mint tea all day", variant: "lowrise", color: "#0f766e" },
+  { label: "Art Supplies", sublabel: "Paints & canvases", variant: "workshop", color: "#d53f8c" },
+  { label: "Bike Repair", sublabel: "Tune-ups", variant: "workshop", color: "#553c9a" },
+  { label: "Ice Cream", sublabel: "Ashta & pistachio", variant: "lowrise", color: "#f0abfc" },
+  { label: "Pharmacy", sublabel: "Open late", variant: "lowrise", color: "#14b8a6" },
+  { label: "Print Shop", sublabel: "Posters & stickers", variant: "workshop", color: "#805ad5" },
+  { label: "Gym", sublabel: "Lift heavy, ship often", variant: "studio", color: "#4c1d95" },
+];
 
-  const streetEndZ = Math.min(cursor[-1], cursor[1], -40) - 12;
-  return { id, buildings, signposts, streetEndZ, ...streetDecor(streetEndZ, id) };
+/** World point in front of a building's entrance, `extra` meters out from the facade. */
+export function doorPoint(b: BuildingSpec, extra = 1.6) {
+  const out = b.width / 2 + extra;
+  return { x: b.x + Math.cos(b.rotY) * out, z: b.z - Math.sin(b.rotY) * out };
 }
 
-/** Which trees line each district street. */
-const STREET_TREES: Record<DistrictId, { keys: FoliageKey[]; palettes: LeafPalette[] }> = {
+/** Yaw that turns local +x (the entrance side) toward the district center from angle `a`. */
+const faceCenter = (a: number) => Math.atan2(Math.cos(a), -Math.sin(a));
+/** Angle 0 is south (+z), where the entry avenue is; angles grow clockwise seen from above. */
+const polar = (a: number, r: number) => ({ x: Math.sin(a) * r, z: Math.cos(a) * r });
+
+function withFillers(items: Item[], id: DistrictId): Item[] {
+  const missing = Math.max(0, RING.minBuildings - items.length);
+  if (!missing) return items;
+  const random = seeded(id.length * 31 + 7);
+  const start = Math.floor(random() * FILLERS.length);
+  const fillers: Item[] = Array.from({ length: missing }, (_, k) => {
+    const f = FILLERS[(start + k) % FILLERS.length];
+    return {
+      id: `filler-${k}`,
+      variant: f.variant,
+      label: f.label,
+      sublabel: f.sublabel,
+      width: 8 + Math.round(random() * 3),
+      depth: 9 + Math.round(random() * 3),
+      floors: 2 + Math.round(random() * 2),
+      color: f.color,
+      crown: false,
+      filler: true,
+      group: `~filler-${k}`,
+    };
+  });
+  // Spread the shops between the real buildings instead of bunching them up.
+  const out: Item[] = [];
+  const every = Math.max(1, Math.ceil(items.length / missing));
+  let f = 0;
+  items.forEach((item, i) => {
+    out.push(item);
+    if ((i + 1) % every === 0 && f < fillers.length) out.push(fillers[f++]);
+  });
+  while (f < fillers.length) out.push(fillers[f++]);
+  return out;
+}
+
+export function computeDistrictLayout(content: Content, id: DistrictId): DistrictLayout {
+  const items = withFillers(itemsFor[id](content), id);
+  const rows = items.length > 16 ? 2 : 1;
+
+  // Consecutive items with the same group form one cluster.
+  const groups: { key: string; rows: Item[][] }[] = [];
+  for (const item of items) {
+    const key = item.group ?? "";
+    let g = groups[groups.length - 1];
+    if (!g || g.key !== key) {
+      g = { key, rows: Array.from({ length: rows }, () => []) };
+      groups.push(g);
+    }
+    const counts = g.rows.map((r) => r.length);
+    g.rows[counts.indexOf(Math.min(...counts))].push(item);
+  }
+  const arcOf = (row: Item[]) => row.reduce((s, it) => s + it.depth + RING.gap, 0);
+  const groupArc = groups.map((g) => Math.max(...g.rows.map(arcOf)) + RING.groupPad);
+  const total = groupArc.reduce((s, l) => s + l, 0);
+
+  // Big enough that every cluster fits on the circle, leaving the entry gap free.
+  let inner = RING.minInner;
+  let entryGap = 0;
+  for (let i = 0; i < 4; i++) {
+    entryGap = Math.max(0.5, 24 / inner);
+    inner = Math.max(RING.minInner, total / (Math.PI * 2 - entryGap));
+  }
+  const usable = Math.PI * 2 - entryGap;
+  const firstRowWidth = Math.max(...items.map((it) => it.width));
+
+  const buildings: BuildingSpec[] = [];
+  const signposts: Signpost[] = [];
+  const billboards: Billboard[] = [];
+  const clusterGaps: number[] = [];
+  let angle = entryGap / 2;
+  groups.forEach((g, gi) => {
+    const span = (groupArc[gi] / total) * usable;
+    const pad = (RING.groupPad / groupArc[gi]) * span;
+    clusterGaps.push(angle);
+    g.rows.forEach((row, ri) => {
+      const rowArc = arcOf(row);
+      // Center the row inside the cluster's span.
+      let a = angle + pad / 2 + (span - pad - (rowArc / groupArc[gi]) * span) / 2;
+      for (const item of row) {
+        const step = ((item.depth + RING.gap) / groupArc[gi]) * span;
+        const center = a + step / 2;
+        const r = inner + (ri === 0 ? 0 : firstRowWidth + 6) + item.width / 2;
+        const rest: Omit<Item, "group"> = item;
+        buildings.push({
+          ...rest,
+          ...polar(center, r),
+          rotY: faceCenter(center),
+          height: item.floors * FLOOR_HEIGHT,
+          facing: 1,
+        });
+        a += step;
+      }
+    });
+    if (g.key && !g.key.startsWith("~")) {
+      const mid = angle + span / 2;
+      signposts.push({ label: g.key, ...polar(mid, inner - 1.4), rot: mid });
+    }
+    angle += span;
+  });
+
+  const ringRadius = inner - RING.sidewalk - RING.roadHalfWidth;
+  const outerRadius = Math.max(...buildings.map((b) => Math.hypot(b.x, b.z) + b.width / 2));
+  const gateZ = outerRadius + 8;
+  // Holographic code screens stand in the gaps between clusters.
+  clusterGaps.slice(1).forEach((a, i) => {
+    if (i % 2 === 0) billboards.push({ ...polar(a, inner + 2.5), rot: a + Math.PI });
+  });
+
+  const decor = districtDecor(id, { inner, ringRadius, outerRadius, gateZ, clusterGaps, entryGap });
+  return {
+    id,
+    buildings,
+    signposts,
+    billboards,
+    ringRadius,
+    innerRadius: inner,
+    outerRadius,
+    gateZ,
+    spawn: [0, 2, gateZ - 6],
+    exit: { x: 0, z: gateZ + 4 },
+    ...decor,
+  };
+}
+
+/** Which trees grow in each district. */
+const DISTRICT_TREES: Record<DistrictId, { keys: FoliageKey[]; palettes: LeafPalette[] }> = {
   business: { keys: ["round", "detailed", "plateau"], palettes: ["lilac", "lilac", "blossom"] },
   skills: { keys: ["cone", "tall", "thin", "blocks"], palettes: ["deep", "lilac"] },
   projects: { keys: ["palm", "palmBend", "palmShort"], palettes: ["mint"] },
@@ -332,67 +480,103 @@ const STREET_TREES: Record<DistrictId, { keys: FoliageKey[]; palettes: LeafPalet
   arcade: { keys: ["palm", "palmShort", "palmBend"], palettes: ["mint"] },
 };
 
-/** Lamps, trees, flowers and holographic billboards along a district street. */
-function streetDecor(streetEndZ: number, id: DistrictId) {
-  const lamps: LampSpot[] = [];
-  const trees: [number, number][] = [];
-  const foliage: FoliageItem[] = [];
+const FLOWERS = ["flowerPurpleA", "flowerPurpleB", "flowerPurpleC", "flowerRed", "flowerYellowA"] as const;
+
+/** The four paths from the plaza to the ring road (south one continues as the entry avenue). */
+export const SPOKES = [0, Math.PI / 2, Math.PI, (Math.PI * 3) / 2];
+
+/** Lamps around the ring and along the avenue, a park full of trees, flower beds, and a wild meadow outside. */
+function districtDecor(
+  id: DistrictId,
+  r: { inner: number; ringRadius: number; outerRadius: number; gateZ: number; clusterGaps: number[]; entryGap: number },
+) {
   const random = seeded(id.length * 97 + 13);
-  const theme = STREET_TREES[id];
-  const billboards: Billboard[] = [];
-  const curb = STREET.roadHalfWidth + 0.8;
-  let slot = 0;
-  for (let z = STREET.startZ - 2; z > streetEndZ; z -= 14, slot++) {
-    lamps.push({ x: -curb, z, rot: 0 }, { x: curb, z, rot: Math.PI });
-    // Every third gap swaps one tree for a holographic code billboard, alternating sides.
-    const billboardSide = slot % 3 === 1 ? (slot % 2 === 0 ? 1 : -1) : 0;
-    for (const s of [-1, 1] as const) {
-      if (s === billboardSide) billboards.push({ x: s * (curb + 2), z: z - 7, side: s });
-      else trees.push([s * (curb + 2.4), z - 7]);
-    }
-  }
-  for (const [x, z] of trees) {
+  const theme = DISTRICT_TREES[id];
+  const lamps: LampSpot[] = [];
+  const foliage: FoliageItem[] = [];
+  const tree = (x: number, z: number, scale = 1) =>
     foliage.push({
       key: pick(random, theme.keys),
       x,
       z,
       rot: random() * Math.PI * 2,
-      size: 0.85 + random() * 0.3,
+      size: (0.85 + random() * 0.35) * scale,
       palette: pick(random, theme.palettes),
     });
-    foliage.push(...undergrowth(random, x, z, 2).map((u) => ({ ...u, x: x + (u.x - x) * 0.35, z: z + (u.z - z) * 0.6 })));
+  const nearSpoke = (a: number, rad: number, half: number) =>
+    SPOKES.some((s) => Math.abs(Math.atan2(Math.sin(a - s), Math.cos(a - s))) * rad < half);
+
+  // Lamps on both curbs of the ring road; outer arms reach over the road.
+  const ringLampCount = Math.round((Math.PI * 2 * r.ringRadius) / 16);
+  for (let i = 0; i < ringLampCount; i++) {
+    const a = (i + 0.5) * ((Math.PI * 2) / ringLampCount);
+    const outer = polar(a, r.ringRadius + RING.roadHalfWidth + 0.8);
+    lamps.push({ ...outer, rot: faceCenter(a) });
+    if (i % 2 === 0 && !nearSpoke(a, r.ringRadius, 4)) {
+      const innerLamp = polar(a, r.ringRadius - RING.roadHalfWidth - 0.8);
+      lamps.push({ ...innerLamp, rot: faceCenter(a) + Math.PI });
+    }
   }
-  // Flowers on top of the planters (StreetFurniture puts a planter 10.5 m past each lamp).
-  for (const lamp of lamps) {
-    const side = Math.sign(lamp.x);
-    const px = side * (STREET.roadHalfWidth + STREET.sidewalkWidth - 0.7);
+  // Lamps along the entry avenue.
+  for (let z = r.ringRadius + RING.roadHalfWidth + 8; z < r.gateZ; z += 12) {
+    lamps.push({ x: -(RING.roadHalfWidth + 0.8), z, rot: 0 }, { x: RING.roadHalfWidth + 0.8, z, rot: Math.PI });
+  }
+
+  // The park between the plaza and the ring road: tree groves, not a lone row.
+  const parkIn = RING.plazaRadius + 3;
+  const parkOut = r.ringRadius - RING.roadHalfWidth - 3;
+  const groves = 7 + Math.round(random() * 3);
+  for (let g = 0; g < groves; g++) {
+    const a = (g + random() * 0.6) * ((Math.PI * 2) / groves);
+    const rad = parkIn + (parkOut - parkIn) * (0.35 + random() * 0.5);
+    if (nearSpoke(a, rad, 5)) continue;
+    const c = polar(a, rad);
+    const n = 2 + Math.round(random() * 2);
+    for (let k = 0; k < n; k++) tree(c.x + (random() - 0.5) * 6, c.z + (random() - 0.5) * 6);
+    foliage.push(...undergrowth(random, c.x, c.z, 4));
+  }
+  // Flower beds around the plaza edge.
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2 + 0.06;
+    if (nearSpoke(a, RING.plazaRadius + 1.5, 3)) continue;
+    const p = polar(a, RING.plazaRadius + 1.4);
+    foliage.push({ key: pick(random, FLOWERS), x: p.x, z: p.z, rot: random() * 6, size: 0.9, palette: "mint" });
+  }
+  // A small garden in every gap between clusters, in front of the billboards.
+  for (const a of r.clusterGaps.slice(1)) {
+    const p = polar(a, r.inner + 1);
+    tree(p.x, p.z, 0.8);
     for (let k = 0; k < 3; k++) {
       foliage.push({
-        key: pick(random, ["flowerPurpleA", "flowerPurpleB", "flowerPurpleC", "flowerRed", "flowerYellowA"] as const),
-        x: px + (random() - 0.5) * 0.8,
-        y: 0.7,
-        z: lamp.z - 10.5 + (random() - 0.5) * 0.8,
-        rot: random() * Math.PI * 2,
-        size: 0.8,
+        key: pick(random, FLOWERS),
+        x: p.x + (random() - 0.5) * 2.5,
+        z: p.z + (random() - 0.5) * 2.5,
+        rot: random() * 6,
+        size: 0.85,
         palette: "mint",
       });
     }
   }
-  // A wild meadow behind the buildings, so the district edges are not bare.
-  for (let i = 0; i < 70; i++) {
-    const side = random() < 0.5 ? -1 : 1;
-    const x = side * (40 + random() * 60);
-    const z = STREET.startZ + 20 - random() * (STREET.startZ + 40 - streetEndZ);
+  // Trees lining the avenue.
+  for (let z = r.ringRadius + RING.roadHalfWidth + 14; z < r.gateZ + 6; z += 12) {
+    for (const s of [-1, 1]) tree(s * (RING.roadHalfWidth + 4), z);
+  }
+  // A wild meadow and forest around the neighborhood.
+  for (let i = 0; i < 110; i++) {
+    const a = random() * Math.PI * 2;
+    const rad = r.outerRadius + 8 + random() * 55;
+    const p = polar(a, rad);
+    if (Math.abs(p.x) < RING.roadHalfWidth + 6 && p.z > 0) continue;
     foliage.push({
       key: random() < 0.6 ? pick(random, theme.keys) : pick(random, ["pineRound", "pineTall", "pine"] as const),
-      x,
-      z,
+      x: p.x,
+      z: p.z,
       rot: random() * Math.PI * 2,
-      size: 0.9 + random() * 0.5,
+      size: 0.9 + random() * 0.6,
       palette: pick(random, [...theme.palettes, "deep"] as LeafPalette[]),
     });
   }
-  return { lamps, foliage, billboards };
+  return { lamps, foliage };
 }
 
 export function districtTitle(id: DistrictId) {

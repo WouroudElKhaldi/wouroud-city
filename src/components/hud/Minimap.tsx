@@ -6,7 +6,7 @@ import { type SceneId, useCityStore } from "@/state/useCityStore";
 import { DISTRICTS, type DistrictId, HUB, landmarkDoorstep, landmarkPlacement } from "@/world/districts";
 import { playerState } from "@/world/env";
 import { computeHubLayout } from "@/world/hubLayout";
-import { computeDistrictLayout, STREET } from "@/world/layout";
+import { computeDistrictLayout, doorPoint, RING, SPOKES } from "@/world/layout";
 import { accents, palette } from "@/world/palette";
 import { PERSONAS } from "@/world/personas";
 
@@ -65,56 +65,56 @@ function useMapData(scene: SceneId, highlights: DistrictId[]): MapData {
     }
 
     const layout = computeDistrictLayout(seedContent, scene);
-    const sidewalkX = STREET.roadHalfWidth + STREET.sidewalkWidth;
-    const top = STREET.startZ + 26;
-    const places: MapPlace[] = layout.buildings.map((b) => {
-      const doorX = b.x + (b.facing * b.width) / 2 + b.facing * 2.5;
-      return {
+    const places: MapPlace[] = layout.buildings
+      .filter((b) => !b.filler)
+      .map((b) => ({
         id: b.id,
         x: b.x,
         z: b.z,
         label: b.label,
         color: b.color,
         highlight: false,
-        target: { x: doorX, z: b.z },
-      };
-    });
+        target: doorPoint(b, 2.5),
+      }));
     places.push({
       id: "exit",
-      x: 0,
-      z: STREET.startZ + 22,
+      x: layout.exit.x,
+      z: layout.exit.z,
       label: "Exit to Central Plaza",
       color: accents.gold,
       highlight: true,
-      target: { x: 0, z: STREET.startZ + 19 },
+      target: { x: layout.exit.x, z: layout.exit.z - 3 },
     });
+    const road = RING.roadHalfWidth * 2;
     const shapes = (
       <>
-        <rect x={-sidewalkX} y={layout.streetEndZ} width={sidewalkX * 2} height={top - layout.streetEndZ} fill={palette.sidewalk} />
-        <rect
-          x={-STREET.roadHalfWidth}
-          y={layout.streetEndZ}
-          width={STREET.roadHalfWidth * 2}
-          height={top - layout.streetEndZ}
-          fill={palette.road}
-        />
+        <circle r={layout.innerRadius} fill={palette.sidewalk} />
+        <circle r={layout.ringRadius - RING.roadHalfWidth} fill={palette.grass} />
+        <circle r={layout.ringRadius} fill="none" stroke={palette.road} strokeWidth={road} />
+        <rect x={-RING.roadHalfWidth} y={layout.ringRadius} width={road} height={layout.gateZ + 6 - layout.ringRadius} fill={palette.road} />
+        {SPOKES.map((a) => (
+          <rect key={a} x={-1.5} y={RING.plazaRadius} width={3} height={layout.ringRadius - RING.plazaRadius} fill={palette.sidewalk} transform={`rotate(${(-a * 180) / Math.PI})`} />
+        ))}
+        <circle r={RING.plazaRadius} fill={palette.plaza} stroke={accents.gold} strokeWidth={0.8} />
+        <circle r={4} fill={accents.mint} />
         {layout.buildings.map((b) => (
           <rect
             key={b.id}
-            x={b.x - b.width / 2}
-            y={b.z - b.depth / 2}
+            x={-b.width / 2}
+            y={-b.depth / 2}
             width={b.width}
             height={b.depth}
             rx={1}
-            fill={b.color}
+            fill={b.filler ? "#cbbfe6" : b.color}
             stroke="#ffffff"
             strokeWidth={0.4}
+            transform={`translate(${b.x} ${b.z}) rotate(${(-b.rotY * 180) / Math.PI})`}
           />
         ))}
       </>
     );
-    const maxX = Math.max(30, ...layout.buildings.map((b) => Math.abs(b.x) + b.width / 2 + 4));
-    return { bounds: { minX: -maxX, maxX, minZ: layout.streetEndZ - 6, maxZ: top + 2 }, shapes, places };
+    const r = layout.outerRadius + 6;
+    return { bounds: { minX: -r, maxX: r, minZ: -r, maxZ: Math.max(r, layout.gateZ + 8) }, shapes, places };
   }, [scene, highlights]);
 }
 

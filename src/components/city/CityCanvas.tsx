@@ -12,7 +12,9 @@ import { landmarkDoorstep } from "@/world/districts";
 import { worldEnv } from "@/world/env";
 import { isTouchDevice } from "@/world/touch";
 import { DayNight } from "./DayNight";
-import { DISTRICT_SPAWN, DistrictScene } from "./DistrictScene";
+import { DistrictScene } from "./DistrictScene";
+import { seedContent } from "@/content/seed";
+import { computeDistrictLayout } from "@/world/layout";
 import { HubScene } from "./HubScene";
 import { keyboardMap, Player } from "./Player";
 import { GIRL_OUTFITS, GUY_OUTFIT, NPC_LOOKS } from "@/world/outfits";
@@ -42,7 +44,7 @@ export default function CityCanvas() {
 
   // Where the player appears: the plaza, a landmark's doorstep when coming back, or a district's gate.
   const spawn = useMemo(() => {
-    if (scene !== "hub") return { position: DISTRICT_SPAWN, facing: Math.PI };
+    if (scene !== "hub") return { position: computeDistrictLayout(seedContent, scene).spawn, facing: Math.PI };
     if (!cameFrom) return { position: HUB_SPAWN, facing: Math.PI };
     const door = landmarkDoorstep(cameFrom);
     return { position: [door.x, 2, door.z] as [number, number, number], facing: Math.atan2(-door.x, -door.z) };

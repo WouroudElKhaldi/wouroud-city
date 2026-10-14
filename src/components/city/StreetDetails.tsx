@@ -168,7 +168,7 @@ export function CodeBillboards({ spots }: { spots: Billboard[] }) {
   return (
     <group>
       {spots.map((s, i) => (
-        <group key={`${s.x}:${s.z}`} position={[s.x, 0, s.z]} rotation-y={s.side > 0 ? -Math.PI / 2 : Math.PI / 2}>
+        <group key={`${s.x}:${s.z}`} position={[s.x, 0, s.z]} rotation-y={s.rot}>
           <RigidBody type="fixed" colliders={false}>
             <CylinderCollider args={[1.5, 0.3]} position={[-1.6, 1.5, 0]} />
             <CylinderCollider args={[1.5, 0.3]} position={[1.6, 1.5, 0]} />

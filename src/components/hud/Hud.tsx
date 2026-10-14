@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useCityStore } from "@/state/useCityStore";
 import { districtById, landmarkDoorstep } from "@/world/districts";
-import { STREET } from "@/world/layout";
+import { seedContent } from "@/content/seed";
+import { computeDistrictLayout } from "@/world/layout";
 import { PERSONAS } from "@/world/personas";
 import { useIsTouch } from "@/world/touch";
 import { Minimap } from "./Minimap";
@@ -58,7 +59,8 @@ export function Hud() {
   const nextStop = () => {
     if (!p) return;
     if (scene !== "hub") {
-      setWaypoint({ x: 0, z: STREET.startZ + 19, label: "the exit to Central Plaza" });
+      const { exit } = computeDistrictLayout(seedContent, scene);
+      setWaypoint({ x: exit.x, z: exit.z - 3, label: "the exit to Central Plaza" });
       return;
     }
     const visited = useCityStore.getState().cameFrom;
