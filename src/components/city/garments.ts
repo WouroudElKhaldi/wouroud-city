@@ -16,6 +16,7 @@ export function addModestLayers(model: THREE.Object3D, options: ModestLayers) {
   const removers: (() => void)[] = [];
   if (options.sleeves) removers.push(addSkinLayer(model, ["arms"], options.sleeves));
   if (options.neckline) removers.push(addSkinLayer(model, ["neck", "chest"], options.neckline));
+  if (options.skirt) removers.push(addSkinLayer(model, ["legs"], options.skirt));
 
   model.updateMatrixWorld(true);
   const toModel = new THREE.Matrix4().copy(model.matrixWorld).invert();
@@ -62,7 +63,8 @@ export function addModestLayers(model: THREE.Object3D, options: ModestLayers) {
   };
 
   if (options.skirt) {
-    lathe(options.skirt, hips.y + legLength * 0.08, foot.y + legLength * 0.04, hipWidth * 0.94, hipWidth * 1.45, 8);
+    // The hem is wide enough that a foot at full stride stays inside the skirt.
+    lathe(options.skirt, hips.y + legLength * 0.08, foot.y + legLength * 0.04, hipWidth * 0.94, hipWidth * 1.65, 8);
   }
   if (options.tunic) {
     // Just a little longer than the original top: from the waist to the upper thigh.

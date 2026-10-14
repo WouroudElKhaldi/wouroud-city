@@ -89,7 +89,7 @@ export function shapeCurvy(scene: THREE.Object3D) {
 // Skin layer (sleeves, high necklines)
 // ---------------------------------------------------------------------------
 
-export type SkinRegion = "arms" | "neck" | "chest";
+export type SkinRegion = "arms" | "neck" | "chest" | "legs";
 
 /**
  * Copies the triangles of the character's skin that belong to the given regions,
@@ -106,6 +106,8 @@ export function addSkinLayer(model: THREE.Object3D, regions: SkinRegion[], color
   });
   const added: THREE.Object3D[] = [];
   const include = (bone: string) => {
+    // Legs (not feet): fabric for the long dress, so a striding leg never shows skin below the skirt.
+    if (/UpperLeg|LowerLeg/.test(bone)) return regions.includes("legs");
     if (HAND_BONES.test(bone) || LEG_BONES.test(bone) || bone === "Head") return false;
     if (/Arm|Shoulder/.test(bone)) return regions.includes("arms");
     if (bone === "Neck") return regions.includes("neck");

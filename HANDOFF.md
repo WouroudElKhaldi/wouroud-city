@@ -33,8 +33,10 @@ Node 24 / npm 11 on Windows. `.claude/launch.json` has a `wouroud-city` dev-serv
 - **Free only:** every service and asset must be free (CC0 assets; free tiers: Vercel Hobby,
   MongoDB Atlas M0, Cloudflare R2 chosen for media). Downloads are OK if free.
 - **Look and feel** (from repeated user feedback, follow strictly):
-  - Palette: **violet leads**, with **warm gold** and **mint/teal** as supporting colors
-    (`src/world/palette.ts` → `accents`). Not everything violet.
+  - Palette: the UI keeps violet with gold and mint, but **buildings are NOT all violet anymore**
+    (owner changed her mind, 2026-10-15): every building is the color of what it represents
+    (`world/signatures.ts` accents: JS yellow, Laravel red, Docker blue, Jamrex pink...), and each
+    district landmark has its own color (`world/districts.ts`). Nature should be lush and colorful.
   - Rich, detailed design everywhere, never "simple". Decorations must be **interactive**, not static.
   - Characters are **adult-proportioned** (not chibi/mini). The user disliked the Kenney mini characters.
   - **Hijab rules:** a girl wearing a hijab **automatically wears a fully modest outfit**: sleeves to the
@@ -166,6 +168,15 @@ Key ideas:
 - **Music** (`world/music.ts`, `hud/Ambience.tsx`): generative Web Audio music per place, follows mute.
 - **SEO**: `app/opengraph-image.tsx` (generated share image with the photo), `sitemap.ts`, `robots.ts`,
   `site.ts` (`SITE_URL` from `NEXT_PUBLIC_SITE_URL`, JSON-LD Person). `next build` passes.
+- **Driving and riding**: `useCityStore.driving` ({ id, model, from }). Parked cars (hub lot + one per district
+  gate) and the stables horse (`city/Horse.tsx`) offer E to get in. While driving, Ecctrl is disabled and Player
+  sets the body's velocity/heading itself (`car` ref); `DrivenCar` adds a car-sized collider. Exit with E parks
+  it (`parked` map). Camera swings behind once moving. Ecctrl's `currPos` is stale while disabled: read
+  `body.translation()`.
+- **Seats** are kinematic (bodyType 2) so the bench collider and gravity can't make the player shake.
+- **Grass** (`city/GrassField.tsx`): instanced swaying clumps + wildflowers; `isHubLawn` / `districtLawn` keep it off paving.
+- **Photo mode** (`city/PhotoCapture.tsx`, `takePhoto()`): renders the view and saves a captioned PNG.
+- **Long dress**: `addSkinLayer(..., ["legs"])` gives fabric legs so a stride never shows skin.
 - Dev handle `window.__store` (the Zustand store) makes testing quick: `__store.getState().goTo("skills")`,
   `setActivity("stack")`, `setState({ weather: "snow" })`.
 ## 4. Status

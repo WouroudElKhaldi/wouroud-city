@@ -71,5 +71,5 @@ _(nothing; next up: 43 Better people)_
 35. ⬜ Batch / bake troika text labels (skills district has ~43)
 36. ⬜ LOD for far buildings, KTX2 / Draco compression of models (gltf-transform)
 37. ✅ Accessibility: reduced motion (CSS + still emblems), info panels are focused dialogs, screen-reader summary with a résumé link
-38. ⬜ Character polish: foot poking through the long skirt, blazer tunic seam, eyebrows on the dress model
+38. 🔄 Character polish: ✅ long dress: wider hem plus fabric leg layer so a striding leg never shows skin; ⬜ blazer tunic seam, ⬜ eyebrows on the dress model
 39. ⬜ New robot avatar (current one is the old procedural model)
