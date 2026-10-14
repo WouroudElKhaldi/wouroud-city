@@ -20,9 +20,10 @@ export function Emblem({ signature, y, scale }: { signature: Signature; y: numbe
   const light = useMemo(() => new THREE.MeshStandardMaterial({ color: "#f8f5ff", roughness: 0.35, metalness: 0.1 }), []);
   const dark = useMemo(() => new THREE.MeshStandardMaterial({ color: DARK, roughness: 0.5, metalness: 0.3 }), []);
   const phase = useMemo(() => (y * 7.3) % (Math.PI * 2), [y]);
+  const calm = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   useFrame(({ clock }) => {
     const g = group.current;
-    if (!g) return;
+    if (!g || calm) return;
     const t = clock.elapsedTime;
     g.rotation.y = t * 0.45 + phase;
     g.position.y = y + Math.sin(t * 1.3 + phase) * 0.18 * scale;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { seedContent } from "@/content/seed";
 import type { Experience, Project, Skill, Training } from "@/content/schema";
 import { type Activity, type Panel, useCityStore } from "@/state/useCityStore";
@@ -307,6 +307,12 @@ export function InfoPanel() {
   const panel = useCityStore((s) => s.panel);
   const openPanel = useCityStore((s) => s.openPanel);
 
+  // Keyboard and screen-reader focus moves into the panel when it opens or changes.
+  const dialog = useRef<HTMLElement>(null);
+  useEffect(() => {
+    dialog.current?.focus({ preventScroll: true });
+  }, [panel]);
+
   // Every real building of this district, in map order, for the previous / next arrows.
   const siblings = useMemo(
     () => (panel ? computeDistrictLayout(seedContent, panel.district).buildings.filter((b) => !b.filler).map((b) => b.id) : []),
@@ -337,7 +343,11 @@ export function InfoPanel() {
   return (
     <div className="pointer-events-auto absolute inset-0 z-20 flex items-end justify-end sm:items-center sm:p-4" onClick={() => openPanel(null)}>
       <article
-        className="info-panel"
+        ref={dialog}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        className="info-panel outline-none"
         style={{ borderColor: district.accent }}
         onClick={(e) => e.stopPropagation()}
         aria-label="Building details"

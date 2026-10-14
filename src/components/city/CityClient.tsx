@@ -22,6 +22,14 @@ export function CityClient() {
   const activity = useCityStore((s) => s.activity);
   return (
     <div className="relative h-dvh w-full overflow-hidden">
+      <div className="sr-only">
+        <h1>Wouroud&apos;s City, the 3D portfolio of Wouroud El Khaldi</h1>
+        <p>
+          A walkable 3D city where every building comes from her portfolio: work experience, skills, projects, studies,
+          certificates, languages and hobbies. The same content is available as a regular page.
+        </p>
+        <a href="/resume">Read the résumé as a regular page</a>
+      </div>
       <CityCanvas />
       {started ? (
         <>

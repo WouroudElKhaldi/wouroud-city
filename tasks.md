@@ -70,6 +70,6 @@ _(nothing; next up: 43 Better people)_
 ### F. Polish and performance
 35. ⬜ Batch / bake troika text labels (skills district has ~43)
 36. ⬜ LOD for far buildings, KTX2 / Draco compression of models (gltf-transform)
-37. ⬜ Accessibility: reduced motion, keyboard focus in panels, screen-reader summary of the city
+37. ✅ Accessibility: reduced motion (CSS + still emblems), info panels are focused dialogs, screen-reader summary with a résumé link
 38. ⬜ Character polish: foot poking through the long skirt, blazer tunic seam, eyebrows on the dress model
 39. ⬜ New robot avatar (current one is the old procedural model)
