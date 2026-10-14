@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useProgress } from "@react-three/drei";
+import { useEffect, useState } from "react";
 import { seedContent } from "@/content/seed";
 import { type AvatarKind, useCityStore } from "@/state/useCityStore";
 import { GIRL_OUTFITS, type GirlOutfit, HIJAB_COLORS } from "@/world/outfits";
@@ -13,9 +14,37 @@ const AVATARS: { kind: AvatarKind; label: string; emoji: string }[] = [
   { kind: "robot", label: "Robot", emoji: "🤖" },
 ];
 
+/** Give up waiting for the loader after this long, so a failed asset never locks the door. */
+const LOAD_TIMEOUT_MS = 25000;
+
+/**
+ * True once the city's models and textures have finished loading. The canvas is
+ * code-split, so "nothing loading yet" (total 0) does not count as ready.
+ */
+function useCityReady() {
+  const idle = useProgress((s) => s.total > 0 && !s.active);
+  const raw = useProgress((s) => s.progress);
+  const [ready, setReady] = useState(false);
+  const [progress, setProgress] = useState(0);
+  // Models load in waves (each Suspense boundary starts the next), so wait for a
+  // quiet second before calling it done; once ready it stays ready.
+  useEffect(() => {
+    if (ready || !idle) return;
+    const t = window.setTimeout(() => setReady(true), 1000);
+    return () => window.clearTimeout(t);
+  }, [idle, ready]);
+  useEffect(() => {
+    const t = window.setTimeout(() => setReady(true), LOAD_TIMEOUT_MS);
+    return () => window.clearTimeout(t);
+  }, []);
+  // Never let the bar move backwards when a new wave adds more files.
+  if (raw > progress) setProgress(raw);
+  return { ready, progress: ready ? 100 : Math.min(progress, 99) };
+}
+
 /**
  * The first thing a visitor sees: who they are (recruiter, developer, just visiting)
- * and how they look. The city keeps loading behind it, so entering is instant.
+ * and how they look. The city loads behind it, with progress on the enter button.
  */
 export function WelcomeScreen() {
   const { persona, avatar, hijab, hijabColor, outfit, start, setAvatar, setHijab, setHijabColor, setOutfit } =
@@ -23,6 +52,7 @@ export function WelcomeScreen() {
   const [choice, setChoice] = useState<Persona | null>(persona);
   const profile = seedContent.profile;
   const touch = useIsTouch();
+  const { ready, progress } = useCityReady();
 
   return (
     <div className="welcome-backdrop pointer-events-auto absolute inset-0 z-30 flex items-center justify-center overflow-y-auto p-4">
@@ -117,12 +147,17 @@ export function WelcomeScreen() {
         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
-            disabled={!choice}
+            disabled={!choice || !ready}
             onClick={() => choice && start(choice)}
             className="welcome-enter"
           >
-            {choice ? "Enter the city →" : "Pick who's visiting to enter"}
+            {!choice ? "Pick who's visiting to enter" : ready ? "Enter the city →" : `Building the city… ${Math.round(progress)}%`}
           </button>
+          {!ready && (
+            <div className="welcome-progress" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100} aria-label="Loading the city">
+              <span style={{ width: `${Math.max(4, progress)}%` }} />
+            </div>
+          )}
           <a href="/resume" className="text-sm text-amber-200 underline-offset-4 hover:underline">
             In a hurry? Skip to the résumé →
           </a>

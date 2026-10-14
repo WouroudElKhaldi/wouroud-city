@@ -24,19 +24,19 @@ See `HANDOFF.md` for architecture, rules and gotchas.
 
 ## 🔄 In progress
 
-_(nothing)_
+18. SEO and sharing (see B)
 
-## ⬜ Not started (in build order)
+## Roadmap (in build order)
 
 ### A. Phones and tablets
 13. ✅ Responsive HUD on phones: nothing off-screen, compact top bar, smaller minimap, menu sheet for secondary buttons
 14. ✅ Touch controls: virtual joystick (walk, push further = run), jump and interact buttons, one-finger drag to look, pinch to zoom
 15. ✅ Touch-aware help text (no WASD hints on phones) and a readable full map on small screens
-16. ✅ Mobile quality preset: lower DPR, no post-processing, fewer shadows on phones
+16. ✅ Mobile quality preset: lower DPR and no post-processing on phones (fewer shadows still to try if phones are slow)
 
 ### B. First impression
-17. 🔄 Loading screen with real progress while models load behind the welcome screen
-18. ⬜ SEO and sharing: Open Graph / Twitter image, metadata, sitemap, robots, JSON-LD Person
+17. ✅ Loading screen with real progress while models load behind the welcome screen
+18. 🔄 SEO and sharing: Open Graph / Twitter image, metadata, sitemap, robots, JSON-LD Person
 19. ⬜ README rewrite (what it is, how to run, controls, credits)
 
 ### C. Content inside buildings
