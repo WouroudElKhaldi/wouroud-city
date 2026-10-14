@@ -102,14 +102,29 @@ function treeFor(x: number, z: number, r: number, random: () => number): { key: 
   const arcade = landmarkPlacement("arcade");
   const nearCoast = [harbor, arcade].some((p) => Math.hypot(x - p.x, z - p.z) < 36);
   if (nearCoast && random() < 0.7) return { key: pick(random, ["palm", "palmBend", "palmShort"] as const), palette: "mint" };
-  if (random() < 0.1) return { key: pick(random, ["oak", "fat", "round"] as const), palette: "autumn" };
-  if (r < 48) return { key: pick(random, ["oak", "fat", "round", "detailed", "small"] as const), palette: "blossom" };
+  if (random() < 0.12) return { key: pick(random, ["oak", "fat", "round"] as const), palette: pick(random, ["autumn", "sunset"] as const) };
+  if (r < 48)
+    return { key: pick(random, ["oak", "fat", "round", "detailed", "small"] as const), palette: pick(random, ["blossom", "rainbow", "spring", "sunset"] as const) };
   if (r < 105)
     return {
       key: pick(random, ["round", "detailed", "plateau", "blocks", "cone", "simple", "tall", "thin"] as const),
-      palette: pick(random, ["lilac", "lilac", "mint", "blossom", "lilac", "mint"] as const),
+      palette: pick(random, ["spring", "spring", "rainbow", "lilac", "blossom", "citrus", "ocean", "sunset"] as const),
     };
-  return { key: pick(random, ["pineRound", "pineRoundC", "pineTall", "pineSmall", "pine"] as const), palette: "deep" };
+  return { key: pick(random, ["pineRound", "pineRoundC", "pineTall", "pineSmall", "pine"] as const), palette: pick(random, ["spring", "spring", "deep", "ocean"] as const) };
+}
+
+/** Lawns in the hub: not the plaza, the roads or the landmark platforms. */
+export function isHubLawn(x: number, z: number) {
+  const r = Math.hypot(x, z);
+  if (r < HUB.plazaRadius + 1.5) return false;
+  for (const d of DISTRICTS) {
+    const s = landmarkPlacement(d.id);
+    if (Math.hypot(x - s.x, z - s.z) < HUB.landmarkRadius + 2) return false;
+    const along = x * Math.cos(s.angle) + z * Math.sin(s.angle);
+    const across = Math.abs(-x * Math.sin(s.angle) + z * Math.cos(s.angle));
+    if (along > 0 && along < HUB.ringRadius && across < HUB.roadHalfWidth + 1.5) return false;
+  }
+  return true;
 }
 
 /** Flower beds and hedges around the plaza, between the road openings. */

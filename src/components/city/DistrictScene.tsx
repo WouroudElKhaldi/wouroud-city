@@ -7,11 +7,12 @@ import { seedContent } from "@/content/seed";
 import type { Seat } from "@/state/useCityStore";
 import { useCityStore } from "@/state/useCityStore";
 import { type DistrictId, districtById } from "@/world/districts";
-import { computeDistrictLayout, RING, SPOKES } from "@/world/layout";
+import { computeDistrictLayout, districtLawn, RING, SPOKES } from "@/world/layout";
 import { accents, palette } from "@/world/palette";
 import { Building, DARK } from "./Building";
 import { BuildingDoors } from "./BuildingDoors";
 import { Foliage } from "./Foliage";
+import { GrassField } from "./GrassField";
 import { WorldGround } from "./HubScene";
 import { useGlowMaterial } from "./materials";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
@@ -33,6 +34,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
   const openPanel = useCityStore((s) => s.openPanel);
   const { ringRadius, innerRadius, gateZ } = layout;
   const parkEdge = ringRadius - RING.roadHalfWidth;
+  const lawn = useMemo(() => districtLawn(layout), [layout]);
 
   const walkers = useMemo(
     () =>
@@ -159,6 +161,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
 
       <StreetLamps points={layout.lamps} />
       <Foliage items={layout.foliage} />
+      <GrassField isLawn={lawn} radius={layout.outerRadius + 40} count={9000} seed={id.length * 13} />
       <CodeBillboards spots={layout.billboards} />
       <Pedestrians walkers={walkers} />
       <Pigeons center={[0, RING.plazaRadius - 4]} radius={3} count={7} />

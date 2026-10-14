@@ -477,14 +477,14 @@ export function computeDistrictLayout(content: Content, id: DistrictId): Distric
 
 /** Which trees grow in each district. */
 const DISTRICT_TREES: Record<DistrictId, { keys: FoliageKey[]; palettes: LeafPalette[] }> = {
-  business: { keys: ["round", "detailed", "plateau"], palettes: ["lilac", "lilac", "blossom"] },
-  skills: { keys: ["cone", "tall", "thin", "blocks"], palettes: ["deep", "lilac"] },
-  projects: { keys: ["palm", "palmBend", "palmShort"], palettes: ["mint"] },
-  campus: { keys: ["oak", "fat", "round"], palettes: ["autumn", "lilac", "autumn"] },
-  training: { keys: ["oak", "small", "round"], palettes: ["blossom", "mint"] },
-  languages: { keys: ["detailed", "oak", "plateau"], palettes: ["blossom", "lilac"] },
-  hobbies: { keys: ["oak", "fat", "small", "round"], palettes: ["blossom"] },
-  arcade: { keys: ["palm", "palmShort", "palmBend"], palettes: ["mint"] },
+  business: { keys: ["round", "detailed", "plateau"], palettes: ["spring", "blossom", "lilac", "citrus"] },
+  skills: { keys: ["cone", "tall", "thin", "blocks"], palettes: ["rainbow", "ocean", "spring", "lilac"] },
+  projects: { keys: ["palm", "palmBend", "palmShort"], palettes: ["spring", "mint", "citrus"] },
+  campus: { keys: ["oak", "fat", "round"], palettes: ["autumn", "sunset", "spring", "autumn"] },
+  training: { keys: ["oak", "small", "round"], palettes: ["blossom", "spring", "citrus"] },
+  languages: { keys: ["detailed", "oak", "plateau"], palettes: ["blossom", "sunset", "spring"] },
+  hobbies: { keys: ["oak", "fat", "small", "round"], palettes: ["rainbow", "blossom", "sunset"] },
+  arcade: { keys: ["palm", "palmShort", "palmBend"], palettes: ["ocean", "spring", "rainbow"] },
 };
 
 const FLOWERS = ["flowerPurpleA", "flowerPurpleB", "flowerPurpleC", "flowerRed", "flowerYellowA"] as const;
@@ -580,7 +580,7 @@ function districtDecor(
       z: p.z,
       rot: random() * Math.PI * 2,
       size: 0.9 + random() * 0.6,
-      palette: pick(random, [...theme.palettes, "deep"] as LeafPalette[]),
+      palette: pick(random, [...theme.palettes, "spring", "spring"] as LeafPalette[]),
     });
   }
   return { lamps, foliage };
@@ -588,4 +588,30 @@ function districtDecor(
 
 export function districtTitle(id: DistrictId) {
   return districtById(id).name;
+}
+
+/** Where grass may grow in a district: the park, between clusters and the meadow outside. */
+export function districtLawn(layout: DistrictLayout) {
+  const parkEdge = layout.ringRadius - RING.roadHalfWidth - 0.8;
+  return (x: number, z: number) => {
+    const r = Math.hypot(x, z);
+    if (r < RING.plazaRadius + 2.2) return false;
+    if (r < parkEdge) {
+      // Keep the paved paths from the plaza clear.
+      const a = Math.atan2(x, z);
+      return !SPOKES.some((s) => Math.abs(Math.atan2(Math.sin(a - s), Math.cos(a - s))) * r < 2.4);
+    }
+    if (r < layout.innerRadius + 1.5) return false;
+    if (Math.abs(x) < RING.roadHalfWidth + 4 && z > 0) return false;
+    for (const b of layout.buildings) {
+      const dx = x - b.x;
+      const dz = z - b.z;
+      const c = Math.cos(b.rotY);
+      const s = Math.sin(b.rotY);
+      const lx = dx * c - dz * s;
+      const lz = dx * s + dz * c;
+      if (Math.abs(lx) < b.width / 2 + 3.5 && Math.abs(lz) < b.depth / 2 + 3) return false;
+    }
+    return true;
+  };
 }

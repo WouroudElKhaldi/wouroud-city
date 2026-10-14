@@ -55,7 +55,7 @@ export function Building({ spec: raw }: { spec: BuildingSpec }) {
       <Entrance spec={spec} />
       <Roof kind={style.roof} width={width} depth={depth} y={height + 0.3} color={style.roofColor} />
       <DistrictProps kind={style.props} spec={spec} accent={signature?.accent ?? accents.gold} />
-      {signature && spec.variant !== "tower" && <AccentBand width={width} depth={depth} y={height - 0.25} color={signature.accent} />}
+      {signature && spec.variant !== "tower" && <AccentBand width={width} depth={depth} y={height - 0.25} color={tinted(signature.accent, "#ffffff", 0.55)} />}
       {signature && <Emblem signature={signature} y={emblemY} scale={emblemScale} />}
     </group>
   );

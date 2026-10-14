@@ -14,14 +14,14 @@ export type DistrictDef = {
 };
 
 export const DISTRICTS: DistrictDef[] = [
-  { id: "business", name: "Business District", tagline: "Work experience", color: "#6b46c1", accent: "#d6bcfa" },
+  { id: "business", name: "Business District", tagline: "Work experience", color: "#2563eb", accent: "#bfdbfe" },
   { id: "skills", name: "Skill Downtown", tagline: "Skills · height = level", color: "#7c3aed", accent: "#f0abfc" },
-  { id: "projects", name: "Project Harbor", tagline: "Projects & client work", color: "#5b21b6", accent: "#67e8f9" },
-  { id: "campus", name: "Campus", tagline: "Studies", color: "#553c9a", accent: "#fde68a" },
-  { id: "training", name: "Training Park", tagline: "Certificates & bootcamps", color: "#805ad5", accent: "#a7f3d0" },
-  { id: "languages", name: "Polyglot Quarter", tagline: "Arabic · English · French", color: "#9f7aea", accent: "#fecaca" },
-  { id: "hobbies", name: "Hobby Quarter", tagline: "Art, crafts & more", color: "#b794f4", accent: "#fbcfe8" },
-  { id: "arcade", name: "Arcade Pier", tagline: "Play a game", color: "#d53f8c", accent: "#fef08a" },
+  { id: "projects", name: "Project Harbor", tagline: "Projects & client work", color: "#0e7490", accent: "#67e8f9" },
+  { id: "campus", name: "Campus", tagline: "Studies", color: "#b45309", accent: "#fde68a" },
+  { id: "training", name: "Training Park", tagline: "Certificates & bootcamps", color: "#15803d", accent: "#a7f3d0" },
+  { id: "languages", name: "Polyglot Quarter", tagline: "Arabic · English · French", color: "#ca8a04", accent: "#fef08a" },
+  { id: "hobbies", name: "Hobby Quarter", tagline: "Art, crafts & more", color: "#db2777", accent: "#fbcfe8" },
+  { id: "arcade", name: "Arcade Pier", tagline: "Play a game", color: "#ea580c", accent: "#fef08a" },
 ];
 
 export const HUB = {

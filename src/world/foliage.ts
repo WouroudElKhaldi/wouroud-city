@@ -1,6 +1,6 @@
 /**
- * Plant catalog (Kenney Nature Kit, CC0) and the palettes that recolor them
- * into Wouroud's violet world. Positions are plain data so layouts stay pure.
+ * Plant catalog (Kenney Nature Kit, CC0) and the palettes that recolor them:
+ * lush greens with plenty of blossom, sunset and rainbow colors mixed in. Positions are plain data so layouts stay pure.
  */
 
 export type FoliageKind = "tree" | "bush" | "flower" | "grass" | "mushroom" | "rock" | "stump";
@@ -69,6 +69,11 @@ export const LEAF_PALETTES = {
   deep: ["#6d28d9", "#7c3aed", "#5b21b6", "#8b5cf6"],
   autumn: ["#fbbf24", "#f59e0b", "#fb923c"],
   mint: ["#86efac", "#6ee7b7", "#a7f3d0"],
+  spring: ["#4ade80", "#22c55e", "#84cc16", "#a3e635", "#34d399"],
+  sunset: ["#fb7185", "#f97316", "#fbbf24", "#f472b6"],
+  citrus: ["#facc15", "#a3e635", "#fde047", "#bef264"],
+  ocean: ["#38bdf8", "#2dd4bf", "#60a5fa", "#5eead4"],
+  rainbow: ["#f472b6", "#fb923c", "#facc15", "#4ade80", "#38bdf8", "#a78bfa"],
 } as const;
 
 export type LeafPalette = keyof typeof LEAF_PALETTES;

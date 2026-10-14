@@ -4,12 +4,13 @@ import { Text } from "@react-three/drei";
 import { CuboidCollider, CylinderCollider, RigidBody } from "@react-three/rapier";
 import { useMemo } from "react";
 import { DISTRICTS, HUB, landmarkPlacement } from "@/world/districts";
-import { computeHubLayout, WORLD_HALF } from "@/world/hubLayout";
+import { computeHubLayout, isHubLawn, WORLD_HALF } from "@/world/hubLayout";
 import { accents, palette } from "@/world/palette";
 import { Landmark } from "./Landmarks";
 import { useGlowMaterial } from "./materials";
 import { Fountain } from "./StreetDetails";
 import { Foliage } from "./Foliage";
+import { GrassField } from "./GrassField";
 import { Beacons } from "./Guidance";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Balls, Knockables, type ParkedCar, ParkedCars, Pigeons } from "./Playthings";
@@ -94,6 +95,7 @@ export function HubScene() {
 
       <StreetLamps points={layout.lamps} />
       <Foliage items={layout.foliage} />
+      <GrassField isLawn={isHubLawn} radius={150} count={14000} seed={3} />
       <PlazaBenches />
       <Beacons />
       <Pigeons center={[0, 0]} radius={13} count={12} />

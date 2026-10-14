@@ -20,14 +20,14 @@ export type RoofKind = "flat" | "gable" | "arch" | "dome";
 type Props = "fins" | "containers" | "columns" | "flags" | "awning" | "murals" | "neon" | null;
 
 export const DISTRICT_STYLE: Record<DistrictId, { roof: RoofKind; tint: number; props: Props; roofColor: string }> = {
-  business: { roof: "flat", tint: 0.25, props: "fins", roofColor: DARK },
-  skills: { roof: "flat", tint: 0, props: null, roofColor: DARK },
-  projects: { roof: "arch", tint: 0.5, props: "containers", roofColor: "#2d1f52" },
-  campus: { roof: "gable", tint: 0.15, props: "columns", roofColor: "#a4553f" },
-  training: { roof: "dome", tint: 0.3, props: "flags", roofColor: "#5eead4" },
-  languages: { roof: "gable", tint: 0.35, props: "awning", roofColor: "#b45d3e" },
-  hobbies: { roof: "gable", tint: 0.55, props: "murals", roofColor: "#7c3aed" },
-  arcade: { roof: "arch", tint: 0.3, props: "neon", roofColor: "#d53f8c" },
+  business: { roof: "flat", tint: 1, props: "fins", roofColor: DARK },
+  skills: { roof: "flat", tint: 1, props: null, roofColor: DARK },
+  projects: { roof: "arch", tint: 1, props: "containers", roofColor: "#2d1f52" },
+  campus: { roof: "gable", tint: 1, props: "columns", roofColor: "#a4553f" },
+  training: { roof: "dome", tint: 1, props: "flags", roofColor: "#5eead4" },
+  languages: { roof: "gable", tint: 1, props: "awning", roofColor: "#b45d3e" },
+  hobbies: { roof: "gable", tint: 1, props: "murals", roofColor: "#7c3aed" },
+  arcade: { roof: "arch", tint: 1, props: "neon", roofColor: "#d53f8c" },
 };
 
 /** Style for one building: HQ towers and sawtooth workshops keep their own tops. */
