@@ -8,6 +8,8 @@ import * as THREE from "three";
 import { worldEnv } from "@/world/env";
 import type { BuildingSpec } from "@/world/layout";
 import { palette } from "@/world/palette";
+import { signatureFor, type TowerShape } from "@/world/signatures";
+import { Emblem } from "./Emblems";
 import { useFacade, useGlowMaterial } from "./materials";
 
 export const FLOOR = 3.2;
@@ -24,6 +26,9 @@ export const STONE = "#3b2d63";
  */
 export function Building({ spec }: { spec: BuildingSpec }) {
   const { width, depth, height } = spec;
+  const signature = useMemo(() => signatureFor(spec.id, spec.label), [spec.id, spec.label]);
+  const emblemY = height + (spec.variant === "tower" ? 4.6 : spec.variant === "hq" ? 4 : 3.2);
+  const emblemScale = spec.variant === "tower" ? 2.3 : Math.min(4, Math.max(1.6, Math.min(width, depth) * 0.3));
   return (
     <group position={[spec.x, 0, spec.z]} rotation-y={spec.rotY}>
       <RigidBody type="fixed" colliders={false}>
@@ -38,8 +43,10 @@ export function Building({ spec }: { spec: BuildingSpec }) {
       {spec.variant === "studio" && <StudioBuilding spec={spec} />}
       {spec.variant === "lowrise" && <LowriseBuilding spec={spec} />}
       {spec.variant === "workshop" && <WorkshopBuilding spec={spec} />}
-      {spec.variant === "tower" && <SkillTower spec={spec} />}
+      {spec.variant === "tower" && <SkillTower spec={spec} shape={signature?.shape ?? "box"} accent={signature?.accent} />}
       <Entrance spec={spec} />
+      {signature && spec.variant !== "tower" && <AccentBand width={width} depth={depth} y={height - 0.25} color={signature.accent} />}
+      {signature && <Emblem signature={signature} y={emblemY} scale={emblemScale} />}
     </group>
   );
 }
@@ -106,7 +113,7 @@ function HqBuilding({ spec }: { spec: BuildingSpec }) {
       ))}
       <Antenna position={[cw * 0.25, height + 0.4, 0]} tall={4.5} />
       <RooftopUnits width={cw} depth={depth * 0.58} y={height + 0.4} count={2} />
-      {spec.crown && <Crown y={height + 6.4} size={Math.min(width, depth) * 0.16} material={neon} />}
+      {spec.crown && spec.filler && <Crown y={height + 6.4} size={Math.min(width, depth) * 0.16} material={neon} />}
     </group>
   );
 }
@@ -180,20 +187,54 @@ function WorkshopBuilding({ spec }: { spec: BuildingSpec }) {
 }
 
 /** Skill: a glass tower with glowing edges, a rotating level ring and, for top skills, a spire. */
-function SkillTower({ spec }: { spec: BuildingSpec }) {
+function SkillTower({ spec, shape, accent }: { spec: BuildingSpec; shape: TowerShape; accent?: string }) {
   const { width, depth, height, floors, color } = spec;
   const bodyMat = useFacade(color, width, floors, seedOf(spec), true);
-  const neon = useGlowMaterial(spec.crown ? palette.magenta : "#c4b5fd", 0.5, 3);
+  const edge = accent ?? (spec.crown ? palette.magenta : "#c4b5fd");
+  const neon = useGlowMaterial(edge, 0.5, 3);
   const ring = useRef<THREE.Group>(null);
   useFrame((_, delta) => {
     if (ring.current) ring.current.rotation.y += delta * 0.5;
   });
   const bodyH = height - 0.4;
+  const r = Math.min(width, depth) / 2;
   return (
     <group>
-      <Box size={[width, bodyH, depth]} position={[0, 0.4 + bodyH / 2, 0]} material={bodyMat} />
-      <EdgeGlow width={width + 0.02} height={bodyH} depth={depth + 0.02} y={0.4 + bodyH / 2} color={spec.crown ? palette.magenta : "#c4b5fd"} />
-      <Box size={[width + 0.25, 0.3, depth + 0.25]} position={[0, height + 0.15, 0]} color={DARK} />
+      {shape === "box" && (
+        <>
+          <Box size={[width, bodyH, depth]} position={[0, 0.4 + bodyH / 2, 0]} material={bodyMat} />
+          <EdgeGlow width={width + 0.02} height={bodyH} depth={depth + 0.02} y={0.4 + bodyH / 2} color={edge} />
+        </>
+      )}
+      {(shape === "cylinder" || shape === "hex" || shape === "tapered") && (
+        <mesh position={[0, 0.4 + bodyH / 2, 0]} material={bodyMat} castShadow receiveShadow rotation-y={shape === "hex" ? Math.PI / 6 : 0}>
+          <cylinderGeometry
+            args={[shape === "tapered" ? r * 0.62 : r, shape === "hex" ? r * 1.05 : r, bodyH, shape === "cylinder" ? 28 : shape === "hex" ? 6 : 4]}
+          />
+        </mesh>
+      )}
+      {shape === "stepped" &&
+        [1, 0.78, 0.56].map((k, i) => {
+          const h = bodyH / 3;
+          return <Box key={k} size={[width * k, h, depth * k]} position={[0, 0.4 + h * i + h / 2, 0]} material={bodyMat} />;
+        })}
+      {shape === "twisted" &&
+        Array.from({ length: Math.max(3, floors) }, (_, i) => {
+          const n = Math.max(3, floors);
+          const h = bodyH / n;
+          return (
+            <mesh key={i} position={[0, 0.4 + h * i + h / 2, 0]} rotation-y={(i / n) * (Math.PI / 2)} material={bodyMat} castShadow>
+              <boxGeometry args={[width * 0.9, h * 0.94, depth * 0.9]} />
+            </mesh>
+          );
+        })}
+      {/* Glowing collar in the skill's brand color */}
+      {shape !== "box" && (
+        <mesh position={[0, height - 0.1, 0]} material={neon}>
+          <cylinderGeometry args={[r * (shape === "tapered" || shape === "stepped" ? 0.66 : 1.02), r * (shape === "tapered" || shape === "stepped" ? 0.66 : 1.02), 0.25, shape === "hex" ? 6 : 28]} />
+        </mesh>
+      )}
+      {shape === "box" && <Box size={[width + 0.25, 0.3, depth + 0.25]} position={[0, height + 0.15, 0]} color={DARK} />}
       <group ref={ring} position={[0, height + 1.6, 0]}>
         <mesh rotation-x={Math.PI / 2} material={neon}>
           <torusGeometry args={[width * 0.42, 0.07, 8, 40]} />
@@ -213,7 +254,7 @@ function SkillTower({ spec }: { spec: BuildingSpec }) {
             </Text>
           ))}
       </group>
-      {spec.crown && (
+      {spec.crown && !accent && (
         <mesh position={[0, height + 4.2, 0]} material={neon}>
           <coneGeometry args={[0.35, 3, 6]} />
         </mesh>
@@ -402,6 +443,26 @@ function RooftopGarden({ width, depth, y }: { width: number; depth: number; y: n
           <meshStandardMaterial color="#f3e8ff" />
         </mesh>
       </group>
+    </group>
+  );
+}
+
+/** A glowing band in the item's brand color just under the roof line. */
+function AccentBand({ width, depth, y, color }: { width: number; depth: number; y: number; color: string }) {
+  const glow = useGlowMaterial(color, 0.5, 2.4, color);
+  const t = 0.22;
+  return (
+    <group position={[0, y, 0]}>
+      {[-1, 1].map((s) => (
+        <group key={s}>
+          <mesh position={[(s * (width + t)) / 2, 0, 0]} material={glow}>
+            <boxGeometry args={[t, 0.3, depth + t * 2]} />
+          </mesh>
+          <mesh position={[0, 0, (s * (depth + t)) / 2]} material={glow}>
+            <boxGeometry args={[width, 0.3, t]} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }

@@ -24,14 +24,14 @@ See `HANDOFF.md` for architecture, rules and gotchas.
 
 ## 🔄 In progress
 
-41. Unique building per item (see A0)
+42. District-specific architecture (see A0)
 
 ## Roadmap (in build order)
 
 ### A0. Better 3D design (top priority, owner's request)
 40. ✅ District layout redesign: no more one long street. Each district is a round neighborhood: a central square, ring road, buildings grouped in clusters (by category / company / project type), parks, plazas and decor between groups
-41. 🔄 Unique building per item: every building gets its own design from its data (CSS tower ≠ JS tower, Jamrex ≠ FitSync ≠ Hyperfocus). Signature shapes, roofs, colors, rooftop props and logos per skill / project / job
-42. ⬜ District-specific architecture: Business = glass towers, Skills = neon downtown, Projects = harbor warehouses and ships, Campus = brick and clock tower, Training = park pavilions, Polyglot = old-town houses, Hobbies = art studios, Arcade = pier with rides
+41. ✅ Unique building per item: every building gets its own design from its data (CSS tower ≠ JS tower, Jamrex ≠ FitSync ≠ Hyperfocus). Signature shapes, roofs, colors, rooftop props and logos per skill / project / job
+42. 🔄 District-specific architecture: Business = glass towers, Skills = neon downtown, Projects = harbor warehouses and ships, Campus = brick and clock tower, Training = park pavilions, Polyglot = old-town houses, Hobbies = art studios, Arcade = pier with rides
 43. ⬜ Better people: higher-quality CC0 characters (more detail, nicer faces), more variety for NPCs, better hijab and outfit fit
 44. ⬜ More life between buildings: fountains, statues, market stalls, trees in groups, benches, kids playing, birds, cars driving on the ring road
 

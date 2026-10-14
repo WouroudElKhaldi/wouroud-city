@@ -149,7 +149,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       )}
       <BuildingDoors district={id} buildings={layout.buildings} />
       {layout.signposts.map((s) => (
-        <Signpost key={s.label} label={s.label} x={s.x} z={s.z} rot={s.rot} color={district.color} />
+        <Signpost key={`${s.label}-${s.rot}`} label={s.label} x={s.x} z={s.z} rot={s.rot} color={district.color} />
       ))}
 
       <StreetLamps points={layout.lamps} />

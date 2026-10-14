@@ -367,13 +367,15 @@ function withFillers(items: Item[], id: DistrictId): Item[] {
       group: `~filler-${k}`,
     };
   });
-  // Spread the shops between the real buildings instead of bunching them up.
+  // Spread the shops between the real buildings, but never inside a cluster.
   const out: Item[] = [];
   const every = Math.max(1, Math.ceil(items.length / missing));
   let f = 0;
   items.forEach((item, i) => {
     out.push(item);
-    if ((i + 1) % every === 0 && f < fillers.length) out.push(fillers[f++]);
+    const boundary = i === items.length - 1 || items[i + 1].group !== item.group || !item.group;
+    if (boundary && (i + 1) % every === 0 && f < fillers.length) out.push(fillers[f++]);
+    else if (boundary && item.group && f < fillers.length) out.push(fillers[f++]);
   });
   while (f < fillers.length) out.push(fillers[f++]);
   return out;
