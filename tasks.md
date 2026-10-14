@@ -24,7 +24,7 @@ See `HANDOFF.md` for architecture, rules and gotchas.
 
 ## 🔄 In progress
 
-43. Better people (see A0)
+_(nothing; next up: 43 Better people)_
 
 ## Roadmap (in build order)
 
