@@ -1,25 +1,23 @@
 import * as THREE from "three";
-import { addFolds } from "./garments";
 
 /**
  * Hijab for the adult (Quaternius) characters, measured from the character's own
- * head so it fits any of them. Pieces:
+ * head so it fits any of them. It wraps the head and frames the face, going under
+ * the chin down to the top of the neck, where the outfit's high neckline takes over.
+ * Pieces (all attached to the head bone):
  *  - hood: an outer and an inner layer shaped around the head, with an oval
- *    opening for the face (attached to the head bone);
- *  - rim: a soft rolled edge of fabric framing the face, which also hides the
- *    cut edge of the opening;
- *  - drape (khimar): wraps the neck and falls over the shoulders, chest and back
- *    with gentle folds, longer at front and back than at the sides (neck bone).
+ *    opening for the face;
+ *  - rim: a soft rolled edge of fabric framing the face;
+ *  - volume: a gentle rounded lift at the back, from the hair gathered underneath.
  * The character's hair should be hidden while it is worn.
  */
 
 /** The face opening on the unit sphere: an oval on the front (+z). */
-const FACE = { rx: 0.6, ry: 0.64, cy: -0.14 };
+const FACE = { rx: 0.64, ry: 0.58, cy: -0.08 };
 
 export function buildHijab(model: THREE.Object3D, color: string): { removeFromParent: () => void } | null {
   const headBone = model.getObjectByName("Head");
-  const neckBone = model.getObjectByName("Neck") ?? headBone;
-  if (!headBone || !neckBone) return null;
+  if (!headBone) return null;
 
   const bounds = measureHeadSkin(model, headBone);
   if (!bounds) return null;
@@ -39,8 +37,8 @@ export function buildHijab(model: THREE.Object3D, color: string): { removeFromPa
   lining.color = new THREE.Color(color).multiplyScalar(0.78);
 
   // Head-sized ellipsoid frame, a little roomier than the head itself.
-  const radii = new THREE.Vector3(size.x * 0.62, size.y * 0.6, size.z * 0.64);
-  const hoodCenter = new THREE.Vector3(center.x, center.y + size.y * 0.05, center.z - size.z * 0.06);
+  const radii = new THREE.Vector3(size.x * 0.6, size.y * 0.64, size.z * 0.62);
+  const hoodCenter = new THREE.Vector3(center.x, center.y + size.y * 0.02, center.z - size.z * 0.05);
 
   const outer = new THREE.Mesh(makeHoodGeometry(), fabric);
   outer.scale.copy(radii);
@@ -53,44 +51,18 @@ export function buildHijab(model: THREE.Object3D, color: string): { removeFromPa
   const rim = new THREE.Mesh(makeRimGeometry(radii), fabric);
   rim.position.copy(hoodCenter);
 
-  // Drape ------------------------------------------------------------------
-  const w = size.x;
-  const top = center.y - size.y * 0.28;
-  const length = size.y * 1.15;
-  const profile = [
-    new THREE.Vector2(w * 0.34, top),
-    new THREE.Vector2(w * 0.38, top - length * 0.18),
-    new THREE.Vector2(w * 0.58, top - length * 0.36),
-    new THREE.Vector2(w * 0.98, top - length * 0.56),
-    new THREE.Vector2(w * 1.16, top - length * 0.8),
-    new THREE.Vector2(w * 1.2, top - length),
-  ];
-  const drapeGeometry = new THREE.LatheGeometry(profile, 72);
-  addFolds(drapeGeometry, top, length, 9, 0.05);
-  // Longer at the front and back than over the arms, like a real khimar.
-  const pos = drapeGeometry.attributes.position;
-  const v = new THREE.Vector3();
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i);
-    const depth = THREE.MathUtils.clamp((top - v.y) / length, 0, 1);
-    const frontBack = Math.abs(v.z) / Math.max(1e-6, Math.hypot(v.x, v.z));
-    pos.setY(i, v.y - frontBack * depth * depth * length * 0.35);
-  }
-  drapeGeometry.computeVertexNormals();
-  const drape = new THREE.Mesh(drapeGeometry, fabric);
-  drape.position.set(center.x, 0, center.z - size.z * 0.06);
-  drape.scale.set(1, 1, 0.8);
+  // Volume: the hair gathered under the scarf lifts the back of the head a little.
+  const volume = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), fabric);
+  volume.scale.set(radii.x * 0.62, radii.y * 0.5, radii.z * 0.55);
+  volume.position.set(hoodCenter.x, hoodCenter.y + radii.y * 0.32, hoodCenter.z - radii.z * 0.62);
 
-  const pieces = [outer, inner, rim, drape];
+  const pieces = [outer, inner, rim, volume];
   for (const p of pieces) {
     p.castShadow = true;
     model.add(p);
   }
   model.updateMatrixWorld(true);
-  headBone.attach(outer);
-  headBone.attach(inner);
-  headBone.attach(rim);
-  neckBone.attach(drape);
+  for (const p of pieces) headBone.attach(p);
   return { removeFromParent: () => pieces.forEach((p) => p.removeFromParent()) };
 }
 

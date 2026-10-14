@@ -5,7 +5,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
-import { addModestLayers } from "./garments";
+import { addFaceFeatures, shapeCurvy } from "./body";
+import { addModestLayers, type ModestLayers } from "./garments";
 import { buildHijab } from "./hijab";
 
 /** The animations our scenes ask for; each model maps them to its own clip names. */
@@ -75,14 +76,14 @@ export function Character({
   hijab?: boolean;
   hijabColor?: string;
   colors?: Record<string, string>;
-  /** Extra coverage: sleeves to the wrists and/or an ankle-length skirt, in these colors. */
-  modest?: { sleeves?: string; skirt?: string };
+  /** Extra coverage layers (sleeves, high neckline, skirt or longer top), in these colors. */
+  modest?: ModestLayers;
 }) {
   const { scene, animations } = useGLTF(characterUrl(file));
   const root = useRef<THREE.Group>(null);
 
   const { model, scale } = useMemo(() => {
-    smoothOnce(scene);
+    smoothOnce(scene, file.startsWith("female"));
     const m = cloneSkinned(scene);
     m.traverse((o) => {
       const mesh = o as THREE.Mesh;
@@ -94,7 +95,7 @@ export function Character({
     m.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(m, true);
     return { model: m, scale: HEIGHT / Math.max(0.01, box.max.y - box.min.y) };
-  }, [scene]);
+  }, [scene, file]);
 
   // Outfit colors.
   useLayoutEffect(() => {
@@ -125,13 +126,19 @@ export function Character({
     };
   }, [model, hijab, hijabColor]);
 
-  // Modest layers: sleeves to the wrists and an ankle-length skirt.
-  const sleeves = modest?.sleeves;
-  const skirt = modest?.skirt;
+  // Modest layers.
+  const { sleeves, neckline, skirt, tunic } = modest ?? {};
   useLayoutEffect(() => {
-    if (!sleeves && !skirt) return;
-    return addModestLayers(model, { sleeves, skirt });
-  }, [model, sleeves, skirt]);
+    if (!sleeves && !neckline && !skirt && !tunic) return;
+    return addModestLayers(model, { sleeves, neckline, skirt, tunic });
+  }, [model, sleeves, neckline, skirt, tunic]);
+
+  // Feminine face details for the women.
+  const feminine = file.startsWith("female");
+  useLayoutEffect(() => {
+    if (!feminine) return;
+    return addFaceFeatures(model);
+  }, [model, feminine]);
 
   const { actions, names } = useAnimations(animations, root);
 
@@ -164,9 +171,25 @@ const smoothed = new WeakSet<THREE.Object3D>();
  * recomputing normals gives soft, rounded shading, which reads as far more natural
  * on faces and skin. Done once per loaded file; every clone shares the result.
  */
-function smoothOnce(scene: THREE.Object3D) {
+function smoothOnce(scene: THREE.Object3D, curvy: boolean) {
   if (smoothed.has(scene)) return;
   smoothed.add(scene);
+  if (curvy) {
+    // Weld first so the reshaping moves shared vertices together.
+    scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const g = mesh.geometry.clone();
+      g.deleteAttribute("normal");
+      mesh.geometry = mergeVertices(g, 1e-4);
+    });
+    shapeCurvy(scene);
+    scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (mesh.isMesh) mesh.geometry.computeVertexNormals();
+    });
+    return;
+  }
   scene.traverse((o) => {
     const mesh = o as THREE.Mesh;
     if (!mesh.isMesh) return;

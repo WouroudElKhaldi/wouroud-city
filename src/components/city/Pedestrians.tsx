@@ -10,6 +10,7 @@ import { useCityStore } from "@/state/useCityStore";
 import { playerState } from "@/world/env";
 import { sfx } from "@/world/sfx";
 import { NPC_LOOKS } from "@/world/outfits";
+import type { ModestLayers } from "./garments";
 import { Character, type CharacterAnimation, type PersonFile } from "./Character";
 import { useProximity } from "./useProximity";
 
@@ -19,7 +20,7 @@ export type Walker = {
   file: PersonFile;
   colors: Record<string, string>;
   hijab?: string;
-  modest?: { sleeves?: string; skirt?: string };
+  modest?: ModestLayers;
   /** Closed loop of waypoints on the ground */
   path: [number, number][];
   speed: number;
