@@ -310,3 +310,97 @@ kbd {
   color: #ffffff;
   font-weight: 600;
 }
+
+/* ---------- Phones ---------- */
+@media (max-width: 639px) {
+  .hud-root .hud-panel {
+    padding: 0.45rem 0.65rem;
+    border-radius: 0.75rem;
+  }
+  .minimap {
+    width: 112px;
+    height: 112px;
+  }
+  .info-panel {
+    width: 100%;
+    max-height: 78dvh;
+    border-radius: 1.25rem 1.25rem 0 0;
+    border-bottom: 0;
+    padding: 1.1rem 1.1rem max(1.1rem, env(safe-area-inset-bottom));
+    animation: hud-sheet-in 240ms ease-out;
+  }
+  .panel-title {
+    font-size: 1.35rem;
+  }
+}
+.hud-sheet {
+  padding: 1rem 1rem max(1rem, env(safe-area-inset-bottom));
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: rgb(26 16 61 / 0.95);
+  border-top: 1px solid rgb(246 196 83 / 0.4);
+  animation: hud-sheet-in 220ms ease-out;
+}
+@keyframes hud-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+.touch-controls,
+.touch-stick,
+.touch-button {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.touch-stick {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgb(159 122 234 / 0.25), rgb(26 16 61 / 0.45));
+  border: 2px solid rgb(246 196 83 / 0.55);
+  box-shadow:
+    0 8px 24px rgb(13 8 32 / 0.35),
+    inset 0 0 18px rgb(159 122 234 / 0.35);
+  backdrop-filter: blur(6px);
+}
+.touch-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, #fde68a, #f6c453 55%, #d69e2e);
+  box-shadow: 0 4px 14px rgb(13 8 32 / 0.45);
+  pointer-events: none;
+}
+.touch-button {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: rgb(26 16 61 / 0.55);
+  border: 2px solid rgb(196 181 253 / 0.6);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 24px rgb(13 8 32 / 0.35);
+}
+.touch-button:active {
+  transform: scale(0.94);
+  background: rgb(124 58 237 / 0.7);
+}
+.touch-action {
+  width: 76px;
+  height: 76px;
+  font-size: 1.1rem;
+  color: #1a103d;
+  background: linear-gradient(135deg, #fde68a, #f6c453);
+  border-color: #ffffff;
+  animation: hud-pulse 1.6s ease-in-out infinite;
+}

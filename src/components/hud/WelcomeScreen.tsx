@@ -5,6 +5,7 @@ import { seedContent } from "@/content/seed";
 import { type AvatarKind, useCityStore } from "@/state/useCityStore";
 import { GIRL_OUTFITS, type GirlOutfit, HIJAB_COLORS } from "@/world/outfits";
 import { PERSONAS, type Persona } from "@/world/personas";
+import { useIsTouch } from "@/world/touch";
 
 const AVATARS: { kind: AvatarKind; label: string; emoji: string }[] = [
   { kind: "girl", label: "Girl", emoji: "🧕" },
@@ -21,6 +22,7 @@ export function WelcomeScreen() {
     useCityStore();
   const [choice, setChoice] = useState<Persona | null>(persona);
   const profile = seedContent.profile;
+  const touch = useIsTouch();
 
   return (
     <div className="welcome-backdrop pointer-events-auto absolute inset-0 z-30 flex items-center justify-center overflow-y-auto p-4">
@@ -125,7 +127,13 @@ export function WelcomeScreen() {
             In a hurry? Skip to the résumé →
           </a>
           <p className="text-xs text-violet-200/80">
-            <kbd>W A S D</kbd> walk · <kbd>Shift</kbd> run · <kbd>E</kbd> interact · <kbd>M</kbd> map · drag to look
+            {touch ? (
+              "Joystick to walk · drag to look · pinch to zoom · tap things to play with them"
+            ) : (
+              <>
+                <kbd>W A S D</kbd> walk · <kbd>Shift</kbd> run · <kbd>E</kbd> interact · <kbd>M</kbd> map · drag to look
+              </>
+            )}
           </p>
         </div>
       </div>

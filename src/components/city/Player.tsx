@@ -8,6 +8,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useCityStore } from "@/state/useCityStore";
 import { playerState } from "@/world/env";
+import { touchInput } from "@/world/touch";
 import { Avatar } from "./Avatar";
 import { GIRL_OUTFITS, GUY_OUTFIT } from "@/world/outfits";
 import { Character, type CharacterAnimation } from "./Character";
@@ -31,6 +32,7 @@ const FEET_OFFSET = CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS + FLOAT_HEIGHT + 0.06;
 
 
 const GESTURE_SECONDS = 1.3;
+const STILL = { forward: false, backward: false, leftward: false, rightward: false, jump: false, run: false, joystick: { x: 0, y: 0 } };
 
 /**
  * The visitor: an Ecctrl physics character, fed by the keyboard, with a
@@ -77,20 +79,28 @@ export function Player({
   useFrame(() => {
     const c = controller.current;
     if (!c) return;
-    const keys = getKeys();
+    const k = getKeys();
+    // The keyboard and the on-screen joystick drive the same controller.
+    const keys = {
+      ...k,
+      run: k.run || touchInput.run,
+      jump: k.jump || touchInput.jump,
+      joystick: { x: touchInput.x, y: touchInput.y },
+    };
+    const moving = k.forward || k.backward || k.leftward || k.rightward || touchInput.x !== 0 || touchInput.y !== 0;
     const store = useCityStore.getState();
 
     if (store.seat) {
-      // Any movement key gets you up again.
-      if (keys.forward || keys.backward || keys.leftward || keys.rightward || keys.jump) store.stand();
+      // Any movement gets you up again.
+      if (moving || keys.jump) store.stand();
       const s = store.seat;
       c.body.setTranslation({ x: s.x, y: s.y + FEET_OFFSET, z: s.z }, true);
       c.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       c.body.setRotation(seatQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, s.facing), true);
-      c.setMovement({ forward: false, backward: false, leftward: false, rightward: false, jump: false, run: false });
+      c.setMovement(STILL);
     } else if (!store.started || store.panel || store.mapOpen) {
       // Welcome screen, info panel or big map open: stand still.
-      c.setMovement({ forward: false, backward: false, leftward: false, rightward: false, jump: false, run: false });
+      c.setMovement(STILL);
     } else {
       c.setMovement(keys);
     }

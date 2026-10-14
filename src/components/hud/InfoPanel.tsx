@@ -251,7 +251,7 @@ export function InfoPanel() {
   const district = districtById(panel.district);
 
   return (
-    <div className="pointer-events-auto absolute inset-0 z-20 flex items-center justify-end p-4" onClick={() => openPanel(null)}>
+    <div className="pointer-events-auto absolute inset-0 z-20 flex items-end justify-end sm:items-center sm:p-4" onClick={() => openPanel(null)}>
       <article
         className="info-panel"
         style={{ borderColor: district.accent }}

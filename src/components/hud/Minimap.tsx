@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { seedContent } from "@/content/seed";
 import { type SceneId, useCityStore } from "@/state/useCityStore";
 import { DISTRICTS, type DistrictId, HUB, landmarkDoorstep, landmarkPlacement } from "@/world/districts";
@@ -159,7 +159,7 @@ export function Minimap() {
           <div className="map-panel" onClick={(e) => e.stopPropagation()}>
             <div className="mb-2 flex items-center justify-between gap-3">
               <p className="font-semibold text-white">
-                {scene === "hub" ? "Wouroud's City" : DISTRICTS.find((d) => d.id === scene)?.name} · click a place to get directions
+                {scene === "hub" ? "Wouroud's City" : DISTRICTS.find((d) => d.id === scene)?.name} · pick a place to get directions
               </p>
               <button type="button" className="hud-chip text-white" onClick={() => setMapOpen(false)}>
                 Close ✕
@@ -192,7 +192,10 @@ function MapSvg({
   waypoint: { x: number; z: number; label: string } | null;
   onPick?: (p: MapPlace) => void;
 }) {
+  const svg = useRef<SVGSVGElement>(null);
   const world = useRef<SVGGElement>(null);
+  // How much CSS shrinks the full map (on phones); labels grow back to stay readable.
+  const [fit, setFit] = useState(1);
   const arrow = useRef<SVGGElement>(null);
   const size = mode === "mini" ? 170 : 640;
   const { bounds } = data;
@@ -223,12 +226,21 @@ function MapSvg({
     return () => cancelAnimationFrame(frame);
   }, [mode, size, scale, bounds]);
 
-  const labelSize = mode === "full" ? 11 / scale : 0;
+  useEffect(() => {
+    if (mode !== "full" || !svg.current) return;
+    const el = svg.current;
+    const observer = new ResizeObserver(() => setFit(Math.min(1, el.clientWidth / size) || 1));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [mode, size]);
+
+  const labelSize = mode === "full" ? Math.min(11 / fit, 20) / scale : 0;
 
   return (
     <svg
-      width={size}
-      height={size}
+      ref={svg}
+      width={mode === "mini" ? "100%" : size}
+      height={mode === "mini" ? "100%" : size}
       viewBox={`0 0 ${size} ${size}`}
       className={mode === "full" ? "map-svg" : undefined}
       role={mode === "full" ? "img" : undefined}

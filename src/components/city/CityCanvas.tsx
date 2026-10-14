@@ -10,6 +10,7 @@ import * as THREE from "three";
 import { useCityStore } from "@/state/useCityStore";
 import { landmarkDoorstep } from "@/world/districts";
 import { worldEnv } from "@/world/env";
+import { isTouchDevice } from "@/world/touch";
 import { DayNight } from "./DayNight";
 import { DISTRICT_SPAWN, DistrictScene } from "./DistrictScene";
 import { HubScene } from "./HubScene";
@@ -33,8 +34,11 @@ export default function CityCanvas() {
   const cameFrom = useCityStore((s) => s.cameFrom);
   const playerPosition = useRef(new THREE.Vector3(...HUB_SPAWN));
   // Drop to a lower resolution on slow devices instead of stuttering.
-  const [dpr, setDpr] = useState(1.5);
-  const [effects, setEffects] = useState(true);
+  // Phones start on a lighter preset: lower resolution and no post-processing.
+  const [mobile] = useState(isTouchDevice);
+  const maxDpr = mobile ? 1.25 : 1.5;
+  const [dpr, setDpr] = useState(mobile ? 1 : 1.5);
+  const [effects, setEffects] = useState(!mobile);
 
   // Where the player appears: the plaza, a landmark's doorstep when coming back, or a district's gate.
   const spawn = useMemo(() => {
@@ -63,7 +67,7 @@ export default function CityCanvas() {
             setDpr(1);
             setEffects(false);
           }}
-          onIncline={() => setDpr(1.5)}
+          onIncline={() => setDpr(maxDpr)}
         />
         <AdaptiveDpr pixelated />
         <DayNight followTarget={playerPosition} />
