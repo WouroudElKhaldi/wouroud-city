@@ -161,7 +161,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
 
       <StreetLamps points={layout.lamps} />
       <Foliage items={layout.foliage} />
-      <GrassField isLawn={lawn} radius={layout.outerRadius + 40} count={9000} seed={id.length * 13} />
+      <GrassField isLawn={lawn} radius={layout.outerRadius + 40} count={16000} seed={id.length * 13} />
       <CodeBillboards spots={layout.billboards} />
       <Pedestrians walkers={walkers} />
       <Pigeons center={[0, RING.plazaRadius - 4]} radius={3} count={7} />

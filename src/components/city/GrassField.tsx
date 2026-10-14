@@ -12,7 +12,7 @@ import { seeded } from "@/world/foliage";
  * grass off roads, plazas and floors.
  */
 
-const GRASS_COLORS = ["#4ade80", "#22c55e", "#65a30d", "#84cc16", "#16a34a", "#86efac"];
+const GRASS_COLORS = ["#4ade80", "#22c55e", "#65a30d", "#84cc16", "#16a34a", "#a3e635"];
 const FLOWER_COLORS = ["#f472b6", "#fb7185", "#facc15", "#fb923c", "#a78bfa", "#38bdf8", "#ffffff", "#f0abfc"];
 
 const wind = { value: 0 };
@@ -103,7 +103,8 @@ export function GrassField({
       const out: [number, number][] = [];
       for (let i = 0; i < n * 4 && out.length < n; i++) {
         const a = random() * Math.PI * 2;
-        const r = Math.sqrt(random()) * radius;
+        // Denser toward the middle, where people walk.
+        const r = random() ** 0.85 * radius;
         const x = Math.cos(a) * r;
         const z = Math.sin(a) * r;
         if (isLawn(x, z)) out.push([x, z]);
@@ -135,8 +136,8 @@ export function GrassField({
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       mesh.computeBoundingSphere();
     };
-    fill(grass.current, spots.grass, GRASS_COLORS, 1.2, 1.1);
-    fill(blooms.current, spots.flowers, FLOWER_COLORS, 1, 0.8);
+    fill(grass.current, spots.grass, GRASS_COLORS, 0.55, 0.5);
+    fill(blooms.current, spots.flowers, FLOWER_COLORS, 0.6, 0.45);
   }, [spots]);
 
   useFrame((_, delta) => {

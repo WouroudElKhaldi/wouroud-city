@@ -108,7 +108,7 @@ export function Player({
     }
 
     // Safety net: if a collision ever tips the capsule over, stand it back up, keeping its heading.
-    const q = c.body.rotation();
+    const q = c.body?.rotation() ?? { x: 0, y: 0, z: 0, w: 1 };
     const tilt = 1 - 2 * (q.x * q.x + q.z * q.z);
     if (tilt < 0.82) {
       const yaw = Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.y * q.y + q.x * q.x));

@@ -27,7 +27,7 @@ export const palette = {
     hemiGround: "#0f2a2a",
     sun: "#9fa8ff",
   },
-  grass: "#8fd18f",
+  grass: "#5aa95c",
   road: "#3b2d63",
   roadLine: accents.honey,
   sidewalk: "#f1e9dc",

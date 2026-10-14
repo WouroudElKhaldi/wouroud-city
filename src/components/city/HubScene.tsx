@@ -95,7 +95,7 @@ export function HubScene() {
 
       <StreetLamps points={layout.lamps} />
       <Foliage items={layout.foliage} />
-      <GrassField isLawn={isHubLawn} radius={150} count={14000} seed={3} />
+      <GrassField isLawn={isHubLawn} radius={150} count={26000} seed={3} />
       <PlazaBenches />
       <Beacons />
       <Pigeons center={[0, 0]} radius={13} count={12} />
