@@ -1,7 +1,7 @@
 # HANDOFF — Wouroud's City (3D portfolio)
 
 Read this first. It is everything the next Claude session needs to continue the work.
-Last updated: 2026-10-14. NOT yet verified in the browser: welcome screen, minimap, info panels, résumé page (type-check and lint pass). Check these first.
+Last updated: 2026-10-15. Task list with status: `tasks.md` (keep it updated after every finished task).
 
 ---
 
@@ -142,6 +142,20 @@ Key ideas:
 
 ---
 
+
+### Added 2026-10-15
+- **Round districts** (`world/layout.ts` → `computeDistrictLayout`): central plaza + fountain + park, ring road,
+  buildings in clusters outside the ring facing the center (two rows when > 16 items), neighborhood shops
+  (`filler: true`, no panel) fill small districts. Entry avenue + gate + exit portal on the south (+z).
+  `doorPoint(b)` gives a building's door; `layout.spawn` / `layout.exit` replace the old STREET constants.
+- **Unique buildings**: `world/signatures.ts` maps every content id → rooftop emblem, brand accent, tower shape.
+  `components/city/Emblems.tsx` draws ~55 emblems from primitives. New content falls back to initials.
+- **District architecture** (`components/city/Architecture.tsx`): per-district roof (arch / gable / dome),
+  brand-color tint and street props (containers, columns, flags, awnings, murals, fins, neon).
+  Shared colors live in `buildingTheme.ts` (importing them from Building.tsx caused an init cycle).
+- **Phones**: `world/touch.ts` (`touchInput`, `useIsTouch`), `components/hud/TouchControls.tsx` (joystick + jump +
+  action), compact HUD with a menu sheet, bottom-sheet info panel, mobile DPR/effects preset.
+- Welcome screen enter button shows real loading progress (drei `useProgress`).
 ## 4. Status
 
 Done:

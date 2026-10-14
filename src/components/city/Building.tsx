@@ -7,14 +7,15 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { worldEnv } from "@/world/env";
 import type { BuildingSpec } from "@/world/layout";
-import { palette } from "@/world/palette";
+import { accents, palette } from "@/world/palette";
 import { signatureFor, type TowerShape } from "@/world/signatures";
 import { Emblem } from "./Emblems";
+import { DistrictProps, Roof, roofHeight, styleFor, tinted } from "./Architecture";
 import { useFacade, useGlowMaterial } from "./materials";
 
-export const FLOOR = 3.2;
-export const DARK = "#1f1640";
-export const STONE = "#3b2d63";
+import { DARK, FLOOR, STONE } from "./buildingTheme";
+
+export { DARK, FLOOR, STONE };
 
 // ---------------------------------------------------------------------------
 // Building
@@ -24,10 +25,17 @@ export const STONE = "#3b2d63";
  * A data-driven building. Footprint, height and color come from the layout;
  * the variant picks the architecture (HQ tower, studio, low-rise, workshop, skill tower).
  */
-export function Building({ spec }: { spec: BuildingSpec }) {
+export function Building({ spec: raw }: { spec: BuildingSpec }) {
+  const signature = useMemo(() => signatureFor(raw.id, raw.label), [raw.id, raw.label]);
+  const style = useMemo(() => styleFor(raw), [raw]);
+  // The district style tints the body toward the item's brand color and may put a pitched roof on top.
+  const spec = useMemo(
+    () => ({ ...raw, color: tinted(raw.color, signature?.accent, style.tint), pitched: style.roof !== "flat" }),
+    [raw, signature, style],
+  );
   const { width, depth, height } = spec;
-  const signature = useMemo(() => signatureFor(spec.id, spec.label), [spec.id, spec.label]);
-  const emblemY = height + (spec.variant === "tower" ? 4.6 : spec.variant === "hq" ? 4 : 3.2);
+  const roofH = roofHeight(style.roof, width, depth);
+  const emblemY = height + roofH + (spec.variant === "tower" ? 4.6 : spec.variant === "hq" ? 4 : 3.2);
   const emblemScale = spec.variant === "tower" ? 2.3 : Math.min(4, Math.max(1.6, Math.min(width, depth) * 0.3));
   return (
     <group position={[spec.x, 0, spec.z]} rotation-y={spec.rotY}>
@@ -45,6 +53,8 @@ export function Building({ spec }: { spec: BuildingSpec }) {
       {spec.variant === "workshop" && <WorkshopBuilding spec={spec} />}
       {spec.variant === "tower" && <SkillTower spec={spec} shape={signature?.shape ?? "box"} accent={signature?.accent} />}
       <Entrance spec={spec} />
+      <Roof kind={style.roof} width={width} depth={depth} y={height + 0.3} color={style.roofColor} />
+      <DistrictProps kind={style.props} spec={spec} accent={signature?.accent ?? accents.gold} />
       {signature && spec.variant !== "tower" && <AccentBand width={width} depth={depth} y={height - 0.25} color={signature.accent} />}
       {signature && <Emblem signature={signature} y={emblemY} scale={emblemScale} />}
     </group>
@@ -139,7 +149,7 @@ function StudioBuilding({ spec }: { spec: BuildingSpec }) {
         );
       })}
       <Box size={[width + 0.3, 0.5, depth + 0.3]} position={[0, height + 0.05, 0]} color={DARK} />
-      <RooftopGarden width={width} depth={depth} y={height + 0.3} />
+      {!spec.pitched && <RooftopGarden width={width} depth={depth} y={height + 0.3} />}
     </group>
   );
 }
@@ -152,7 +162,7 @@ function LowriseBuilding({ spec }: { spec: BuildingSpec }) {
     <group>
       <Box size={[width, height - 0.4, depth]} position={[0, 0.4 + (height - 0.4) / 2, 0]} material={bodyMat} />
       <Box size={[width + 0.4, 0.6, depth + 0.4]} position={[0, height + 0.1, 0]} color={DARK} />
-      <RooftopUnits width={width} depth={depth} y={height + 0.4} count={3} tank />
+      {!spec.pitched && <RooftopUnits width={width} depth={depth} y={height + 0.4} count={3} tank />}
     </group>
   );
 }

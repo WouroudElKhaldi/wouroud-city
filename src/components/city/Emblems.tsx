@@ -5,7 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Emblem as EmblemKind, Signature } from "@/world/signatures";
-import { DARK } from "./Building";
+import { DARK } from "./buildingTheme";
 import { useGlowMaterial } from "./materials";
 
 /**

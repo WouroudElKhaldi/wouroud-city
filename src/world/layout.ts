@@ -47,6 +47,10 @@ export type BuildingSpec = {
   /** Yaw of the whole building around y */
   rotY: number;
   crown: boolean;
+  /** Set by the renderer when the district style puts a pitched, arched or domed roof on top */
+  pitched?: boolean;
+  /** Which district it stands in; sets the architecture style */
+  district: DistrictId;
   /** A neighborhood shop that fills the ring; no info panel */
   filler?: boolean;
 };
@@ -76,7 +80,7 @@ export type DistrictLayout = {
 };
 
 /** What a district needs to know about each building before it is placed. */
-type Item = Omit<BuildingSpec, "x" | "z" | "facing" | "rotY" | "height"> & { group?: string };
+type Item = Omit<BuildingSpec, "x" | "z" | "facing" | "rotY" | "height" | "district"> & { group?: string };
 
 function toMonths(date: string): number {
   const [y, m] = date.split("-").map(Number);
@@ -433,6 +437,7 @@ export function computeDistrictLayout(content: Content, id: DistrictId): Distric
           ...rest,
           ...polar(center, r),
           rotY: faceCenter(center),
+          district: id,
           height: item.floors * FLOOR_HEIGHT,
           facing: 1,
         });
