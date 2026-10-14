@@ -2,7 +2,7 @@
 
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { CylinderCollider, RigidBody } from "@react-three/rapier";
+import { CylinderCollider, RigidBody, RoundCylinderCollider } from "@react-three/rapier";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { type DistrictDef, HUB } from "@/world/districts";
@@ -23,6 +23,8 @@ export function Landmark({ district }: { district: DistrictDef }) {
       <Platform district={district} />
       <RigidBody type="fixed" colliders={false}>
         <CylinderCollider args={[8, 6.4]} position={[0, 8, -0.8]} />
+        {/* The platform you stand on; rounded edges let you step up without jumping. */}
+        <RoundCylinderCollider args={[0.1, HUB.landmarkRadius - 0.2, 0.2]} position={[0, 0.1, 0]} />
       </RigidBody>
       <Model district={district} />
       <Portal
