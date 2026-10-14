@@ -98,7 +98,7 @@ export function Player({
       c.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       c.body.setRotation(seatQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, s.facing), true);
       c.setMovement(STILL);
-    } else if (!store.started || store.panel || store.mapOpen) {
+    } else if (!store.started || store.panel || store.mapOpen || store.activity) {
       // Welcome screen, info panel or big map open: stand still.
       c.setMovement(STILL);
     } else {

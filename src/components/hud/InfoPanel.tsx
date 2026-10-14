@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { seedContent } from "@/content/seed";
 import type { Experience, Project, Skill, Training } from "@/content/schema";
-import { useCityStore } from "@/state/useCityStore";
+import { type Activity, useCityStore } from "@/state/useCityStore";
 import { districtById } from "@/world/districts";
 import { sfx } from "@/world/sfx";
 
@@ -153,6 +153,15 @@ function TrainingView({ t }: { t: Training }) {
   );
 }
 
+function PlayButton({ activity, label }: { activity: Activity; label: string }) {
+  const setActivity = useCityStore((s) => s.setActivity);
+  return (
+    <button type="button" className="welcome-enter mt-5 w-full" onClick={() => setActivity(activity)}>
+      {label}
+    </button>
+  );
+}
+
 function PanelBody({ district, id }: { district: string; id: string }) {
   const c = seedContent;
   switch (district) {
@@ -215,7 +224,11 @@ function PanelBody({ district, id }: { district: string; id: string }) {
           <p className="panel-kicker">Hobby</p>
           <h2 className="panel-title">{h.name}</h2>
           <p className="mt-3">{h.description}</p>
-          <p className="panel-plaque">🎨 Coming soon inside: {h.interaction}</p>
+          {h.id === "painting" || h.id === "digital-drawing" ? (
+            <PlayButton activity="paint" label="🎨 Paint on the easel" />
+          ) : (
+            <p className="panel-plaque">✨ Coming soon inside: {h.interaction}</p>
+          )}
         </>
       ) : null;
     }
@@ -225,8 +238,9 @@ function PanelBody({ district, id }: { district: string; id: string }) {
           <p className="panel-kicker">Arcade Pier</p>
           <h2 className="panel-title">Full Stack Arcade</h2>
           <p className="mt-3">
-            Stack the stack: drop blocks labelled HTML, CSS, JS, React, Node, MongoDB… as high as you can. The game opens soon.
+            Stack the stack: drop blocks labelled HTML, CSS, JS, React, Node, MongoDB… as high as you can. Perfect drops build a combo.
           </p>
+          <PlayButton activity="stack" label="🕹️ Play Full Stack" />
         </>
       );
   }

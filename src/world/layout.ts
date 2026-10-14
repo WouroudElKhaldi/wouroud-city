@@ -277,7 +277,7 @@ function arcadeItems(): Item[] {
       id: "full-stack-arcade",
       variant: "workshop",
       label: "Full Stack Arcade",
-      sublabel: "Stack the stack · opening soon",
+      sublabel: "Stack the stack · press E to play",
       width: 18,
       depth: 18,
       floors: 4,

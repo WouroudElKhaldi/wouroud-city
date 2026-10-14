@@ -22,6 +22,9 @@ export type Waypoint = { x: number; z: number; label: string };
 /** Which building's info panel is open. */
 export type Panel = { district: DistrictId; id: string };
 
+/** A full-screen mini activity: the arcade game or the painting easel. */
+export type Activity = "stack" | "paint";
+
 const FADE_MS = 450;
 let toastId = 0;
 
@@ -32,6 +35,7 @@ type CityState = {
   waypoint: Waypoint | null;
   panel: Panel | null;
   mapOpen: boolean;
+  activity: Activity | null;
   avatar: AvatarKind;
   hijab: boolean;
   hijabColor: string;
@@ -67,6 +71,7 @@ type CityState = {
   setWaypoint: (waypoint: Waypoint | null) => void;
   openPanel: (panel: Panel | null) => void;
   setMapOpen: (open: boolean) => void;
+  setActivity: (activity: Activity | null) => void;
 };
 
 export const useCityStore = create<CityState>((set, get) => ({
@@ -75,6 +80,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   waypoint: null,
   panel: null,
   mapOpen: false,
+  activity: null,
   avatar: "girl",
   hijab: true,
   hijabColor: "#c49cad",
@@ -113,7 +119,7 @@ export const useCityStore = create<CityState>((set, get) => ({
     }, FADE_MS);
   },
   interact: () => {
-    if (!get().started || get().panel) return;
+    if (!get().started || get().panel || get().activity) return;
     if (get().seat) {
       get().stand();
       return;
@@ -134,4 +140,8 @@ export const useCityStore = create<CityState>((set, get) => ({
   setWaypoint: (waypoint) => set({ waypoint, mapOpen: false }),
   openPanel: (panel) => set({ panel, nearby: null }),
   setMapOpen: (mapOpen) => set({ mapOpen }),
+  setActivity: (activity) => set({ activity, panel: null, nearby: null }),
 }));
+
+// Handy when debugging in the browser console.
+if (typeof window !== "undefined" && process.env.NODE_ENV === "development") Object.assign(window, { __store: useCityStore });

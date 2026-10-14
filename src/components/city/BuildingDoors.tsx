@@ -20,7 +20,7 @@ export function BuildingDoors({ district, buildings }: { district: DistrictId; b
     const store = useCityStore.getState();
     let best: BuildingSpec | null = null;
     let bestD = RADIUS * RADIUS;
-    if (store.started && !store.seat && !store.fading && !store.panel) {
+    if (store.started && !store.seat && !store.fading && !store.panel && !store.activity) {
       for (const b of buildings) {
         if (b.filler) continue;
         const door = doorPoint(b);
@@ -37,7 +37,12 @@ export function BuildingDoors({ district, buildings }: { district: DistrictId; b
     current.current = id;
     if (best) {
       const target = best;
-      store.setNearby({ id: id!, label: `View ${target.label}`, run: () => store.openPanel({ district, id: target.id }) });
+      const arcade = district === "arcade";
+      store.setNearby({
+        id: id!,
+        label: arcade ? `Play ${target.label}` : `View ${target.label}`,
+        run: () => (arcade ? store.setActivity("stack") : store.openPanel({ district, id: target.id })),
+      });
     }
   });
 

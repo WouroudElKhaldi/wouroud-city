@@ -418,3 +418,47 @@ kbd {
   background: linear-gradient(90deg, #9f7aea, #5eead4, #f6c453);
   transition: width 300ms ease-out;
 }
+
+/* ---------- Activities (arcade game, easel) ---------- */
+.activity-backdrop {
+  background: radial-gradient(circle at 50% 0%, rgb(124 58 237 / 0.55), rgb(13 8 32 / 0.96) 70%);
+  backdrop-filter: blur(8px);
+  animation: hud-toast-in 250ms ease-out;
+}
+.paint-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  background: rgb(26 16 61 / 0.7);
+  border: 1px solid rgb(246 196 83 / 0.35);
+}
+.paint-easel {
+  width: min(100%, 1000px, calc((100dvh - 15rem) * 1.41));
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(160deg, #8b5a3c, #5e3a24);
+  box-shadow: 0 20px 50px rgb(13 8 32 / 0.5);
+}
+.paint-size {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  background: rgb(76 29 149 / 0.4);
+  border: 1px solid rgb(196 181 253 / 0.35);
+}
+.paint-size span {
+  border-radius: 999px;
+  background: #ffffff;
+}
+.paint-size[aria-pressed="true"] {
+  background: #805ad5;
+  border-color: #f0abfc;
+}
+.hud-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

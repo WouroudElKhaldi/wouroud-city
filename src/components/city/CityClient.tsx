@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import { Hud } from "@/components/hud/Hud";
 import { InfoPanel } from "@/components/hud/InfoPanel";
+import { PaintStudio } from "@/components/hud/PaintStudio";
+import { StackGame } from "@/components/hud/StackGame";
 import { WelcomeScreen } from "@/components/hud/WelcomeScreen";
 import { useCityStore } from "@/state/useCityStore";
 
@@ -16,6 +18,7 @@ const CityCanvas = dynamic(() => import("./CityCanvas"), {
 
 export function CityClient() {
   const started = useCityStore((s) => s.started);
+  const activity = useCityStore((s) => s.activity);
   return (
     <div className="relative h-dvh w-full overflow-hidden">
       <CityCanvas />
@@ -23,6 +26,8 @@ export function CityClient() {
         <>
           <Hud />
           <InfoPanel />
+          {activity === "stack" && <StackGame />}
+          {activity === "paint" && <PaintStudio />}
         </>
       ) : (
         <WelcomeScreen />

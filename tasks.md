@@ -52,8 +52,8 @@ _(nothing; next up: 43 Better people)_
 22. ⬜ Real interiors you can walk into (start with the HQ / Sahme Trading and one project building)
 
 ### D. Play
-23. ⬜ Arcade Pier game "Full Stack": one-tap block stacking with tech labels (HTML → CSS → JS → React → Node → MongoDB…), local best score
-24. ⬜ Hobby Quarter: painting easel (2D canvas painting app in the gallery)
+23. ✅ Arcade Pier game "Full Stack": one-tap block stacking with tech labels (HTML → CSS → JS → React → Node → MongoDB…), local best score
+24. ✅ Hobby Quarter: painting easel (2D canvas painting app in the gallery)
 25. ⬜ Hobby Quarter: gallery of the owner's paintings, crochet toy, photo camera, library of "what I'm learning"
 26. ⬜ Horse riding in the park
 27. ⬜ Weather: rain / snow / fog toggle (instanced particles), wet look at night
