@@ -462,3 +462,11 @@ kbd {
   opacity: 0.4;
   cursor: not-allowed;
 }
+.panel-chip-link {
+  cursor: pointer;
+  transition: background 150ms;
+}
+.panel-chip-link:hover {
+  background: rgb(20 184 166 / 0.4);
+  color: #ffffff;
+}

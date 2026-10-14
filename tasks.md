@@ -47,8 +47,8 @@ _(nothing; next up: 43 Better people)_
 19. ⬜ README rewrite (what it is, how to run, controls, credits)
 
 ### C. Content inside buildings
-20. ⬜ Richer info panels: project media gallery (screenshots/video), "used in" links between skills ↔ projects ↔ jobs, next/previous building
-21. ⬜ Private Vault building explains the private work GitHub
+20. 🔄 Richer info panels: ✅ "used in" links between skills ↔ projects ↔ jobs, ✅ next/previous building; ⬜ project media gallery (needs screenshots from the owner / admin)
+21. ✅ Private Vault building explains the private work GitHub
 22. ⬜ Real interiors you can walk into (start with the HQ / Sahme Trading and one project building)
 
 ### D. Play

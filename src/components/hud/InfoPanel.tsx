@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { seedContent } from "@/content/seed";
 import type { Experience, Project, Skill, Training } from "@/content/schema";
-import { type Activity, useCityStore } from "@/state/useCityStore";
+import { type Activity, type Panel, useCityStore } from "@/state/useCityStore";
 import { districtById } from "@/world/districts";
+import { computeDistrictLayout } from "@/world/layout";
 import { sfx } from "@/world/sfx";
 
 function formatDate(date: string | null) {
@@ -14,18 +15,40 @@ function formatDate(date: string | null) {
   return new Date(Number(y), Number(m) - 1).toLocaleString("en", { month: "short", year: "numeric" });
 }
 
-function Chips({ items }: { items: string[] }) {
+const norm = (s: string) => s.toLowerCase().replace(/.js$|s+|[./-]/g, "");
+const SKILL_BY_NAME = new Map(seedContent.skills.flatMap((sk) => [[norm(sk.name), sk.id], [norm(sk.id), sk.id]]));
+
+/** The skill building a technology name points to, if the city has one. */
+function skillFor(tech: string) {
+  return SKILL_BY_NAME.get(norm(tech)) ?? SKILL_BY_NAME.get(norm(tech.split(" ")[0]));
+}
+
+/** Chips that jump to another building's panel when it exists: tech → skill tower, skill → project. */
+function LinkChips({ items }: { items: { label: string; to?: Panel }[] }) {
+  const openPanel = useCityStore((s) => s.openPanel);
   if (!items.length) return null;
   return (
     <ul className="mt-3 flex flex-wrap gap-1.5">
       {items.map((t) => (
-        <li key={t} className="panel-chip">
-          {t}
+        <li key={t.label}>
+          {t.to ? (
+            <button type="button" className="panel-chip panel-chip-link" onClick={() => openPanel(t.to!)} title="Open its building">
+              {t.label} →
+            </button>
+          ) : (
+            <span className="panel-chip inline-block">{t.label}</span>
+          )}
         </li>
       ))}
     </ul>
   );
 }
+
+const techLinks = (tech: string[]) =>
+  tech.map((t) => {
+    const id = skillFor(t);
+    return { label: t, to: id ? ({ district: "skills", id } as Panel) : undefined };
+  });
 
 function Bullets({ items }: { items: string[] }) {
   if (!items.length) return null;
@@ -59,14 +82,18 @@ function ExperienceView({ job }: { job: Experience }) {
       </ol>
       <p className="mt-3">{job.summary}</p>
       <Bullets items={job.highlights} />
-      <Chips items={job.tech} />
+      <LinkChips items={techLinks(job.tech)} />
       {job.plaque && <p className="panel-plaque">★ {job.plaque}</p>}
     </>
   );
 }
 
 function SkillView({ skill }: { skill: Skill }) {
-  const usedIn = seedContent.projects.filter((p) => p.tech.some((t) => t.toLowerCase().includes(skill.name.toLowerCase().replace(".js", ""))));
+  const uses = (tech: string[]) => tech.some((t) => skillFor(t) === skill.id);
+  const usedIn = [
+    ...seedContent.projects.filter((p) => uses(p.tech)).map((p) => ({ label: p.name, to: { district: "projects", id: p.id } as Panel })),
+    ...seedContent.experience.filter((j) => uses(j.tech)).map((j) => ({ label: j.company, to: { district: "business", id: j.id } as Panel })),
+  ];
   return (
     <>
       <p className="panel-kicker">Skill · {skill.category}</p>
@@ -87,7 +114,7 @@ function SkillView({ skill }: { skill: Skill }) {
       {usedIn.length > 0 && (
         <>
           <p className="mt-4 text-sm font-semibold text-white">Used in</p>
-          <Chips items={usedIn.map((p) => p.name)} />
+          <LinkChips items={usedIn} />
         </>
       )}
     </>
@@ -104,6 +131,9 @@ function ProjectView({ project }: { project: Project }) {
       </p>
       <h2 className="panel-title">{project.name}</h2>
       <p className="mt-2 text-lg text-violet-50">{project.pitch}</p>
+      {project.category === "work-private" && (
+        <p className="panel-plaque">🔒 {seedContent.profile.privateWorkNote}</p>
+      )}
       {project.description.map((d) => (
         <p key={d} className="mt-3">
           {d}
@@ -113,7 +143,7 @@ function ProjectView({ project }: { project: Project }) {
       <p className="mt-3 text-sm">
         <span className="text-violet-200">Role:</span> {project.role}
       </p>
-      <Chips items={project.tech} />
+      <LinkChips items={techLinks(project.tech)} />
       {project.links.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {project.links.map((l) => (
@@ -251,15 +281,29 @@ export function InfoPanel() {
   const panel = useCityStore((s) => s.panel);
   const openPanel = useCityStore((s) => s.openPanel);
 
+  // Every real building of this district, in map order, for the previous / next arrows.
+  const siblings = useMemo(
+    () => (panel ? computeDistrictLayout(seedContent, panel.district).buildings.filter((b) => !b.filler).map((b) => b.id) : []),
+    [panel],
+  );
+  const index = panel ? siblings.indexOf(panel.id) : -1;
+  const step = (d: number) => {
+    if (!panel || siblings.length < 2) return;
+    const i = (Math.max(0, index) + d + siblings.length) % siblings.length;
+    openPanel({ district: panel.district, id: siblings[i] });
+  };
+
   useEffect(() => {
     if (!panel) return;
     sfx.pop();
     const onKey = (e: KeyboardEvent) => {
       if (e.code === "Escape") openPanel(null);
+      if (e.code === "ArrowRight") step(1);
+      if (e.code === "ArrowLeft") step(-1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [panel, openPanel]);
+  });
 
   if (!panel) return null;
   const district = districtById(panel.district);
@@ -274,9 +318,24 @@ export function InfoPanel() {
       >
         <div className="mb-3 flex items-center justify-between gap-2">
           <span className="text-xs tracking-widest text-violet-200 uppercase">{district.name}</span>
-          <button type="button" className="hud-chip text-white" onClick={() => openPanel(null)}>
-            Close <kbd>Esc</kbd>
-          </button>
+          <div className="flex items-center gap-1">
+            {siblings.length > 1 && (
+              <>
+                <button type="button" className="hud-chip text-white" onClick={() => step(-1)} aria-label="Previous building">
+                  ←
+                </button>
+                <span className="text-xs text-violet-200 tabular-nums">
+                  {index + 1}/{siblings.length}
+                </span>
+                <button type="button" className="hud-chip text-white" onClick={() => step(1)} aria-label="Next building">
+                  →
+                </button>
+              </>
+            )}
+            <button type="button" className="hud-chip text-white" onClick={() => openPanel(null)}>
+              Close <kbd>Esc</kbd>
+            </button>
+          </div>
         </div>
         <PanelBody district={panel.district} id={panel.id} />
       </article>
