@@ -17,6 +17,7 @@ import { keyboardMap, Player } from "./Player";
 import { GIRL_OUTFITS, GUY_OUTFIT, NPC_LOOKS } from "@/world/outfits";
 import { Particles } from "./Particles";
 import { PlayerSpotlight } from "./PlayerSpotlight";
+import { WaypointGuide } from "./Guidance";
 import { preloadCharacters } from "./Character";
 import { preloadFoliage } from "./Foliage";
 import { preloadPlaythings } from "./Playthings";
@@ -75,6 +76,7 @@ export default function CityCanvas() {
         </Suspense>
         <Particles />
         <PlayerSpotlight />
+        <WaypointGuide />
         {effects && <Effects />}
       </Canvas>
     </KeyboardControls>

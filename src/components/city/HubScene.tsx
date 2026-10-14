@@ -10,6 +10,7 @@ import { Landmark } from "./Landmarks";
 import { useGlowMaterial } from "./materials";
 import { Fountain } from "./StreetDetails";
 import { Foliage } from "./Foliage";
+import { Beacons } from "./Guidance";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Balls, Knockables, type ParkedCar, ParkedCars, Pigeons } from "./Playthings";
 import { Seats } from "./StreetDetails";
@@ -94,6 +95,7 @@ export function HubScene() {
       <StreetLamps points={layout.lamps} />
       <Foliage items={layout.foliage} />
       <PlazaBenches />
+      <Beacons />
       <Pigeons center={[0, 0]} radius={13} count={12} />
       <Balls
         spots={[

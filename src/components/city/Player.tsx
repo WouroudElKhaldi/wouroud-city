@@ -88,6 +88,9 @@ export function Player({
       c.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       c.body.setRotation(seatQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, s.facing), true);
       c.setMovement({ forward: false, backward: false, leftward: false, rightward: false, jump: false, run: false });
+    } else if (!store.started || store.panel || store.mapOpen) {
+      // Welcome screen, info panel or big map open: stand still.
+      c.setMovement({ forward: false, backward: false, leftward: false, rightward: false, jump: false, run: false });
     } else {
       c.setMovement(keys);
     }
@@ -96,6 +99,7 @@ export function Player({
     position.current?.copy(p);
     playerState.position.set(p.x, p.y - FEET_OFFSET, p.z);
     playerState.speed = c.isOnGround ? c.moveSpeed : 0;
+    if (c.moveSpeed > 0.3) playerState.heading = Math.atan2(c.currLinVel.x, c.currLinVel.z);
     camera.current?.moveTo(p.x, p.y + 0.6, p.z, true);
 
     let next: CharacterAnimation;

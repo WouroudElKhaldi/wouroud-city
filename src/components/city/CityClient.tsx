@@ -2,6 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { Hud } from "@/components/hud/Hud";
+import { InfoPanel } from "@/components/hud/InfoPanel";
+import { WelcomeScreen } from "@/components/hud/WelcomeScreen";
+import { useCityStore } from "@/state/useCityStore";
 
 // WebGL and physics only run in the browser.
 const CityCanvas = dynamic(() => import("./CityCanvas"), {
@@ -12,10 +15,18 @@ const CityCanvas = dynamic(() => import("./CityCanvas"), {
 });
 
 export function CityClient() {
+  const started = useCityStore((s) => s.started);
   return (
     <div className="relative h-dvh w-full overflow-hidden">
       <CityCanvas />
-      <Hud />
+      {started ? (
+        <>
+          <Hud />
+          <InfoPanel />
+        </>
+      ) : (
+        <WelcomeScreen />
+      )}
     </div>
   );
 }

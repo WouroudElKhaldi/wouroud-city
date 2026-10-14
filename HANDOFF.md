@@ -1,7 +1,7 @@
 # HANDOFF — Wouroud's City (3D portfolio)
 
 Read this first. It is everything the next Claude session needs to continue the work.
-Last updated: 2026-10-14. Latest commit: `d1b9bd4` on `master`.
+Last updated: 2026-10-14. NOT yet verified in the browser: welcome screen, minimap, info panels, résumé page (type-check and lint pass). Check these first.
 
 ---
 
@@ -169,13 +169,13 @@ Known issues / polish:
 
 ## 5. Roadmap (what to build next, roughly in order)
 
-1. **Welcome screen**: choose visitor type (Recruiter / Developer / Just visiting) + avatar
+1. ~~Welcome screen~~ DONE (WelcomeScreen.tsx, personas.ts, beacons). 1b. **Welcome screen follow-ups**: choose visitor type (Recruiter / Developer / Just visiting) + avatar
    (girl with hijab option + outfit, guy, robot). Persona highlights districts (beacons, map pins,
    guided route; recruiter gets a CV download button and a guided tour).
-2. **Minimap**: collapsible corner minimap + expandable full map (2D SVG from the same layout data),
+2. ~~Minimap~~ DONE (Minimap.tsx, Guidance.tsx waypoints). 2b. **Minimap follow-ups**: collapsible corner minimap + expandable full map (2D SVG from the same layout data),
    live player arrow, landmarks, click to set a waypoint (glowing path on the ground).
-3. **Recruiter / résumé mode**: a clean 2D page from the same content (+ PDF CV download).
-4. **Building interiors / info panels**: entering a building (or E at its door) shows its content:
+3. ~~Résumé mode~~ DONE (app/resume, public/cv). 3b. **Résumé follow-ups**: a clean 2D page from the same content (+ PDF CV download).
+4. Info panels DONE (InfoPanel.tsx, BuildingDoors.tsx; E or click a building). Still to do: **real interiors**: entering a building (or E at its door) shows its content:
    job highlights, project details (screenshots, video, tech, links), certificate (verify link),
    skill details. Private Vault building explains work code is on a private work GitHub.
 5. **Hobby Quarter interactions**: painting easel (2D canvas painting app in the gallery),

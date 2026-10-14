@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { DistrictId } from "@/world/districts";
 import type { GirlOutfit } from "@/world/outfits";
+import type { Persona } from "@/world/personas";
 import { setMuted } from "@/world/sfx";
 
 export type AvatarKind = "girl" | "guy" | "robot";
@@ -15,10 +16,22 @@ export type Seat = { id: string; x: number; y: number; z: number; facing: number
 
 export type Toast = { id: number; title?: string; text: string };
 
+/** A target on the map; a glowing path leads the player to it. */
+export type Waypoint = { x: number; z: number; label: string };
+
+/** Which building's info panel is open. */
+export type Panel = { district: DistrictId; id: string };
+
 const FADE_MS = 450;
 let toastId = 0;
 
 type CityState = {
+  /** False while the welcome screen is showing. */
+  started: boolean;
+  persona: Persona | null;
+  waypoint: Waypoint | null;
+  panel: Panel | null;
+  mapOpen: boolean;
   avatar: AvatarKind;
   hijab: boolean;
   hijabColor: string;
@@ -48,9 +61,20 @@ type CityState = {
   stand: () => void;
   playGesture: (name: NonNullable<CityState["gesture"]>["name"]) => void;
   toast: (text: string, title?: string) => void;
+  start: (persona: Persona) => void;
+  setPersona: (persona: Persona) => void;
+  showWelcome: () => void;
+  setWaypoint: (waypoint: Waypoint | null) => void;
+  openPanel: (panel: Panel | null) => void;
+  setMapOpen: (open: boolean) => void;
 };
 
 export const useCityStore = create<CityState>((set, get) => ({
+  started: false,
+  persona: null,
+  waypoint: null,
+  panel: null,
+  mapOpen: false,
   avatar: "girl",
   hijab: true,
   hijabColor: "#c49cad",
@@ -81,14 +105,15 @@ export const useCityStore = create<CityState>((set, get) => ({
   goTo: (scene) => {
     if (get().fading || get().scene === scene) return;
     const from = get().scene;
-    set({ fading: true, nearby: null, seat: null });
+    set({ fading: true, nearby: null, seat: null, panel: null, mapOpen: false });
     // Fade to black, swap the scene while the screen is covered, then fade back in.
     window.setTimeout(() => {
-      set({ scene, cameFrom: from === "hub" ? null : from });
+      set({ scene, cameFrom: from === "hub" ? null : from, waypoint: null });
       window.setTimeout(() => set({ fading: false }), 120);
     }, FADE_MS);
   },
   interact: () => {
+    if (!get().started || get().panel) return;
     if (get().seat) {
       get().stand();
       return;
@@ -103,4 +128,10 @@ export const useCityStore = create<CityState>((set, get) => ({
     set((s) => ({ toasts: [...s.toasts.slice(-2), { id, text, title }] }));
     window.setTimeout(() => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })), 6000);
   },
+  start: (persona) => set({ persona, started: true }),
+  setPersona: (persona) => set({ persona }),
+  showWelcome: () => set({ started: false, panel: null, mapOpen: false }),
+  setWaypoint: (waypoint) => set({ waypoint, mapOpen: false }),
+  openPanel: (panel) => set({ panel, nearby: null }),
+  setMapOpen: (mapOpen) => set({ mapOpen }),
 }));

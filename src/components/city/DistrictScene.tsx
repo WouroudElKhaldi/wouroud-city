@@ -7,6 +7,7 @@ import { type DistrictId, districtById } from "@/world/districts";
 import { computeDistrictLayout, STREET } from "@/world/layout";
 import { palette } from "@/world/palette";
 import { Building, DARK } from "./Building";
+import { BuildingDoors } from "./BuildingDoors";
 import { WorldGround } from "./HubScene";
 import { useGlowMaterial } from "./materials";
 import { Portal } from "./Portal";
@@ -25,6 +26,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
   const layout = useMemo(() => computeDistrictLayout(seedContent, id), [id]);
   const district = districtById(id);
   const goTo = useCityStore((s) => s.goTo);
+  const openPanel = useCityStore((s) => s.openPanel);
   const roadTopZ = STREET.startZ + 28;
   const length = roadTopZ - layout.streetEndZ;
   const centerZ = (roadTopZ + layout.streetEndZ) / 2;
@@ -83,8 +85,18 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       />
 
       {layout.buildings.map((spec) => (
-        <Building key={spec.id} spec={spec} />
+        <group
+          key={spec.id}
+          onClick={(e) => {
+            if (e.delta > 6) return;
+            e.stopPropagation();
+            openPanel({ district: id, id: spec.id });
+          }}
+        >
+          <Building spec={spec} />
+        </group>
       ))}
+      <BuildingDoors district={id} buildings={layout.buildings} />
       {layout.signposts.map((s) => (
         <Signpost key={`${s.side}${s.z}`} label={s.label} x={s.x} z={s.z} side={s.side} />
       ))}

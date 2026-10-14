@@ -1,23 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
-import { type AvatarKind, useCityStore } from "@/state/useCityStore";
-import { districtById } from "@/world/districts";
-import { GIRL_OUTFITS, type GirlOutfit, HIJAB_COLORS } from "@/world/outfits";
+import { useCityStore } from "@/state/useCityStore";
+import { districtById, landmarkDoorstep } from "@/world/districts";
+import { STREET } from "@/world/layout";
+import { PERSONAS } from "@/world/personas";
+import { Minimap } from "./Minimap";
 
-const avatars: { kind: AvatarKind; label: string }[] = [
-  { kind: "girl", label: "Girl" },
-  { kind: "guy", label: "Guy" },
-  { kind: "robot", label: "Robot" },
-];
+export const CV_URL = "/cv/Wouroud_El_Khaldi-cv.pdf";
 
 /** On-screen controls over the 3D city. */
 export function Hud() {
   const {
-    avatar,
-    hijab,
-    hijabColor,
-    outfit,
     timeMode,
     muted,
     scene,
@@ -25,14 +19,14 @@ export function Hud() {
     seat,
     fading,
     toasts,
-    setAvatar,
-    setHijab,
-    setOutfit,
-    setHijabColor,
+    persona,
+    waypoint,
     toggleTime,
     toggleMuted,
     interact,
     goTo,
+    showWelcome,
+    setWaypoint,
   } = useCityStore();
 
   // E or Enter activates whatever the player is standing next to.
@@ -46,6 +40,21 @@ export function Hud() {
 
   const place = scene === "hub" ? "Central Plaza" : districtById(scene).name;
   const prompt = seat ? "Stand up" : nearby?.label;
+  const p = persona ? PERSONAS[persona] : null;
+
+  /** Guided tour: in the hub, point to the next recommended district; in a district, back to the plaza. */
+  const nextStop = () => {
+    if (!p) return;
+    if (scene !== "hub") {
+      setWaypoint({ x: 0, z: STREET.startZ + 19, label: "the exit to Central Plaza" });
+      return;
+    }
+    const visited = useCityStore.getState().cameFrom;
+    const order = p.tour;
+    const next = order[visited ? (order.indexOf(visited) + 1) % order.length : 0];
+    const door = landmarkDoorstep(next, 13);
+    setWaypoint({ x: door.x, z: door.z, label: districtById(next).name });
+  };
 
   return (
     <>
@@ -56,6 +65,7 @@ export function Hud() {
               <p className="text-base font-semibold tracking-wide">Wouroud&apos;s City</p>
               <p className="text-violet-200">{place}</p>
             </div>
+            <Minimap />
             {scene !== "hub" && (
               <button type="button" onClick={() => goTo("hub")} className="hud-panel hud-button pointer-events-auto">
                 ← Back to the city
@@ -77,56 +87,29 @@ export function Hud() {
                 {timeMode === "day" ? "☀️ Day" : "🌙 Night"}
               </button>
             </div>
-            <div className="hud-panel pointer-events-auto flex flex-wrap items-center justify-end gap-1">
-              {avatars.map((a) => (
-                <button
-                  key={a.kind}
-                  type="button"
-                  onClick={() => setAvatar(a.kind)}
-                  aria-pressed={avatar === a.kind}
-                  className="hud-chip"
-                >
-                  {a.label}
+            {p && (
+              <div className="hud-panel pointer-events-auto flex flex-wrap items-center justify-end gap-2">
+                <span>
+                  {p.emoji} Visiting as <strong>{p.label}</strong>
+                </span>
+                <button type="button" className="hud-chip" onClick={showWelcome}>
+                  Change look
                 </button>
-              ))}
-              {avatar === "girl" && (
-                <label className="ml-1 flex cursor-pointer items-center gap-1.5 px-1">
-                  <input type="checkbox" checked={hijab} onChange={(e) => setHijab(e.target.checked)} />
-                  Hijab
-                </label>
-              )}
-            </div>
-            {avatar === "girl" && (
-              <div className="hud-panel pointer-events-auto flex flex-wrap items-center justify-end gap-1">
-                {(Object.keys(GIRL_OUTFITS) as GirlOutfit[]).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setOutfit(key)}
-                    aria-pressed={outfit === key}
-                    className="hud-chip"
-                  >
-                    {GIRL_OUTFITS[key].label}
-                  </button>
-                ))}
-                {hijab && (
-                  <div className="ml-1 flex items-center gap-1 border-l border-violet-300/30 pl-2">
-                    {HIJAB_COLORS.map((h) => (
-                      <button
-                        key={h.color}
-                        type="button"
-                        title={`${h.label} hijab`}
-                        aria-label={`${h.label} hijab`}
-                        aria-pressed={hijabColor === h.color}
-                        onClick={() => setHijabColor(h.color)}
-                        className="hud-swatch"
-                        style={{ background: h.color }}
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
             )}
+            <div className="flex flex-wrap justify-end gap-2">
+              <button type="button" className="hud-panel hud-button hud-gold pointer-events-auto" onClick={nextStop}>
+                ✦ {waypoint ? `Heading to ${waypoint.label}` : "Guide me: next stop"}
+              </button>
+              {persona === "recruiter" && (
+                <a href={CV_URL} download className="hud-panel hud-button hud-gold pointer-events-auto">
+                  📄 Download CV
+                </a>
+              )}
+              <a href="/resume" className="hud-panel hud-button pointer-events-auto">
+                Résumé page
+              </a>
+            </div>
             <div className="flex w-72 flex-col gap-2">
               {toasts.map((t) => (
                 <div key={t.id} className="hud-panel hud-toast">
@@ -148,9 +131,9 @@ export function Hud() {
 
         <div className="hud-panel max-w-sm self-start text-violet-100">
           <p>
-            <kbd>W A S D</kbd> walk · <kbd>Shift</kbd> run · <kbd>Space</kbd> jump · <kbd>E</kbd> interact
+            <kbd>W A S D</kbd> walk · <kbd>Shift</kbd> run · <kbd>Space</kbd> jump · <kbd>E</kbd> interact · <kbd>M</kbd> map
           </p>
-          <p>Drag to look · scroll to zoom · click trees, lamps, balls, flowers and cars</p>
+          <p>Drag to look · scroll to zoom · click trees, lamps, balls, flowers, cars and buildings</p>
         </div>
       </div>
 

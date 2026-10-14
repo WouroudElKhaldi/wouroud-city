@@ -12,6 +12,8 @@ export const worldEnv = {
 export const playerState = {
   position: new THREE.Vector3(0, 0, 12),
   speed: 0,
+  /** Direction of travel in radians: atan2(vx, vz). Used by the minimap arrow. */
+  heading: Math.PI,
 };
 
 /** Materials whose glow follows the night factor (lit windows, lamp bulbs, neon signs). */
