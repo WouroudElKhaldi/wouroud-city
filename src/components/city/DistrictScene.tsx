@@ -19,6 +19,7 @@ import { Balls, Knockables, Pigeons } from "./Playthings";
 import { Portal } from "./Portal";
 import { CodeBillboards, Fountain, Seats } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
+import { MarketStalls, Traffic } from "./Traffic";
 
 /**
  * One district on its own: a round neighborhood. A plaza with a fountain in the
@@ -63,6 +64,10 @@ export function DistrictScene({ id }: { id: DistrictId }) {
         { ...at(Math.PI / 4, mid), kind: "soccer" as const },
         { ...at((Math.PI * 5) / 4, mid), kind: "beach" as const },
       ],
+      stalls: [0.75, 1.25, 1.75].map((k) => {
+        const a = Math.PI * k + 0.32;
+        return { ...at(a, RING.plazaRadius + 6), rot: a };
+      }),
       cones: [-3, -1, 1, 3].map((x) => ({ x, z: ringRadius + RING.roadHalfWidth + 3, kind: "cone" as const })),
     };
   }, [parkEdge, ringRadius]);
@@ -159,6 +164,8 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       <Pigeons center={[0, RING.plazaRadius - 4]} radius={3} count={7} />
       <Balls spots={toys.balls} />
       <Knockables spots={toys.cones} />
+      <MarketStalls spots={toys.stalls} />
+      <Traffic radius={ringRadius} count={Math.max(4, Math.round(ringRadius / 7))} />
     </group>
   );
 }

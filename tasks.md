@@ -33,7 +33,7 @@ _(nothing; next up: 43 Better people)_
 41. ✅ Unique building per item: every building gets its own design from its data (CSS tower ≠ JS tower, Jamrex ≠ FitSync ≠ Hyperfocus). Signature shapes, roofs, colors, rooftop props and logos per skill / project / job
 42. ✅ District-specific architecture: Business = glass towers, Skills = neon downtown, Projects = harbor warehouses and ships, Campus = brick and clock tower, Training = park pavilions, Polyglot = old-town houses, Hobbies = art studios, Arcade = pier with rides
 43. ⬜ Better people: higher-quality CC0 characters (more detail, nicer faces), more variety for NPCs, better hijab and outfit fit
-44. ⬜ More life between buildings: fountains, statues, market stalls, trees in groups, benches, kids playing, birds, cars driving on the ring road
+44. ✅ More life: cars driving the ring road (they stop for you and honk), market stalls, fountain plaza, benches, tree groves, pigeons, walkers (statues and kids playing still open)
 
 ### A. Phones and tablets
 13. ✅ Responsive HUD on phones: nothing off-screen, compact top bar, smaller minimap, menu sheet for secondary buttons
