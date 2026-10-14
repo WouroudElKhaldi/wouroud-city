@@ -1,31 +1,45 @@
 "use client";
 
-import { AdaptiveDpr, KeyboardControls, PerformanceMonitor } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
+import { AdaptiveDpr, Environment, KeyboardControls, Lightformer, PerformanceMonitor } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Bloom, EffectComposer, SMAA, Vignette } from "@react-three/postprocessing";
 import { Physics } from "@react-three/rapier";
+import type { BloomEffect } from "postprocessing";
 import { Suspense, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { seedContent } from "@/content/seed";
-import { computeLayout } from "@/world/layout";
+import { useCityStore } from "@/state/useCityStore";
+import { landmarkDoorstep } from "@/world/districts";
+import { worldEnv } from "@/world/env";
 import { DayNight } from "./DayNight";
-import { Districts } from "./Districts";
-import { Ground } from "./Ground";
-import { keyboardMap, Player, SPAWN } from "./Player";
-import { StreetLamps, Trees } from "./StreetProps";
+import { DISTRICT_SPAWN, DistrictScene } from "./DistrictScene";
+import { HubScene } from "./HubScene";
+import { keyboardMap, Player } from "./Player";
+
+const HUB_SPAWN: [number, number, number] = [0, 2, 12];
 
 export default function CityCanvas() {
-  const layout = useMemo(() => computeLayout(seedContent), []);
-  const playerPosition = useRef(new THREE.Vector3(...SPAWN));
+  const scene = useCityStore((s) => s.scene);
+  const cameFrom = useCityStore((s) => s.cameFrom);
+  const playerPosition = useRef(new THREE.Vector3(...HUB_SPAWN));
   // Drop to a lower resolution on slow devices instead of stuttering.
   const [dpr, setDpr] = useState(1.5);
+  const [effects, setEffects] = useState(true);
+
+  // Where the player appears: the plaza, a landmark's doorstep when coming back, or a district's gate.
+  const spawn = useMemo(() => {
+    if (scene !== "hub") return { position: DISTRICT_SPAWN, facing: Math.PI };
+    if (!cameFrom) return { position: HUB_SPAWN, facing: Math.PI };
+    const door = landmarkDoorstep(cameFrom);
+    return { position: [door.x, 2, door.z] as [number, number, number], facing: Math.atan2(-door.x, -door.z) };
+  }, [scene, cameFrom]);
 
   return (
     <KeyboardControls map={keyboardMap}>
       <Canvas
         shadows
         dpr={dpr}
-        camera={{ fov: 55, near: 0.1, far: 1200, position: [0, 6, 45] }}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
+        camera={{ fov: 55, near: 0.1, far: 1200, position: [0, 6, 30] }}
+        gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
         onCreated={(state) => {
           state.gl.toneMapping = THREE.ACESFilmicToneMapping;
           state.gl.toneMappingExposure = 1.05;
@@ -33,19 +47,54 @@ export default function CityCanvas() {
           if (process.env.NODE_ENV === "development") Object.assign(window, { __city: { state, playerPosition } });
         }}
       >
-        <PerformanceMonitor onDecline={() => setDpr(1)} onIncline={() => setDpr(1.5)} />
+        <PerformanceMonitor
+          onDecline={() => {
+            setDpr(1);
+            setEffects(false);
+          }}
+          onIncline={() => setDpr(1.5)}
+        />
         <AdaptiveDpr pixelated />
         <DayNight followTarget={playerPosition} />
+        <CityEnvironment />
         <Suspense fallback={null}>
-          <Physics>
-            <Ground avenueEndZ={layout.avenueEndZ} />
-            <Districts layout={layout} />
-            <StreetLamps points={layout.lamps} />
-            <Trees points={layout.trees} />
-            <Player position={playerPosition} />
+          <Physics key={scene}>
+            {scene === "hub" ? <HubScene /> : <DistrictScene id={scene} />}
+            <Player position={playerPosition} spawn={spawn.position} facing={spawn.facing} />
           </Physics>
         </Suspense>
+        {effects && <Effects />}
       </Canvas>
     </KeyboardControls>
+  );
+}
+
+/**
+ * Soft studio lighting baked into an environment map from a few glowing panels,
+ * so glass and metal reflect something violet. No HDR file to download.
+ */
+function CityEnvironment() {
+  return (
+    <Environment resolution={256} frames={1}>
+      <Lightformer form="rect" intensity={2} color="#f3e8ff" position={[0, 6, -10]} scale={[20, 6, 1]} />
+      <Lightformer form="rect" intensity={1.4} color="#c4b5fd" position={[-10, 3, 0]} rotation-y={Math.PI / 2} scale={[20, 4, 1]} />
+      <Lightformer form="rect" intensity={1.2} color="#f0abfc" position={[10, 3, 0]} rotation-y={-Math.PI / 2} scale={[20, 4, 1]} />
+      <Lightformer form="ring" intensity={3} color="#ffffff" position={[0, 10, 0]} rotation-x={Math.PI / 2} scale={6} />
+    </Environment>
+  );
+}
+
+/** Bloom makes lit windows, neon and lamps glow; it strengthens as night falls. */
+function Effects() {
+  const bloom = useRef<BloomEffect>(null);
+  useFrame(() => {
+    if (bloom.current) bloom.current.intensity = 0.35 + worldEnv.night * 1.1;
+  });
+  return (
+    <EffectComposer multisampling={0}>
+      <Bloom ref={bloom} mipmapBlur luminanceThreshold={0.85} luminanceSmoothing={0.2} intensity={0.4} radius={0.7} />
+      <Vignette offset={0.25} darkness={0.55} />
+      <SMAA />
+    </EffectComposer>
   );
 }

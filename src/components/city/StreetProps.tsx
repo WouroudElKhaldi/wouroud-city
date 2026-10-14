@@ -5,9 +5,11 @@ import { CylinderCollider, RigidBody } from "@react-three/rapier";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { registerNightGlow, worldEnv } from "@/world/env";
+import type { LampSpot } from "@/world/layout";
 import { palette } from "@/world/palette";
 
 type Point = [number, number];
+
 
 /** Fills an instanced mesh from a list of matrices once. */
 function useInstances(ref: React.RefObject<THREE.InstancedMesh | null>, matrices: THREE.Matrix4[], colors?: THREE.Color[]) {
@@ -37,7 +39,7 @@ function at(x: number, y: number, z: number, rotY = 0, scale = 1) {
  * At night each lamp also paints a warm pool of light on the ground — a cheap fake
  * instead of dozens of real lights, so the frame rate stays high.
  */
-export function StreetLamps({ points }: { points: Point[] }) {
+export function StreetLamps({ points }: { points: LampSpot[] }) {
   const poles = useRef<THREE.InstancedMesh>(null);
   const arms = useRef<THREE.InstancedMesh>(null);
   const bulbs = useRef<THREE.InstancedMesh>(null);
@@ -48,12 +50,14 @@ export function StreetLamps({ points }: { points: Point[] }) {
     const armM: THREE.Matrix4[] = [];
     const bulbM: THREE.Matrix4[] = [];
     const poolM: THREE.Matrix4[] = [];
-    for (const [x, z] of points) {
-      const inward = x > 0 ? -1 : 1;
+    for (const { x, z, rot } of points) {
+      // Unit vector of the arm direction in world space.
+      const dx = Math.cos(rot);
+      const dz = -Math.sin(rot);
       poleM.push(at(x, 2.5, z));
-      armM.push(at(x + inward * 0.7, 4.9, z));
-      bulbM.push(at(x + inward * 1.35, 4.7, z));
-      poolM.push(at(x + inward * 1.35, 0.04, z));
+      armM.push(at(x + dx * 0.7, 4.9, z + dz * 0.7, rot));
+      bulbM.push(at(x + dx * 1.35, 4.7, z + dz * 1.35));
+      poolM.push(at(x + dx * 1.6, 0.04, z + dz * 1.6));
     }
     return { poleM, armM, bulbM, poolM };
   }, [points]);
@@ -89,7 +93,7 @@ export function StreetLamps({ points }: { points: Point[] }) {
   return (
     <group>
       <RigidBody type="fixed" colliders={false}>
-        {points.map(([x, z]) => (
+        {points.map(({ x, z }) => (
           <CylinderCollider key={`${x}:${z}`} args={[2.5, 0.15]} position={[x, 2.5, z]} />
         ))}
       </RigidBody>
@@ -108,7 +112,6 @@ export function StreetLamps({ points }: { points: Point[] }) {
         ref={pools}
         args={[undefined, undefined, points.length]}
         material={poolMaterial}
-        rotation-x={0}
         renderOrder={2}
       >
         <cylinderGeometry args={[4, 4, 0.01, 32]} />

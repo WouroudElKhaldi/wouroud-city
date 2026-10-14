@@ -54,6 +54,7 @@ export function DayNight({ followTarget }: { followTarget: React.RefObject<THREE
 
     (scene.background as THREE.Color).lerpColors(colors.daySky, colors.nightSky, n);
     (scene.fog as THREE.Fog).color.lerpColors(colors.dayFog, colors.nightFog, n);
+    scene.environmentIntensity = THREE.MathUtils.lerp(1, 0.3, n);
 
     if (hemi.current) {
       hemi.current.color.lerpColors(colors.dayHemiSky, colors.nightHemiSky, n);

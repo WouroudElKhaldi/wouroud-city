@@ -26,14 +26,22 @@ const FLOAT_HEIGHT = 0.3;
 /** Distance from the controller's center down to the ground it floats above (the ground ray adds ~6 cm). */
 const FEET_OFFSET = CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS + FLOAT_HEIGHT + 0.06;
 
-export const SPAWN: [number, number, number] = [0, 2, 33];
 
 /**
  * The visitor: an Ecctrl physics character, fed by the keyboard,
  * with a third-person camera that follows and can be orbited by dragging.
  * `position` is written every frame for the sun, the minimap and anything else that follows the player.
  */
-export function Player({ position }: { position: React.RefObject<THREE.Vector3 | null> }) {
+export function Player({
+  position,
+  spawn,
+  facing,
+}: {
+  position: React.RefObject<THREE.Vector3 | null>;
+  spawn: [number, number, number];
+  /** Yaw in radians; the avatar faces (sin, cos) of this angle. */
+  facing: number;
+}) {
   const controller = useRef<EcctrlHandle>(null);
   const camera = useRef<EcctrlCameraControlsHandle>(null);
   const [, getKeys] = useKeyboardControls<Controls>();
@@ -41,8 +49,16 @@ export function Player({ position }: { position: React.RefObject<THREE.Vector3 |
   const hijab = useCityStore((s) => s.hijab);
 
   useEffect(() => {
-    // Start behind the player, looking down the avenue.
-    camera.current?.setLookAt(SPAWN[0], SPAWN[1] + 3, SPAWN[2] + 8, SPAWN[0], SPAWN[1], SPAWN[2] - 4, false);
+    // Start behind the player, looking the way they face.
+    const fx = Math.sin(facing);
+    const fz = Math.cos(facing);
+    const [x, y, z] = spawn;
+    camera.current?.setLookAt(x - fx * 8, y + 3, z - fz * 8, x + fx * 4, y, z + fz * 4, false);
+  }, [spawn, facing]);
+
+  useEffect(() => {
+    // Lets the browser console move the player while debugging.
+    if (process.env.NODE_ENV === "development") Object.assign(window, { __player: controller });
   }, []);
 
   useFrame(() => {
@@ -58,8 +74,8 @@ export function Player({ position }: { position: React.RefObject<THREE.Vector3 |
     <>
       <Ecctrl
         ref={controller}
-        position={SPAWN}
-        rotation={[0, Math.PI, 0]}
+        position={spawn}
+        rotation={[0, facing, 0]}
         capsuleHalfHeight={CAPSULE_HALF_HEIGHT}
         capsuleRadius={CAPSULE_RADIUS}
         floatHeight={FLOAT_HEIGHT}

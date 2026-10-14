@@ -58,3 +58,19 @@ kbd {
   background: rgb(243 232 255 / 0.15);
   border: 1px solid rgb(243 232 255 / 0.3);
 }
+
+.hud-prompt {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  border-color: rgb(240 171 252 / 0.7);
+  box-shadow: 0 0 24px rgb(159 122 234 / 0.55);
+  animation: hud-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes hud-pulse {
+  50% {
+    box-shadow: 0 0 36px rgb(240 171 252 / 0.75);
+  }
+}
