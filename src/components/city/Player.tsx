@@ -11,10 +11,8 @@ import { useCityStore } from "@/state/useCityStore";
 import { playerState } from "@/world/env";
 import { touchInput } from "@/world/touch";
 import { Avatar } from "./Avatar";
-import { GIRL_OUTFITS, GUY_OUTFIT } from "@/world/outfits";
-import { Character, type CharacterAnimation } from "./Character";
+import type { CharacterAnimation } from "./Character";
 import { Person } from "./Person";
-import { USE_NEW_BODIES as NEW_BODY } from "@/world/flags";
 import { playerLook } from "@/world/outfits";
 import { HorseModel, SADDLE_HEIGHT } from "./Horse";
 
@@ -59,17 +57,13 @@ export function Player({
   const camera = useRef<EcctrlCameraControlsHandle>(null);
   const [, getKeys] = useKeyboardControls<Controls>();
   const avatar = useCityStore((s) => s.avatar);
-  const hijab = useCityStore((s) => s.hijab);
   const outfitKey = useCityStore((s) => s.outfit);
-  const hijabColor = useCityStore((s) => s.hijabColor);
   const seat = useCityStore((s) => s.seat);
   const driving = useCityStore((s) => s.driving);
   const riding = driving?.model === "horse";
   /** The car's own speed and heading while driving (m/s, radians). */
   const car = useRef({ speed: 0, heading: 0 });
   const [animation, setAnimation] = useState<CharacterAnimation>("idle");
-  const outfit = avatar === "guy" ? GUY_OUTFIT : GIRL_OUTFITS[outfitKey];
-  const wearsHijab = avatar === "girl" && hijab;
   const seatQuat = useMemo(() => new THREE.Quaternion(), []);
   /** Seconds the controller has been off the ground; tiny bumps don't count as falling. */
   const airborne = useRef(0);
@@ -240,24 +234,10 @@ export function Player({
           visible={!driving || riding}
         >
           {avatar === "robot" ? (
-            <Avatar kind="robot" hijab={false} controller={controller} />
+            <Avatar kind="robot" controller={controller} />
           ) : (
-            <Suspense fallback={<Avatar kind={avatar} hijab={hijab} controller={controller} />}>
-              {NEW_BODY ? (
-                <Person look={playerLook(avatar, outfitKey, hijab, hijabColor)} animation={animation} matchPlayerSpeed />
-              ) : (
-                <Character
-                  file={outfit.file}
-                  colors={outfit.colors}
-                  // Wearing a hijab always means a fully covering outfit.
-                  modest={wearsHijab || outfit.alwaysModest ? outfit.modest : undefined}
-                  animation={animation}
-                  matchPlayerSpeed
-                  hair={outfit.hair}
-                  hijab={wearsHijab}
-                  hijabColor={hijabColor}
-                />
-              )}
+            <Suspense fallback={<Avatar kind={avatar} controller={controller} />}>
+              <Person look={playerLook(avatar, outfitKey)} animation={animation} matchPlayerSpeed />
             </Suspense>
           )}
         </group>

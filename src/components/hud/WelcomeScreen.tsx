@@ -4,7 +4,7 @@ import { useProgress } from "@react-three/drei";
 import { useEffect, useState } from "react";
 import { seedContent } from "@/content/seed";
 import { type AvatarKind, useCityStore } from "@/state/useCityStore";
-import { GIRL_OUTFITS, type GirlOutfit, HIJAB_COLORS } from "@/world/outfits";
+import { LOOKS } from "@/world/outfits";
 import { PERSONAS, type Persona } from "@/world/personas";
 import { useIsTouch } from "@/world/touch";
 
@@ -47,8 +47,7 @@ function useCityReady() {
  * and how they look. The city loads behind it, with progress on the enter button.
  */
 export function WelcomeScreen() {
-  const { persona, avatar, hijab, hijabColor, outfit, start, setAvatar, setHijab, setHijabColor, setOutfit } =
-    useCityStore();
+  const { persona, avatar, outfit, start, setAvatar, setOutfit } = useCityStore();
   const [choice, setChoice] = useState<Persona | null>(persona);
   const profile = seedContent.profile;
   const touch = useIsTouch();
@@ -108,38 +107,19 @@ export function WelcomeScreen() {
               </button>
             ))}
           </div>
-          {avatar === "girl" && (
+          {avatar !== "robot" && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <label className="welcome-chip cursor-pointer">
-                <input type="checkbox" checked={hijab} onChange={(e) => setHijab(e.target.checked)} /> Hijab
-              </label>
-              {(Object.keys(GIRL_OUTFITS) as GirlOutfit[]).map((key) => (
+              {LOOKS[avatar].map((l) => (
                 <button
-                  key={key}
+                  key={l.id}
                   type="button"
-                  onClick={() => setOutfit(key)}
-                  aria-pressed={outfit === key}
+                  onClick={() => setOutfit(l.id)}
+                  aria-pressed={outfit === l.id}
                   className="welcome-chip"
                 >
-                  {GIRL_OUTFITS[key].label}
+                  {l.label}
                 </button>
               ))}
-              {hijab && (
-                <span className="ml-1 flex items-center gap-1.5">
-                  {HIJAB_COLORS.map((h) => (
-                    <button
-                      key={h.color}
-                      type="button"
-                      title={`${h.label} hijab`}
-                      aria-label={`${h.label} hijab`}
-                      aria-pressed={hijabColor === h.color}
-                      onClick={() => setHijabColor(h.color)}
-                      className="hud-swatch"
-                      style={{ background: h.color }}
-                    />
-                  ))}
-                </span>
-              )}
             </div>
           )}
         </section>

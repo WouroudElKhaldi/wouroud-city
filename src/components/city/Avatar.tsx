@@ -16,11 +16,9 @@ import { registerNightGlow } from "@/world/env";
  */
 export function Avatar({
   kind,
-  hijab,
   controller,
 }: {
   kind: AvatarKind;
-  hijab: boolean;
   controller: React.RefObject<EcctrlHandle | null>;
 }) {
   const leftLeg = useRef<THREE.Group>(null);
@@ -105,7 +103,7 @@ export function Avatar({
         </group>
       ))}
 
-      {kind === "robot" ? <RobotHead /> : <HumanHead kind={kind} hijab={hijab} skin={look.skin} hair={look.hair} />}
+      {kind === "robot" ? <RobotHead /> : <HumanHead kind={kind} skin={look.skin} hair={look.hair} />}
     </group>
   );
 }
@@ -140,7 +138,7 @@ const LOOKS = {
   },
 } as const;
 
-function HumanHead({ kind, hijab, skin, hair }: { kind: AvatarKind; hijab: boolean; skin: string; hair: string }) {
+function HumanHead({ kind, skin, hair }: { kind: AvatarKind; skin: string; hair: string }) {
   return (
     <group position={[0, 1.6, 0]}>
       <mesh position={[0, -0.12, 0]}>
@@ -158,19 +156,7 @@ function HumanHead({ kind, hijab, skin, hair }: { kind: AvatarKind; hijab: boole
           <meshStandardMaterial color="#1a103d" />
         </mesh>
       ))}
-      {kind === "girl" && hijab ? (
-        <group>
-          {/* Hijab: wraps the head and frames the face, then drapes over the shoulders */}
-          <mesh position={[0, 0.02, -0.035]} castShadow>
-            <sphereGeometry args={[0.192, 24, 24]} />
-            <meshStandardMaterial color="#b48ea8" roughness={0.8} />
-          </mesh>
-          <mesh position={[0, -0.2, -0.01]} castShadow>
-            <cylinderGeometry args={[0.15, 0.3, 0.26, 24]} />
-            <meshStandardMaterial color="#b48ea8" roughness={0.8} />
-          </mesh>
-        </group>
-      ) : kind === "girl" ? (
+      {kind === "girl" ? (
         <group>
           <mesh position={[0, 0.04, -0.03]} castShadow>
             <sphereGeometry args={[0.18, 20, 20, 0, Math.PI * 2, 0, Math.PI * 0.6]} />

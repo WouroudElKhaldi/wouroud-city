@@ -17,22 +17,19 @@ import { seedContent } from "@/content/seed";
 import { computeDistrictLayout } from "@/world/layout";
 import { HubScene } from "./HubScene";
 import { keyboardMap, Player } from "./Player";
-import { GIRL_OUTFITS, GUY_OUTFIT, NPC_LOOKS } from "@/world/outfits";
+import { LOOKS, NPC_PEOPLE } from "@/world/outfits";
 import { Particles } from "./Particles";
 import { PlayerSpotlight } from "./PlayerSpotlight";
 import { WaypointGuide } from "./Guidance";
 import { Weather } from "./Weather";
 import { PhotoCapture } from "./PhotoCapture";
-import { preloadCharacters } from "./Character";
 import { preloadPeople } from "./Person";
-import { USE_NEW_BODIES } from "@/world/flags";
 import { preloadFoliage } from "./Foliage";
 import { preloadPlaythings } from "./Playthings";
 
 preloadFoliage();
 preloadPlaythings();
-if (USE_NEW_BODIES) preloadPeople();
-else preloadCharacters([...new Set([...Object.values(GIRL_OUTFITS).map((o) => o.file), GUY_OUTFIT.file, ...NPC_LOOKS.map((l) => l.file)])]);
+preloadPeople([LOOKS.girl[0].id, LOOKS.guy[0].id, ...new Set(NPC_PEOPLE.map((p) => p.id))]);
 
 const HUB_SPAWN: [number, number, number] = [0, 2, 12];
 

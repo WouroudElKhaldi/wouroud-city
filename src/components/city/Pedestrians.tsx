@@ -9,21 +9,14 @@ import { seedContent } from "@/content/seed";
 import { useCityStore } from "@/state/useCityStore";
 import { playerState } from "@/world/env";
 import { sfx } from "@/world/sfx";
-import { USE_NEW_BODIES } from "@/world/flags";
-import { NPC_LOOKS, NPC_PEOPLE } from "@/world/outfits";
+import { NPC_PEOPLE } from "@/world/outfits";
 import { Person, type PersonLook } from "./Person";
-import type { ModestLayers } from "./garments";
-import { Character, type CharacterAnimation, type PersonFile } from "./Character";
+import type { CharacterAnimation } from "./Character";
 import { useProximity } from "./useProximity";
 
 export type Walker = {
   id: string;
   name: string;
-  file: PersonFile;
-  colors: Record<string, string>;
-  hijab?: string;
-  modest?: ModestLayers;
-  /** The same person on the new bodies */
   person: PersonLook;
   /** Closed loop of waypoints on the ground */
   path: [number, number][];
@@ -124,18 +117,7 @@ function Pedestrian({ walker }: { walker: Walker }) {
         <CapsuleCollider args={[0.45, 0.35]} />
       </RigidBody>
       <group ref={visual}>
-        {USE_NEW_BODIES ? (
-          <Person look={walker.person} animation={animation} />
-        ) : (
-          <Character
-            file={walker.file}
-            colors={walker.colors}
-            hijab={Boolean(walker.hijab)}
-            hijabColor={walker.hijab}
-            modest={walker.modest}
-            animation={animation}
-          />
-        )}
+        <Person look={walker.person} animation={animation} detail={false} />
         {line && (
           <Html position={[0, 2.25, 0]} center distanceFactor={9} zIndexRange={[20, 0]}>
             <div className="npc-bubble">
@@ -184,7 +166,6 @@ export function makeWalkers(
     return {
       id: `${prefix}-${i}`,
       name: NAMES[(i + prefix.length) % NAMES.length],
-      ...NPC_LOOKS[(i * 3 + prefix.length) % NPC_LOOKS.length],
       person: NPC_PEOPLE[(i * 3 + prefix.length) % NPC_PEOPLE.length],
       path,
       speed: 1.1 + (i % 3) * 0.25,

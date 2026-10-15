@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { DistrictId } from "@/world/districts";
-import type { GirlOutfit } from "@/world/outfits";
+import { DEFAULT_LOOK, LOOKS } from "@/world/outfits";
 import type { Persona } from "@/world/personas";
 import { setMuted } from "@/world/sfx";
 
@@ -50,9 +50,8 @@ type CityState = {
   /** Where cars were left after a drive, by car id (they don't jump back to their old spot). */
   parked: Record<string, CarSpot>;
   avatar: AvatarKind;
-  hijab: boolean;
-  hijabColor: string;
-  outfit: GirlOutfit;
+  /** The avatar's look: a Rocketbox avatar id from LOOKS */
+  outfit: string;
   timeMode: TimeMode;
   weather: Weather;
   muted: boolean;
@@ -66,9 +65,7 @@ type CityState = {
   gesture: { name: "interact-right" | "emote-yes" | "pick-up"; at: number } | null;
   toasts: Toast[];
   setAvatar: (avatar: AvatarKind) => void;
-  setHijab: (hijab: boolean) => void;
-  setOutfit: (outfit: GirlOutfit) => void;
-  setHijabColor: (color: string) => void;
+  setOutfit: (outfit: string) => void;
   toggleTime: () => void;
   cycleWeather: () => void;
   toggleMuted: () => void;
@@ -104,9 +101,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   exitCar: false,
   parked: {},
   avatar: "girl",
-  hijab: true,
-  hijabColor: "#c49cad",
-  outfit: "dress",
+  outfit: DEFAULT_LOOK,
   timeMode: "day",
   weather: "clear",
   muted: false,
@@ -117,10 +112,8 @@ export const useCityStore = create<CityState>((set, get) => ({
   seat: null,
   gesture: null,
   toasts: [],
-  setAvatar: (avatar) => set({ avatar }),
-  setHijab: (hijab) => set({ hijab }),
+  setAvatar: (avatar) => set({ avatar, outfit: avatar === "robot" ? get().outfit : LOOKS[avatar][0].id }),
   setOutfit: (outfit) => set({ outfit }),
-  setHijabColor: (hijabColor) => set({ hijabColor }),
   toggleTime: () => set((s) => ({ timeMode: s.timeMode === "day" ? "night" : "day" })),
   cycleWeather: () => set((s) => ({ weather: WEATHERS[(WEATHERS.indexOf(s.weather) + 1) % WEATHERS.length] })),
   toggleMuted: () => {
