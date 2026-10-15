@@ -18,6 +18,7 @@ import { Beacons } from "./Guidance";
 import { ChatGroups, type ChatGroup, makeWalkers, Pedestrians } from "./Pedestrians";
 import { Statue } from "./Person";
 import { WouroudGuide } from "./WouroudGuide";
+import { GuestbookStand } from "./CityBoards";
 import { Horizon } from "./Horizon";
 import { NPC_PEOPLE } from "@/world/outfits";
 import { Balls, Knockables, type ParkedCar, ParkedCars, Pigeons } from "./Playthings";
@@ -110,6 +111,7 @@ export function HubScene() {
       <Pedestrians walkers={HUB_WALKERS} />
       <ChatGroups groups={HUB_CHATS} />
       <WouroudGuide x={3.2} z={9} facing={Math.atan2(-3.2, 3)} />
+      <GuestbookStand x={-3.6} z={9.6} facing={Math.atan2(3.6, 3.4)} />
     </group>
   );
 }

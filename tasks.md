@@ -48,8 +48,8 @@ P16. ⬜ **Next level** (owner, 2026-10-15: "not just a room in every building, 
    b. ✅ A story to play: 16 quests with XP and levels, badges and a journal (J or 📖 in the HUD; `state/progress.ts`, `hud/Journal.tsx`, saved in the browser), 5 hidden golden ducks (`Ducks.tsx`, `DUCK_SPOTS`); the recruiter tour already exists ("Guide me: next stop")
    c. ✅ Wouroud herself in the city: her hijab look (`WOUROUD_LOOK`, Female_Adult_06, kept out of the crowd) by the hub fountain (`WouroudGuide.tsx`) waves and turns to you; "Talk to Wouroud" opens Ask Wouroud (`hud/AskWouroud.tsx`): questions answered from the live portfolio content (`world/askWouroud.ts`, keyword intents + skill/project/company names, free and offline) with "Show me the way" waypoints
    d. 🔄 Grander architecture: ✅ mountains on the horizon (`Horizon.tsx`, snow caps, haze, darker at night), ✅ the Mediterranean beyond the south edge with a granite seawall, ✅ the Corniche promenade in the hub (paving, railing, palms, lampposts, benches facing the sea), ✅ lobby fronts (P6); ⬜ balconies/shop signage on facades
-   e. Polish: cinematic intro flyover, photo filters, soundtrack, mobile performance
-   f. Live data (with P15): edit from /admin, visitors' high scores and a guestbook shown in the city
+   e. ✅ Polish: cinematic intro flyover on the first visit of a session (`IntroFlyover.tsx`, any key/click skips, off with reduced motion), photo filters (🎞️ in the HUD: Natural, Vivid, Golden hour, Vintage, Black & white), soundtrack (per-district music, P14), phones get about a third of the grass blades (`GRASS_SCALE`)
+   f. ✅ Live data (with P15): edit from /admin ✅; the city guestbook by the hub fountain (board with the newest notes + lectern, E to read all and sign; `/api/guestbook`, `CityBoards.tsx`, `hud/Guestbook.tsx`; no links, rate limited; hide/show/delete in /admin) and the arcade Hall of Fame beside the rally start line (top 3 of each game, refreshed live); new quest "Leave your mark". Needs MONGO_DB_URL to come alive (offline it says so)
 
 ## 🔄 In progress
 

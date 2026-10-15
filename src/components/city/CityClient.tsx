@@ -10,6 +10,7 @@ import { WelcomeScreen } from "@/components/hud/WelcomeScreen";
 import type { Content } from "@/content/schema";
 import { setLiveContent } from "@/content/live";
 import { FlappyGame } from "@/components/hud/FlappyGame";
+import { Guestbook } from "@/components/hud/Guestbook";
 import { AskWouroud } from "@/components/hud/AskWouroud";
 import { Journal } from "@/components/hud/Journal";
 import { MenuCard } from "@/components/hud/MenuCard";
@@ -50,6 +51,7 @@ export function CityClient({ content }: { content: Content }) {
           {activity === "paint" && <PaintStudio />}
           {activity === "xo" && <XoGame />}
           {activity === "flappy" && <FlappyGame />}
+          {activity === "guestbook" && <Guestbook />}
           <RaceHud />
           <MenuCard />
           <Journal />

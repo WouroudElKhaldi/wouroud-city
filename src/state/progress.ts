@@ -19,7 +19,8 @@ export type GameEvent =
   | { type: "flappy"; score: number }
   | { type: "stack"; score: number }
   | { type: "race"; position: number }
-  | { type: "crochet" };
+  | { type: "crochet" }
+  | { type: "guestbook" };
 
 export type Progress = {
   districts: string[];
@@ -36,6 +37,8 @@ export type Progress = {
   bestStack: number;
   bestRace: number;
   crochet: number;
+  /** Guestbook notes written (missing in progress saved before the guestbook existed) */
+  signed?: number;
 };
 
 export type Quest = { id: string; icon: string; title: string; text: string; xp: number; goal: number; value: (p: Progress) => number };
@@ -59,6 +62,7 @@ export const QUESTS: Quest[] = [
   { id: "ducks", icon: "🦆", title: "Duck hunt", text: `Find the ${DUCKS} golden rubber ducks hidden in the city`, xp: 100, goal: DUCKS, value: (p) => p.ducks.length },
   { id: "photographer", icon: "📸", title: "Photographer", text: "Take a photo of the city", xp: 15, goal: 1, value: (p) => p.photos },
   { id: "maker", icon: "🧶", title: "Maker", text: "Finish a crochet bunny in the Hobby Quarter", xp: 30, goal: 1, value: (p) => p.crochet },
+  { id: "guest", icon: "✍️", title: "Leave your mark", text: "Sign the guestbook by the hub fountain", xp: 20, goal: 1, value: (p) => p.signed ?? 0 },
 ];
 
 export const levelOf = (xp: number) => Math.floor(xp / 100) + 1;
@@ -112,6 +116,8 @@ function apply(p: Progress, e: GameEvent): Progress {
       return { ...p, bestRace: p.bestRace === 0 ? e.position : Math.min(p.bestRace, e.position) };
     case "crochet":
       return { ...p, crochet: p.crochet + 1 };
+    case "guestbook":
+      return { ...p, signed: (p.signed ?? 0) + 1 };
   }
 }
 

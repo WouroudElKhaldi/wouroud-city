@@ -32,7 +32,7 @@ export type DrivingCar = { id: string; model: string; from: { x: number; z: numb
 export type CarSpot = { x: number; z: number; rot: number };
 
 /** A full-screen mini activity: an arcade game or the painting easel. */
-export type Activity = "stack" | "paint" | "xo" | "flappy";
+export type Activity = "stack" | "paint" | "xo" | "flappy" | "guestbook";
 
 /**
  * A race against bots on the Arcade Pier's ring road. "grid": waiting for the arcade scene to

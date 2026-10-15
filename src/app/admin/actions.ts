@@ -1,5 +1,6 @@
 "use server";
 
+import { ObjectId } from "mongodb";
 import { updateTag } from "next/cache";
 import { z } from "zod";
 import { isAdmin, signIn, signOut } from "@/auth";
@@ -64,4 +65,35 @@ export async function signInWithGoogle() {
 
 export async function signOutAdmin() {
   await signOut({ redirectTo: "/admin" });
+}
+
+export type AdminNote = { id: string; name: string; from?: string; message: string; at: string; hidden: boolean };
+
+/** The newest 100 guestbook notes, hidden ones included. */
+export async function guestbookNotes(): Promise<AdminNote[]> {
+  if (!(await isAdmin())) return [];
+  const database = await db();
+  if (!database) return [];
+  const docs = await database.collection("guestbook").find({}).sort({ at: -1 }).limit(100).toArray();
+  return docs.map((d) => ({
+    id: String(d._id),
+    name: String(d.name),
+    from: d.from ? String(d.from) : undefined,
+    message: String(d.message),
+    at: new Date(d.at).toISOString(),
+    hidden: !!d.hidden,
+  }));
+}
+
+const idSchema = z.string().regex(/^[a-f0-9]{24}$/);
+
+/** Hide or show a note in the city, or delete it for good. */
+export async function moderateNote(id: string, action: "hide" | "show" | "delete"): Promise<boolean> {
+  if (!(await isAdmin()) || !idSchema.safeParse(id).success) return false;
+  const database = await db();
+  if (!database) return false;
+  const filter = { _id: new ObjectId(id) };
+  if (action === "delete") await database.collection("guestbook").deleteOne(filter);
+  else await database.collection("guestbook").updateOne(filter, { $set: { hidden: action === "hide" } });
+  return true;
 }

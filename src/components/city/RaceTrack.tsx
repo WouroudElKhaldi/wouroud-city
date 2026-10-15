@@ -10,6 +10,7 @@ import { NPC_PEOPLE } from "@/world/outfits";
 import { sfx } from "@/world/sfx";
 import { CAR_SCALE, CarModel, type CarMotion } from "./CarModel";
 import { Person } from "./Person";
+import { HallOfFame } from "./CityBoards";
 import { Text } from "./Text3D";
 import { track } from "@/state/progress";
 
@@ -200,8 +201,15 @@ export function RaceTrack({ radius }: { radius: number }) {
       </group>
 
       <Grandstand radius={radius} />
+      <FameBoard radius={radius} />
     </group>
   );
+}
+
+/** The Hall of Fame, on the other side of the start line from the grandstand, facing the road. */
+function FameBoard({ radius }: { radius: number }) {
+  const spot = at(-0.24, radius + 9);
+  return <HallOfFame x={spot.x} z={spot.z} facing={Math.atan2(-spot.x, -spot.z)} />;
 }
 
 /** A small grandstand beside the start line with people watching the race. */

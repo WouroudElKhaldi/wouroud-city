@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ADMIN_EMAIL, auth, authConfigured, isAdmin } from "@/auth";
-import { signInWithGoogle, signOutAdmin, storedContent } from "./actions";
+import { guestbookNotes, signInWithGoogle, signOutAdmin, storedContent } from "./actions";
 import { AdminEditor } from "./AdminEditor";
+import { GuestbookAdmin } from "./GuestbookAdmin";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 
@@ -55,7 +56,7 @@ async function Gate() {
       </section>
     );
   }
-  const { content, published } = await storedContent();
+  const [{ content, published }, notes] = await Promise.all([storedContent(), guestbookNotes()]);
   return (
     <section className="mt-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -69,6 +70,7 @@ async function Gate() {
         </form>
       </div>
       <AdminEditor content={content} />
+      <GuestbookAdmin notes={notes} />
     </section>
   );
 }

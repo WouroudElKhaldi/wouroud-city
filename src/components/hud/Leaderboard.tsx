@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLiveData } from "@/state/liveData";
 
 /**
  * The Arcade Pier leaderboard for one game, shown on its game-over screen: the top 10 and a form to
@@ -67,6 +68,8 @@ export function Leaderboard({ game, score, unit = "" }: { game: Game; score: num
       setSent(true);
       setError("");
       void load();
+      // The Hall of Fame on the pier shows the new score too.
+      void useLiveData.getState().loadScores();
     } else {
       const d = (await res?.json().catch(() => null)) as { error?: string; offline?: boolean } | null;
       if (d?.offline) setOffline(true);
