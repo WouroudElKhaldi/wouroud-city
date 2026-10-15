@@ -8,6 +8,7 @@ import { PaintStudio } from "@/components/hud/PaintStudio";
 import { StackGame } from "@/components/hud/StackGame";
 import { WelcomeScreen } from "@/components/hud/WelcomeScreen";
 import { FlappyGame } from "@/components/hud/FlappyGame";
+import { MenuCard } from "@/components/hud/MenuCard";
 import { RaceHud } from "@/components/hud/RaceHud";
 import { XoGame } from "@/components/hud/XoGame";
 import { useCityStore } from "@/state/useCityStore";
@@ -44,6 +45,7 @@ export function CityClient() {
           {activity === "xo" && <XoGame />}
           {activity === "flappy" && <FlappyGame />}
           <RaceHud />
+          <MenuCard />
         </>
       ) : (
         <WelcomeScreen />

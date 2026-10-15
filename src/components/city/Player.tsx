@@ -166,7 +166,7 @@ export function Player({
         c.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
         st.speed = 0;
       }
-    } else if (!store.started || store.panel || store.mapOpen || store.activity) {
+    } else if (!store.started || store.panel || store.mapOpen || store.activity || store.menu) {
       // Welcome screen, info panel or big map open: stand still.
       c.setMovement(STILL);
     } else {

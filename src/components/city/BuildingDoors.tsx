@@ -23,7 +23,6 @@ export function BuildingDoors({ district, buildings }: { district: DistrictId; b
     let bestD = RADIUS * RADIUS;
     if (store.started && !store.seat && !store.fading && !store.panel && !store.activity && !store.driving) {
       for (const b of buildings) {
-        if (b.filler) continue;
         const door = doorPoint(b);
         const d = (door.x - playerState.position.x) ** 2 + (door.z - playerState.position.z) ** 2;
         if (d < bestD) {

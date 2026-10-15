@@ -15,6 +15,7 @@ import { Bookcase, FloorLamp, Painting, Rug, Sofa, sofaSeats, Table, TallPlant }
 import { OnWall, useRoom } from "./InteriorScene";
 import { emitBurst } from "./Particles";
 import { box, font, Panel, useCanvas, wrap } from "./roomKit";
+import { ShopRoom } from "./Shops";
 import { Seats } from "./StreetDetails";
 import { Text } from "./Text3D";
 import { useProximity } from "./useProximity";
@@ -30,8 +31,9 @@ import { useProximity } from "./useProximity";
  *  - Hobbies: a studio per hobby (easel, camera, bookshelves, a crochet corner…)
  *  - Arcade: a game hall with the cabinet for that building's game, or the rally garage
  */
-export function ThemedRoom({ district, id, accent }: { district: DistrictId; id: string; accent: string }) {
+export function ThemedRoom({ district, id, accent, label }: { district: DistrictId; id: string; accent: string; label: string }) {
   const c = seedContent;
+  if (id.startsWith("filler-")) return <ShopRoom label={label} />;
   switch (district) {
     case "skills": {
       const skill = c.skills.find((s) => s.id === id);
@@ -104,26 +106,26 @@ function Board({
       ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = accent;
       ctx.fillRect(0, 0, w, 14);
-      let y = 60;
+      let y = 74;
       ctx.textBaseline = "alphabetic";
       if (kicker) {
         ctx.fillStyle = dark ? "#cfe3d6" : accent;
-        ctx.font = font(26, "700");
-        ctx.fillText(kicker.toUpperCase(), 40, y);
-        y += 50;
+        ctx.font = font(36, "700");
+        ctx.fillText(kicker.toUpperCase(), 44, y);
+        y += 70;
       }
       ctx.fillStyle = dark ? "#f4f1ea" : "#1a103d";
-      ctx.font = font(48, "800");
-      y = wrap(ctx, title, 40, y + 10, w - 80, 56);
-      ctx.font = font(30);
+      ctx.font = font(84, "800");
+      y = wrap(ctx, title, 44, y + 20, w - 88, 92) + 6;
+      ctx.font = font(42);
       for (const line of lines) {
-        if (y > h - 40) break;
+        if (y > h - 50) break;
         ctx.fillStyle = accent;
         ctx.beginPath();
-        ctx.arc(52, y - 10 + 14, 7, 0, Math.PI * 2);
+        ctx.arc(58, y - 4, 9, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = dark ? "#e8efe9" : "#2d2a3a";
-        y = wrap(ctx, line, 76, y + 14, w - 120, 40) + 6;
+        y = wrap(ctx, line, 86, y + 10, w - 130, 54) + 10;
       }
     },
     `${title}|${lines.join("|")}|${accent}|${dark}`,

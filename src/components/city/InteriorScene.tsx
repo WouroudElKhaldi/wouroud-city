@@ -95,12 +95,7 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
       <OnWall side="front">
         <ExitDoor id={room.id} district={room.district} accent={accent} />
       </OnWall>
-      <InfoKiosk
-        district={room.district}
-        id={room.id}
-        label={label}
-        accent={accent}
-      />
+      {!spec?.filler && <InfoKiosk district={room.district} id={room.id} label={label} accent={accent} />}
       {hq && job ? (
         <SahmeHQ job={job} accent={accent} />
       ) : branded && job ? (
@@ -110,7 +105,7 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
       ) : project ? (
         <Studio project={project} accent={accent} />
       ) : (
-        <ThemedRoom district={room.district} id={room.id} accent={accent} />
+        <ThemedRoom district={room.district} id={room.id} accent={accent} label={label} />
       )}
       {!hq && !branded && <Pedestrians walkers={walkers} />}
     </RoomContext>

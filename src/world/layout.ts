@@ -330,6 +330,9 @@ export const RING = {
 
 const FILLERS: { label: string; sublabel: string; variant: BuildingVariant; color: string }[] = [
   { label: "Café Byte", sublabel: "Coffee & cardamom", variant: "lowrise", color: "#c0883a" },
+  { label: "Mezze House", sublabel: "Hummus, tabbouleh, fattoush", variant: "lowrise", color: "#15803d" },
+  { label: "Shawarma Corner", sublabel: "Chicken with toum", variant: "lowrise", color: "#c2410c" },
+  { label: "Pizza & Code", sublabel: "Wood-fired, bug-free", variant: "lowrise", color: "#b91c1c" },
   { label: "Corner Bakery", sublabel: "Fresh manakish", variant: "lowrise", color: "#d69e2e" },
   { label: "Bookshop", sublabel: "Tech & poetry", variant: "studio", color: "#2c7a7b" },
   { label: "Co-working Hub", sublabel: "Hot desks · fast Wi-Fi", variant: "studio", color: "#6b46c1" },

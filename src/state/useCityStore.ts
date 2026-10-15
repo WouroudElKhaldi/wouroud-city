@@ -3,6 +3,7 @@ import type { DistrictId } from "@/world/districts";
 import type { RoomScene } from "@/world/interiors";
 import { DEFAULT_LOOK, LOOKS } from "@/world/outfits";
 import type { Persona } from "@/world/personas";
+import type { MenuItem } from "@/world/shops";
 import { setMuted } from "@/world/sfx";
 
 export type AvatarKind = "girl" | "guy" | "robot";
@@ -48,6 +49,9 @@ export type Race = {
   time?: number;
 };
 
+/** A food order in a café or restaurant: served at the shop's table, eaten sitting down. */
+export type Order = { shop: string; item: MenuItem; at: number };
+
 const FADE_MS = 450;
 let toastId = 0;
 
@@ -60,6 +64,9 @@ type CityState = {
   mapOpen: boolean;
   activity: Activity | null;
   race: Race | null;
+  /** The menu card that's open (a shop label) */
+  menu: string | null;
+  order: Order | null;
   driving: DrivingCar | null;
   /** Bumped to ask the canvas for a photo of the current view. */
   photoAt: number;
@@ -106,6 +113,9 @@ type CityState = {
   setActivity: (activity: Activity | null) => void;
   /** Line up for a race on the Arcade Pier's ring road (goes there if needed). */
   startRace: () => void;
+  openMenu: (shop: string | null) => void;
+  placeOrder: (shop: string, item: MenuItem) => void;
+  finishOrder: () => void;
   updateRace: (race: Partial<Race> | null) => void;
   startDriving: (car: DrivingCar) => void;
   takePhoto: () => void;
@@ -120,6 +130,8 @@ export const useCityStore = create<CityState>((set, get) => ({
   mapOpen: false,
   activity: null,
   race: null,
+  menu: null,
+  order: null,
   driving: null,
   photoAt: 0,
   exitCar: false,
@@ -154,7 +166,7 @@ export const useCityStore = create<CityState>((set, get) => ({
     if (get().fading || get().scene === scene) return;
     const from = get().scene;
     const race = get().race?.phase === "grid" && scene === "arcade" ? get().race : null;
-    set({ fading: true, nearby: null, seat: null, panel: null, mapOpen: false, driving: null, exitCar: false, race });
+    set({ fading: true, nearby: null, seat: null, panel: null, mapOpen: false, driving: null, exitCar: false, race, menu: null, order: null });
     // Fade to black, swap the scene while the screen is covered, then fade back in.
     window.setTimeout(() => {
       set({ scene, cameFrom: from === "hub" ? null : from, waypoint: null });
@@ -162,7 +174,7 @@ export const useCityStore = create<CityState>((set, get) => ({
     }, FADE_MS);
   },
   interact: () => {
-    if (!get().started || get().panel || get().activity) return;
+    if (!get().started || get().panel || get().activity || get().menu) return;
     if (get().seat) {
       get().stand();
       return;
@@ -193,6 +205,12 @@ export const useCityStore = create<CityState>((set, get) => ({
     set({ race: { phase: "grid", laps: 3, lap: 0, position: 1, racers: 4, goAt: 0 }, panel: null, nearby: null, seat: null });
     if (get().scene !== "arcade") get().goTo("arcade");
   },
+  openMenu: (menu) => set({ menu, nearby: null }),
+  placeOrder: (shop, item) => {
+    set({ order: { shop, item, at: performance.now() }, menu: null });
+    get().toast(`Your ${item.name} is on the table with the candle. Sit down to enjoy it.`, shop);
+  },
+  finishOrder: () => set({ order: null }),
   updateRace: (race) => set((s) => ({ race: race && s.race ? { ...s.race, ...race } : null })),
   takePhoto: () => set({ photoAt: Date.now(), panel: null }),
   startDriving: (driving) =>
