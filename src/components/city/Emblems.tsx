@@ -7,6 +7,7 @@ import * as THREE from "three";
 import type { Emblem as EmblemKind, Signature } from "@/world/signatures";
 import { DARK } from "./buildingTheme";
 import { useGlowMaterial } from "./materials";
+import { TEXT_FONT, TEXT_FONT_BOLD } from "@/world/fonts";
 
 /**
  * A building's 3D logo floating over its roof: React's atom, Docker's
@@ -58,7 +59,7 @@ function Model({ kind, text, m }: { kind: EmblemKind; text?: string; m: Mats }) 
         <group>
           <M g={box(2.2, 1.5, 0.35)} mat={m.dark} />
           {[0.19, -0.19].map((z) => (
-            <Text key={z} position={[0, 0, z]} rotation-y={z > 0 ? 0 : Math.PI} fontSize={text && text.length > 2 ? 0.62 : 0.95} material={m.glow} anchorX="center" anchorY="middle" fontWeight={800}>
+            <Text font={TEXT_FONT_BOLD} key={z} position={[0, 0, z]} rotation-y={z > 0 ? 0 : Math.PI} fontSize={text && text.length > 2 ? 0.62 : 0.95} material={m.glow} anchorX="center" anchorY="middle">
               {text ?? "?"}
             </Text>
           ))}

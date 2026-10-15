@@ -24,7 +24,7 @@ See `HANDOFF.md` for architecture, rules and gotchas.
 
 ## ⭐ Owner's priority list (open requests, in this order)
 
-P1. 🔄 **Loading time**: the city takes far too long to load. Compress models (meshopt), preload only what the hub shows (player + hub walkers), let the world appear while people stream in
+P1. ✅ **Loading time**: avatars and clips meshopt-compressed (anim 5.4 MB → 0.9 MB, each avatar 480 KB → 107 KB), only the visitor's own body is preloaded (the crowd streams in), sky light map 1.4 MB → 0.3 MB, and 3D labels use a local font instead of waiting on the jsdelivr CDN (that wait blocked the whole scene). Startup download ~20 MB → ~4.5 MB
 P2. ⬜ **Realistic outdoors** in the Rocketbox style (not photoreal, no more low-poly toy look): grass, trees and plants, balls/cones/pigeons, streets/sidewalks/curbs/crosswalks, benches/lamps/planters, the ground in the hub and every district. CC0 assets only, small downloads, keep every interaction and instancing, frame rate no worse
 P3. ⬜ **Codi Tech building: adventures and activities** with her mentors (they did a lot together), much more fun inside
 P4. ⬜ **Freelance office: fill it** with everything from the freelance work (the projects and things built together)
@@ -42,7 +42,7 @@ P15. ⛔ Needs the owner's free accounts: admin, MongoDB, R2 uploads, leaderboar
 
 ## 🔄 In progress
 
-P1 Loading time (see the priority list above)
+P2 Realistic outdoors (see the priority list above)
 
 ## Roadmap (in build order)
 

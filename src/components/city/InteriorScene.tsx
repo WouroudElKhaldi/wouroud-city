@@ -20,6 +20,7 @@ import { useGlowMaterial } from "./materials";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Seats } from "./StreetDetails";
 import { useProximity } from "./useProximity";
+import { TEXT_FONT } from "@/world/fonts";
 
 const W = ROOM.width;
 const D = ROOM.depth;
@@ -527,7 +528,7 @@ function ExitDoor({
       <mesh position={[0, 3.45, 0.02]} material={sign}>
         <boxGeometry args={[1.6, 0.42, 0.05]} />
       </mesh>
-      <Text
+      <Text font={TEXT_FONT}
         position={[0, 3.45, 0.06]}
         fontSize={0.22}
         color="#ffffff"
@@ -574,7 +575,7 @@ function InfoKiosk({
       <mesh position={[0, 1.55, 0.05]} rotation-x={-0.25} material={screen}>
         <boxGeometry args={[1.3, 0.85, 0.08]} />
       </mesh>
-      <Text
+      <Text font={TEXT_FONT}
         position={[0, 1.6, 0.11]}
         rotation-x={-0.25}
         fontSize={0.13}
@@ -622,7 +623,7 @@ function Board({
         <meshStandardMaterial color={PAPER} roughness={0.85} />
       </mesh>
       {title && (
-        <Text
+        <Text font={TEXT_FONT}
           position={[-width / 2 + 0.2, height / 2 - 0.2, 0.01]}
           fontSize={0.2}
           color={accent}
@@ -633,7 +634,7 @@ function Board({
           {title}
         </Text>
       )}
-      <Text
+      <Text font={TEXT_FONT}
         position={[
           -width / 2 + 0.2,
           title ? height / 2 - 0.55 : height / 2 - 0.2,
@@ -676,7 +677,7 @@ function TechTiles({
   const step = length / Math.max(perRow, 1);
   return (
     <group position={position} rotation-y={rotationY}>
-      <Text
+      <Text font={TEXT_FONT}
         position={[0, 1.45, 0.02]}
         fontSize={0.24}
         color={INK}
@@ -694,7 +695,7 @@ function TechTiles({
               <boxGeometry args={[step - 0.15, 0.48, 0.05]} />
               <meshStandardMaterial color={colors[i % colors.length]} />
             </mesh>
-            <Text
+            <Text font={TEXT_FONT}
               position={[0, 0, 0.02]}
               fontSize={0.16}
               color="#ffffff"
@@ -728,7 +729,7 @@ function HighlightWall({
   const step = span / perRow;
   return (
     <group>
-      <Text
+      <Text font={TEXT_FONT}
         position={[-W / 2 + 0.02, 4.55, 0]}
         rotation-y={Math.PI / 2}
         fontSize={0.32}
@@ -803,7 +804,7 @@ function Office({ job, accent }: { job: Experience; accent: string }) {
               emissiveIntensity={0.8}
             />
           </mesh>
-          <Text
+          <Text font={TEXT_FONT}
             position={[0, 4.25, 0.02]}
             fontSize={0.62}
             color="#ffffff"
@@ -813,7 +814,7 @@ function Office({ job, accent }: { job: Experience; accent: string }) {
             {job.company}
           </Text>
           {job.formerName && (
-            <Text
+            <Text font={TEXT_FONT}
               position={[0, 3.78, 0.02]}
               fontSize={0.2}
               color="#d6bcfa"
@@ -823,7 +824,7 @@ function Office({ job, accent }: { job: Experience; accent: string }) {
             </Text>
           )}
           {job.roles.map((r, i) => (
-            <Text
+            <Text font={TEXT_FONT}
               key={r.title}
               position={[0, 3.35 - i * 0.36, 0.02]}
               fontSize={0.24}
@@ -833,7 +834,7 @@ function Office({ job, accent }: { job: Experience; accent: string }) {
               {`${r.title} · ${monthYear(r.start)} – ${monthYear(r.end)}`}
             </Text>
           ))}
-          <Text
+          <Text font={TEXT_FONT}
             position={[0, 2.35 - job.roles.length * 0.18, 0.02]}
             fontSize={0.2}
             color="#f5f0ff"
@@ -897,7 +898,7 @@ function Office({ job, accent }: { job: Experience; accent: string }) {
             emissiveIntensity={0.6}
           />
         </mesh>
-        <Text
+        <Text font={TEXT_FONT}
           position={[0, 0.55, 0.47]}
           fontSize={0.18}
           color="#ffffff"
@@ -991,7 +992,7 @@ function Plaque({ text }: { text: string }) {
           roughness={0.3}
         />
       </mesh>
-      <Text
+      <Text font={TEXT_FONT}
         position={[0, 0, 0.01]}
         fontSize={0.16}
         color={INK}
@@ -1033,7 +1034,7 @@ function Studio({ project, accent }: { project: Project; accent: string }) {
           <mesh position={[0, 3, 0]} material={screen}>
             <boxGeometry args={[15, 3.6, 0.08]} />
           </mesh>
-          <Text
+          <Text font={TEXT_FONT}
             position={[0, 4.15, 0.06]}
             fontSize={0.7}
             color="#ffffff"
@@ -1042,7 +1043,7 @@ function Studio({ project, accent }: { project: Project; accent: string }) {
           >
             {project.name}
           </Text>
-          <Text
+          <Text font={TEXT_FONT}
             position={[0, 3.45, 0.06]}
             fontSize={0.28}
             color={accents.honey}
@@ -1052,7 +1053,7 @@ function Studio({ project, accent }: { project: Project; accent: string }) {
           >
             {project.pitch}
           </Text>
-          <Text
+          <Text font={TEXT_FONT}
             position={[0, 2.55, 0.06]}
             fontSize={0.2}
             color="#e9d8fd"

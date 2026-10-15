@@ -22,6 +22,7 @@ import { Portal } from "./Portal";
 import { CodeBillboards, Fountain, Seats } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 import { MarketStalls, Traffic } from "./Traffic";
+import { TEXT_FONT } from "@/world/fonts";
 
 /** A car waiting by each district's gate, ready to drive around the ring. */
 const DISTRICT_CAR: Record<DistrictId, string> = {
@@ -282,7 +283,7 @@ function CentralPlaza({ color, accent, name }: { color: string; accent: string; 
           <mesh position={[0, 4.35, 0]} material={glow}>
             <octahedronGeometry args={[0.38]} />
           </mesh>
-          <Text position={[0, 0.32, 0.71]} fontSize={0.16} maxWidth={1.3} color={accents.honey} anchorX="center" anchorY="middle">
+          <Text font={TEXT_FONT} position={[0, 0.32, 0.71]} fontSize={0.16} maxWidth={1.3} color={accents.honey} anchorX="center" anchorY="middle">
             {name}
           </Text>
         </group>
@@ -341,10 +342,10 @@ function DistrictArch({ name, tagline, accent, color, z }: { name: string; tagli
       </mesh>
       {[0.27, -0.27].map((dz) => (
         <group key={dz} position={[0, 0, dz]} rotation-y={dz > 0 ? 0 : Math.PI}>
-          <Text position={[0, 7.85, 0]} fontSize={0.75} material={glow} anchorX="center" anchorY="middle">
+          <Text font={TEXT_FONT} position={[0, 7.85, 0]} fontSize={0.75} material={glow} anchorX="center" anchorY="middle">
             {name}
           </Text>
-          <Text position={[0, 7.15, 0]} fontSize={0.34} color="#e9d8fd" anchorX="center" anchorY="middle">
+          <Text font={TEXT_FONT} position={[0, 7.15, 0]} fontSize={0.34} color="#e9d8fd" anchorX="center" anchorY="middle">
             {tagline}
           </Text>
         </group>
@@ -372,7 +373,7 @@ function Signpost({ label, x, z, rot, color }: { label: string; x: number; z: nu
         <meshStandardMaterial color={accents.gold} emissive={accents.gold} emissiveIntensity={0.4} />
       </mesh>
       {[0.07, -0.07].map((dz) => (
-        <Text
+        <Text font={TEXT_FONT}
           key={dz}
           position={[0, 2.75, dz]}
           rotation-y={dz > 0 ? 0 : Math.PI}

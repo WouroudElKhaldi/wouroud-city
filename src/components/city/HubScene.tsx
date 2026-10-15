@@ -17,6 +17,7 @@ import { Balls, Knockables, type ParkedCar, ParkedCars, Pigeons } from "./Playth
 import { Seats } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 import type { Seat } from "@/state/useCityStore";
+import { TEXT_FONT } from "@/world/fonts";
 
 /** Central Plaza and the ring of district landmarks. */
 export function HubScene() {
@@ -72,12 +73,12 @@ export function HubScene() {
           <cylinderGeometry args={[2, 2.4, 1.8, 32]} />
           <meshStandardMaterial color="#4c1d95" />
         </mesh>
-        <Text position={[0, 4.2, 0]} fontSize={3.2} material={monument} anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#2d1f52">
+        <Text font={TEXT_FONT} position={[0, 4.2, 0]} fontSize={3.2} material={monument} anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#2d1f52">
           {"</>"}
         </Text>
         {[0, Math.PI].map((r) => (
           <group key={r} rotation-y={r}>
-            <Text position={[0, 1.15, 2.45]} fontSize={0.42} color="#ffffff" anchorX="center" anchorY="middle" textAlign="center">
+            <Text font={TEXT_FONT} position={[0, 1.15, 2.45]} fontSize={0.42} color="#ffffff" anchorX="center" anchorY="middle" textAlign="center">
               {"Wouroud's City\nCentral Plaza"}
             </Text>
           </group>

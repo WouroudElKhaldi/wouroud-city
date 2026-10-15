@@ -14,6 +14,7 @@ import { DistrictProps, Roof, roofHeight, styleFor, tinted } from "./Architectur
 import { useFacade, useGlowMaterial } from "./materials";
 
 import { DARK, FLOOR, STONE } from "./buildingTheme";
+import { TEXT_FONT } from "@/world/fonts";
 
 export { DARK, FLOOR, STONE };
 
@@ -251,7 +252,7 @@ function SkillTower({ spec, shape, accent }: { spec: BuildingSpec; shape: TowerS
         </mesh>
         {spec.badge &&
           [0, Math.PI].map((r) => (
-            <Text
+            <Text font={TEXT_FONT}
               key={r}
               rotation-y={r}
               position={[Math.sin(r) * 0.01, 0, Math.cos(r) * 0.01]}
@@ -301,7 +302,7 @@ function Entrance({ spec }: { spec: BuildingSpec }) {
       </mesh>
       {/* Name sign */}
       <group position={[front + facing * 0.06, signY, 0]} rotation-y={rot}>
-        <Text
+        <Text font={TEXT_FONT}
           fontSize={Math.min(isTower ? 0.6 : 1.05, ((depth * 0.92) / Math.max(5, spec.label.length)) * 1.7)}
           maxWidth={depth * 0.95}
           anchorX="center"
@@ -313,7 +314,7 @@ function Entrance({ spec }: { spec: BuildingSpec }) {
         >
           {spec.label}
         </Text>
-        <Text
+        <Text font={TEXT_FONT}
           position={[0, -0.18, 0]}
           fontSize={isTower ? 0.26 : 0.36}
           maxWidth={depth * 0.95}

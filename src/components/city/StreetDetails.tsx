@@ -13,6 +13,7 @@ import { emitBurst } from "./Particles";
 import { useProximity } from "./useProximity";
 import { type Billboard, type LampSpot, STREET } from "@/world/layout";
 import { palette } from "@/world/palette";
+import { TEXT_FONT } from "@/world/fonts";
 
 function useInstanceMatrices(ref: React.RefObject<THREE.InstancedMesh | null>, matrices: THREE.Matrix4[]) {
   useLayoutEffect(() => {
@@ -223,10 +224,10 @@ function ScrollingCode({ start }: { start: number }) {
       <mesh position={[0, 0, -0.01]} visible={false}>
         <planeGeometry args={[3.6, 1.7]} />
       </mesh>
-      <Text position={[-1.65, 0.55, 0]} fontSize={0.17} color="#a78bfa" anchorX="left" anchorY="middle">
+      <Text font={TEXT_FONT} position={[-1.65, 0.55, 0]} fontSize={0.17} color="#a78bfa" anchorX="left" anchorY="middle">
         {"● ● ●   wouroud.ts"}
       </Text>
-      <Text
+      <Text font={TEXT_FONT}
         position={[-1.65, 0.05, 0]}
         fontSize={0.2}
         maxWidth={3.3}
@@ -240,7 +241,7 @@ function ScrollingCode({ start }: { start: number }) {
         <planeGeometry args={[0.12, 0.24]} />
         <meshBasicMaterial color="#e9d8fd" toneMapped={false} />
       </mesh>
-      <Text position={[-1.35, -0.45, 0]} fontSize={0.16} color="#c4b5fd" anchorX="left" anchorY="middle">
+      <Text font={TEXT_FONT} position={[-1.35, -0.45, 0]} fontSize={0.16} color="#c4b5fd" anchorX="left" anchorY="middle">
         {"> ready"}
       </Text>
     </group>

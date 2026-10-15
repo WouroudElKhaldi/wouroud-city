@@ -13,6 +13,13 @@ Big source assets (Rocketbox FBX/TGA, ~3.5 GB) are **not** in git (`.assets-src/
 converted web files in `public/models/rb` are. Re-download them only if you need to convert new avatars.
 
 ### Latest work (newest first)
+-1. **Loading time (owner's priority list P1, see `tasks.md`).** Models in `public/models/rb` are now
+   meshopt-compressed with gltf-transform (`resample` + `meshopt` for clips, `meshopt` for bodies);
+   drei's `useGLTF` decodes meshopt by default. Re-run that on any new avatar. Only the visitor's own
+   look is preloaded (`CityCanvas.tsx`); walkers stream in behind their own Suspense. Sky light map is
+   now `public/env/sky_512.hdr`. **Every 3D `<Text>` must pass `font={TEXT_FONT}`** (`world/fonts.ts`,
+   files in `public/fonts`): without it troika fetches fonts from cdn.jsdelivr.net and the whole scene
+   suspends until that answers (in a sandbox without that host the city never appears at all).
 0. **Luxury pass + Sahme trading floor + sizing (latest).**
    - Every room (`InteriorScene.tsx` → `Shell`): marble floor with gold inlay, walnut wainscoting,
      ivory walls, crown molding, walnut pilasters, coffered ceiling, gold chandeliers, sconces, olive

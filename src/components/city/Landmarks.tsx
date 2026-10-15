@@ -10,6 +10,7 @@ import { Antenna, DARK, EdgeGlow, STONE } from "./Building";
 import { useFacade, useGlowMaterial } from "./materials";
 import { Portal } from "./Portal";
 import { useCityStore } from "@/state/useCityStore";
+import { TEXT_FONT } from "@/world/fonts";
 
 /**
  * One landmark per district, standing on the ring around Central Plaza.
@@ -81,10 +82,10 @@ function NameArch({ district }: { district: DistrictDef }) {
       </mesh>
       {[0.21, -0.21].map((dz) => (
         <group key={dz} position={[0, 0, dz]} rotation-y={dz > 0 ? 0 : Math.PI}>
-          <Text position={[0, 6.35, 0]} fontSize={0.6} material={glow} anchorX="center" anchorY="middle">
+          <Text font={TEXT_FONT} position={[0, 6.35, 0]} fontSize={0.6} material={glow} anchorX="center" anchorY="middle">
             {district.name}
           </Text>
-          <Text position={[0, 5.75, 0]} fontSize={0.3} color="#e9d8fd" anchorX="center" anchorY="middle">
+          <Text font={TEXT_FONT} position={[0, 5.75, 0]} fontSize={0.3} color="#e9d8fd" anchorX="center" anchorY="middle">
             {district.tagline}
           </Text>
         </group>
@@ -203,7 +204,7 @@ function SkillsModel({ district }: ModelProps) {
         </mesh>
       </Spin>
       <Bob position={[0, 30, 0]} amount={0.4}>
-        <Text fontSize={3} material={neon} anchorX="center" anchorY="middle">
+        <Text font={TEXT_FONT} fontSize={3} material={neon} anchorX="center" anchorY="middle">
           {"</>"}
         </Text>
       </Bob>
@@ -465,7 +466,7 @@ function LanguagesModel({ district }: ModelProps) {
             <coneGeometry args={[0.35, 0.9, 8]} />
           </mesh>
           {[0.52, -0.52].map((z) => (
-            <Text
+            <Text font={TEXT_FONT}
               key={z}
               position={[0, 0, z]}
               rotation-y={z > 0 ? 0 : Math.PI}
@@ -703,7 +704,7 @@ function ArcadeModel({ district }: ModelProps) {
           </mesh>
         ))}
         <Solid args={[5.4, 1.2, 3.6]} position={[0, 9.4, 0]} material={neon} />
-        <Text position={[0, 9.4, 1.82]} fontSize={0.7} color="#2e1065" anchorX="center" anchorY="middle">
+        <Text font={TEXT_FONT} position={[0, 9.4, 1.82]} fontSize={0.7} color="#2e1065" anchorX="center" anchorY="middle">
           FULL STACK
         </Text>
       </group>

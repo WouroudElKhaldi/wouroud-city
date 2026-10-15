@@ -19,7 +19,6 @@ import { seedContent } from "@/content/seed";
 import { computeDistrictLayout, doorPoint } from "@/world/layout";
 import { HubScene } from "./HubScene";
 import { keyboardMap, Player } from "./Player";
-import { LOOKS, NPC_PEOPLE } from "@/world/outfits";
 import { Particles } from "./Particles";
 import { PlayerSpotlight } from "./PlayerSpotlight";
 import { WaypointGuide } from "./Guidance";
@@ -31,7 +30,9 @@ import { preloadPlaythings } from "./Playthings";
 
 preloadFoliage();
 preloadPlaythings();
-preloadPeople([LOOKS.girl[0].id, LOOKS.guy[0].id, ...new Set(NPC_PEOPLE.map((p) => p.id))]);
+// Only the visitor's own body is fetched up front; the crowd streams in after the city appears
+// (each walker has its own Suspense), so it never holds up the first frame.
+preloadPeople([useCityStore.getState().outfit]);
 
 const HUB_SPAWN: [number, number, number] = [0, 2, 12];
 
@@ -141,7 +142,7 @@ function CameraFill() {
  * reflections on skin, fabric, glass and metal. DayNight dims it at night.
  */
 function CityEnvironment() {
-  return <Environment files="/env/sky_1k.hdr" background={false} environmentIntensity={0.9} />;
+  return <Environment files="/env/sky_512.hdr" background={false} environmentIntensity={0.9} />;
 }
 
 /**

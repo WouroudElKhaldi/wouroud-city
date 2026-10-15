@@ -6,6 +6,7 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useGlowMaterial } from "./materials";
 import { useProximity } from "./useProximity";
+import { TEXT_FONT } from "@/world/fonts";
 
 /**
  * A glowing doorway. Standing in front of it shows the "Press E" prompt.
@@ -73,7 +74,7 @@ export function Portal({
       <mesh position={[0, height / 2, 0]} material={veil}>
         <planeGeometry args={[width, height]} />
       </mesh>
-      <Text
+      <Text font={TEXT_FONT}
         position={[0, height + 0.55, 0.05]}
         fontSize={0.42}
         color="#ffffff"

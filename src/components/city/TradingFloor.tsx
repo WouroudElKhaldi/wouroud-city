@@ -11,6 +11,7 @@ import { accents } from "@/world/palette";
 import { emitBurst } from "./Particles";
 import { SlotMachine } from "./SlotMachine";
 import { Seats } from "./StreetDetails";
+import { TEXT_FONT } from "@/world/fonts";
 
 /**
  * Sahme Trading's office as a trading floor that is also an engineering team's home:
@@ -523,7 +524,7 @@ function Bull({ position }: { position: [number, number, number] }) {
         <boxGeometry args={[1.5, 0.9, 2.1]} />
         <meshStandardMaterial color="#1f2937" roughness={0.4} />
       </mesh>
-      <Text
+      <Text font={TEXT_FONT}
         position={[0, 0.5, 1.06]}
         fontSize={0.14}
         color={accents.gold}
@@ -685,7 +686,7 @@ function Coin({
         <meshStandardMaterial color={color} metalness={0.8} roughness={0.25} />
       </mesh>
       {[0, Math.PI].map((r) => (
-        <Text
+        <Text font={TEXT_FONT}
           key={r}
           rotation-y={r}
           position={[0, 0, Math.cos(r) * 0.035]}
@@ -778,7 +779,7 @@ function Clock({ city, zone, x }: { city: string; zone: string; x: number }) {
           <meshStandardMaterial color={accents.goldDeep} />
         </mesh>
       </group>
-      <Text
+      <Text font={TEXT_FONT}
         position={[0, -0.7, 0]}
         fontSize={0.16}
         color="#1a103d"
@@ -891,7 +892,7 @@ function CoffeeBar({ position }: { position: [number, number, number] }) {
           />
         </mesh>
       ))}
-      <Text
+      <Text font={TEXT_FONT}
         position={[0, 2.0, -0.35]}
         fontSize={0.2}
         color="#1a103d"
@@ -930,7 +931,7 @@ function Whiteboard({ position }: { position: [number, number, number] }) {
             <planeGeometry args={[1.15, 0.36]} />
             <meshBasicMaterial color={color} />
           </mesh>
-          <Text
+          <Text font={TEXT_FONT}
             position={[0, 0, 0.005]}
             fontSize={0.12}
             color="#ffffff"
@@ -955,7 +956,7 @@ function Whiteboard({ position }: { position: [number, number, number] }) {
           <meshBasicMaterial color="#1a103d" />
         </mesh>
       ))}
-      <Text
+      <Text font={TEXT_FONT}
         position={[-1.95, 0.88, 0.01]}
         fontSize={0.11}
         color="#1a103d"
@@ -978,10 +979,10 @@ function NeonCode({ position }: { position: [number, number, number] }) {
   });
   return (
     <group position={position} rotation-y={Math.PI}>
-      <Text fontSize={0.9} material={glow} anchorX="center" anchorY="middle">
+      <Text font={TEXT_FONT} fontSize={0.9} material={glow} anchorX="center" anchorY="middle">
         {"</>"}
       </Text>
-      <Text
+      <Text font={TEXT_FONT}
         position={[0, -0.7, 0]}
         fontSize={0.2}
         color="#1a103d"

@@ -9,6 +9,7 @@ import { useCityStore } from "@/state/useCityStore";
 import { accents } from "@/world/palette";
 import { emitBurst } from "./Particles";
 import { useProximity } from "./useProximity";
+import { TEXT_FONT } from "@/world/fonts";
 
 /**
  * A crypto slot machine. Walk up and press E (or click the lever): the three reels
@@ -56,7 +57,7 @@ const faceAngle = (i: number) => (i + 0.5) * SLICE;
 type Spin = { start: number; from: number[]; to: number[]; result: number[] };
 
 export function SlotMachine({ position, rotationY = 0 }: { position: [number, number, number]; rotationY?: number }) {
-  const texture = useMemo(reelTexture, []);
+  const texture = useMemo(() => reelTexture(), []);
   useEffect(() => () => texture.dispose(), [texture]);
   const reels = useRef<(THREE.Group | null)[]>([]);
   const lever = useRef<THREE.Group>(null);
@@ -68,7 +69,9 @@ export function SlotMachine({ position, rotationY = 0 }: { position: [number, nu
   const [credits, setCredits] = useState(START_CREDITS);
   const [message, setMessage] = useState("Press E to play");
   const creditsRef = useRef(START_CREDITS);
-  creditsRef.current = credits;
+  useEffect(() => {
+    creditsRef.current = credits;
+  }, [credits]);
 
   const play = () => {
     if (spin.current || pending.current) return;
@@ -208,7 +211,7 @@ export function SlotMachine({ position, rotationY = 0 }: { position: [number, nu
           <boxGeometry args={[1.3, 0.42, 0.6]} />
           <meshStandardMaterial color="#1f2937" />
         </mesh>
-        <Text position={[0, 0.02, 0.31]} fontSize={0.15} color={accents.gold} anchorX="center" anchorY="middle" outlineWidth={0.008} outlineColor="#7c2d12">
+        <Text font={TEXT_FONT} position={[0, 0.02, 0.31]} fontSize={0.15} color={accents.gold} anchorX="center" anchorY="middle" outlineWidth={0.008} outlineColor="#7c2d12">
           CRYPTO SLOTS
         </Text>
         {lights.map((m, i) => (
@@ -222,14 +225,14 @@ export function SlotMachine({ position, rotationY = 0 }: { position: [number, nu
         <planeGeometry args={[0.9, 0.22]} />
         <meshBasicMaterial color="#0b1020" />
       </mesh>
-      <Text position={[0, 0.89, 0.46]} fontSize={0.065} color="#22c55e" anchorX="center" anchorY="middle">
+      <Text font={TEXT_FONT} position={[0, 0.89, 0.46]} fontSize={0.065} color="#22c55e" anchorX="center" anchorY="middle">
         {`CREDITS ${credits}   BET ${BET}`}
       </Text>
-      <Text position={[0, 0.8, 0.46]} fontSize={0.05} color="#fde68a" anchorX="center" anchorY="middle">
+      <Text font={TEXT_FONT} position={[0, 0.8, 0.46]} fontSize={0.05} color="#fde68a" anchorX="center" anchorY="middle">
         {message}
       </Text>
       {/* Pay table */}
-      <Text position={[0, 0.45, 0.455]} fontSize={0.055} color="#e9d8fd" anchorX="center" anchorY="middle" textAlign="center" lineHeight={1.3}>
+      <Text font={TEXT_FONT} position={[0, 0.45, 0.455]} fontSize={0.055} color="#e9d8fd" anchorX="center" anchorY="middle" textAlign="center" lineHeight={1.3}>
         {"🚀×50  💎×30  ₿×20\n7×15  Ξ×10  🐂×8\nany pair ×2"}
       </Text>
       {/* Lever on the right side: click it to play */}
