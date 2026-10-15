@@ -80,8 +80,45 @@ function songbird() {
   for (let i = 0; i < 4; i++) tone(base + (i % 2) * 500, 0.07, "sine", 0.025, base * 1.2, i * 0.11);
 }
 
+/** A friendly dog: two short barks. */
+function bark() {
+  [0, 0.22].forEach((d) => {
+    tone(520, 0.09, "sawtooth", 0.06, 300, d);
+    noise(0.08, 0.05, 900, d);
+  });
+}
+
+/**
+ * A street musician's phrase on a plucked string, in maqam hijaz (D, E-flat, F-sharp, G, A, B-flat, C):
+ * a different little tune for every seed.
+ */
+function busk(seed: number) {
+  const hijaz = [293.7, 311.1, 370, 392, 440, 466.2, 523.3, 587.3];
+  let s = seed * 7919 + 13;
+  const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+  let i = Math.floor(rnd() * 3) + 2;
+  for (let n = 0; n < 14; n++) {
+    i = Math.max(0, Math.min(hijaz.length - 1, i + Math.floor(rnd() * 5) - 2));
+    const t = n * 0.22 + (n % 4 === 3 ? 0.08 : 0);
+    tone(hijaz[i], 0.5, "triangle", 0.07, hijaz[i] * 0.995, t);
+    tone(hijaz[i] * 2, 0.18, "sine", 0.02, undefined, t);
+    if (n % 4 === 0) tone(146.8, 0.8, "triangle", 0.05, undefined, t);
+  }
+  tone(293.7, 1.2, "triangle", 0.07, undefined, 14 * 0.22 + 0.1);
+}
+
+/** A bus arriving at the stop: the brakes sigh and the door bell rings. */
+function bus() {
+  noise(0.7, 0.07, 3000);
+  tone(880, 0.25, "sine", 0.05, undefined, 0.6);
+  tone(660, 0.35, "sine", 0.05, undefined, 0.85);
+}
+
 export const sfx = {
   track,
+  bark,
+  busk,
+  bus,
   cricket,
   songbird,
   rustle: () => noise(0.35, 0.1, 2400),

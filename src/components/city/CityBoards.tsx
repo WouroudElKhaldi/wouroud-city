@@ -128,7 +128,7 @@ export function GuestbookStand({ x, z, facing }: { x: number; z: number; facing:
       <Posts width={1.5} height={2} top={2.75} />
       <Panel position={[0, 1.65, 0]} width={1.5} height={2} map={texture} frame="#5b3a22" />
       <Text position={[0, 2.85, 0.03]} fontSize={0.16} color="#fde68a" outlineWidth={0.012} outlineColor="#1a103d" anchorX="center" anchorY="middle">
-        ✍ GUESTBOOK
+        GUESTBOOK
       </Text>
       {/* Lectern with an open book */}
       <group position={[0, 0, 1.1]} rotation-y={Math.PI}>

@@ -12,6 +12,7 @@ import { sfx } from "@/world/sfx";
 import { NPC_PEOPLE } from "@/world/outfits";
 import { Person, type PersonLook } from "./Person";
 import type { CharacterAnimation } from "./Person";
+import { Dog, DOG_COATS } from "./StreetLife";
 import { useProximity } from "./useProximity";
 import { track } from "@/state/progress";
 
@@ -24,6 +25,8 @@ export type Walker = {
   speed: number;
   /** Which district's NPC lines they know ("any" lines are always included) */
   district: string;
+  /** Some people walk their dog (its coat color) */
+  dog?: string;
 };
 
 /** People strolling around. Walk up to one and press E to chat. */
@@ -59,6 +62,7 @@ function Pedestrian({ walker }: { walker: Walker }) {
     [walker.district],
   );
   const playGesture = useCityStore((s) => s.playGesture);
+  const pace = useRef(0);
 
   useProximity({
     id: `talk-${walker.id}`,
@@ -115,6 +119,7 @@ function Pedestrian({ walker }: { walker: Walker }) {
       }
     }
     if (next !== animation && !(animation === "emote-yes" && talking)) setAnimation(next);
+    pace.current = next === "walk" ? walker.speed : 0;
 
     body.current?.setNextKinematicTranslation({ x: s.pos.x, y: 0.9, z: s.pos.z });
     if (visual.current) {
@@ -130,6 +135,7 @@ function Pedestrian({ walker }: { walker: Walker }) {
       </RigidBody>
       <group ref={visual}>
         <Person look={walker.person} animation={animation} detail={false} />
+        {walker.dog && <Dog color={walker.dog} moving={pace} />}
         {line && (
           <Html position={[0, 2.25, 0]} center distanceFactor={9} zIndexRange={[20, 0]}>
             <div className="npc-bubble">
@@ -182,6 +188,7 @@ export function makeWalkers(
       path,
       speed: 1.1 + (i % 3) * 0.25,
       district,
+      dog: i % 3 === 1 ? DOG_COATS[i % DOG_COATS.length] : undefined,
     };
   }
 }

@@ -19,6 +19,7 @@ import { ChatGroups, type ChatGroup, makeWalkers, Pedestrians } from "./Pedestri
 import { Statue } from "./Person";
 import { WouroudGuide } from "./WouroudGuide";
 import { GuestbookStand } from "./CityBoards";
+import { Busker } from "./StreetLife";
 import { Horizon } from "./Horizon";
 import { NPC_PEOPLE } from "@/world/outfits";
 import { Balls, Knockables, type ParkedCar, ParkedCars, Pigeons } from "./Playthings";
@@ -111,6 +112,7 @@ export function HubScene() {
       <Pedestrians walkers={HUB_WALKERS} />
       <ChatGroups groups={HUB_CHATS} />
       <WouroudGuide x={3.2} z={9} facing={Math.atan2(-3.2, 3)} />
+      <HubBusker />
       <GuestbookStand x={-3.6} z={9.6} facing={Math.atan2(3.6, 3.4)} />
     </group>
   );
@@ -137,6 +139,14 @@ export function WorldGround() {
       </mesh>
     </group>
   );
+}
+
+/** The street musician plays between the benches, facing the fountain. */
+function HubBusker() {
+  const a = landmarkPlacement(DISTRICTS[7].id).angle + Math.PI / DISTRICTS.length;
+  const x = Math.cos(a) * 12.2;
+  const z = Math.sin(a) * 12.2;
+  return <Busker x={x} z={z} facing={Math.atan2(-x, -z)} />;
 }
 
 /** Little groups chatting on the plaza, between the benches. */

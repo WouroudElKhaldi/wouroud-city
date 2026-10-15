@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { playerState, registerNightGlow } from "@/world/env";
 import { sfx } from "@/world/sfx";
 import { CAR_SCALE } from "./CarModel";
+import { busState } from "./StreetLife";
 
 /**
  * Cars driving around a district's ring road, one lane each way. They are
@@ -68,7 +69,14 @@ function MovingCar({ driver, radius }: { driver: Driver; radius: number }) {
     const look = d.angle + (d.dir * 5) / r;
     ahead.set(Math.sin(look) * r, 0, Math.cos(look) * r);
     const blocked = ahead.distanceTo(playerState.position) < 3.6;
-    d.speed = THREE.MathUtils.damp(d.speed, blocked ? 0 : CRUISE, blocked ? 6 : 1.2, delta);
+    // Wait behind the Ring Line bus (same lane, a short way ahead) instead of driving through it.
+    let behindBus = false;
+    if (busState.present && d.dir === 1 && d.lane === busState.lane) {
+      let gap = (busState.angle - d.angle) % (Math.PI * 2);
+      if (gap < 0) gap += Math.PI * 2;
+      behindBus = gap * r < 12.5;
+    }
+    d.speed = THREE.MathUtils.damp(d.speed, blocked || behindBus ? 0 : CRUISE, blocked || behindBus ? 6 : 1.2, delta);
     d.blockedFor = blocked ? d.blockedFor + delta : 0;
     if (d.blockedFor > 2.5) {
       sfx.honk();
