@@ -10,6 +10,7 @@ import { WelcomeScreen } from "@/components/hud/WelcomeScreen";
 import type { Content } from "@/content/schema";
 import { setLiveContent } from "@/content/live";
 import { FlappyGame } from "@/components/hud/FlappyGame";
+import { AskWouroud } from "@/components/hud/AskWouroud";
 import { Journal } from "@/components/hud/Journal";
 import { MenuCard } from "@/components/hud/MenuCard";
 import { RaceHud } from "@/components/hud/RaceHud";
@@ -52,6 +53,7 @@ export function CityClient({ content }: { content: Content }) {
           <RaceHud />
           <MenuCard />
           <Journal />
+          <AskWouroud />
         </>
       ) : (
         <WelcomeScreen />

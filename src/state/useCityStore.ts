@@ -68,6 +68,9 @@ type CityState = {
   /** The menu card that's open (a shop label) */
   menu: string | null;
   order: Order | null;
+  /** The "Ask Wouroud" chat is open. */
+  asking: boolean;
+  setAsking: (asking: boolean) => void;
   driving: DrivingCar | null;
   /** Bumped to ask the canvas for a photo of the current view. */
   photoAt: number;
@@ -136,6 +139,8 @@ export const useCityStore = create<CityState>((set, get) => ({
   race: null,
   menu: null,
   order: null,
+  asking: false,
+  setAsking: (asking) => set({ asking, nearby: null }),
   driving: null,
   photoAt: 0,
   exitCar: false,
@@ -180,7 +185,7 @@ export const useCityStore = create<CityState>((set, get) => ({
     }, FADE_MS);
   },
   interact: () => {
-    if (!get().started || get().panel || get().activity || get().menu) return;
+    if (!get().started || get().panel || get().activity || get().menu || get().asking) return;
     if (get().seat) {
       get().stand();
       return;

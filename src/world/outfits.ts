@@ -66,10 +66,13 @@ export function playerLook(avatar: "girl" | "guy", id: string): PersonLook {
 }
 
 /** The city's crowd. */
+/** Wouroud herself in the city (her hijab look); kept out of the crowd. */
+export const WOUROUD_LOOK: PersonLook = { id: "Female_Adult_06", body: "female" };
+
 export const NPC_PEOPLE: PersonLook[] = [
   "Female_Adult_01",
   "Male_Adult_01",
-  "Female_Adult_06",
+  "Female_Adult_12",
   "Male_Adult_07",
   "Female_Adult_04",
   "Male_Adult_10",
