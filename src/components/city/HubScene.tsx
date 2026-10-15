@@ -3,6 +3,8 @@
 import { CuboidCollider, CylinderCollider, RigidBody } from "@react-three/rapier";
 import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import type { FoliageItem } from "@/world/foliage";
 import { DISTRICTS, HUB, landmarkPlacement } from "@/world/districts";
 import { computeHubLayout, isHubLawn, WORLD_HALF } from "@/world/hubLayout";
 import { accents, palette } from "@/world/palette";
@@ -16,6 +18,7 @@ import { Beacons } from "./Guidance";
 import { ChatGroups, type ChatGroup, makeWalkers, Pedestrians } from "./Pedestrians";
 import { Statue } from "./Person";
 import { WouroudGuide } from "./WouroudGuide";
+import { Horizon } from "./Horizon";
 import { NPC_PEOPLE } from "@/world/outfits";
 import { Balls, Knockables, type ParkedCar, ParkedCars, Pigeons } from "./Playthings";
 import { ParkBenches, Planters, planterPlants } from "./StreetDetails";
@@ -87,6 +90,7 @@ export function HubScene() {
 
       <StreetLamps points={layout.lamps} />
       <Planters spots={PLAZA_PLANTERS} />
+      <Corniche />
       <Foliage items={foliage} />
       <GrassField isLawn={isHubLawn} radius={150} count={26000} seed={3} />
       <PlazaBenches />
@@ -123,6 +127,11 @@ export function WorldGround() {
       </RigidBody>
       <mesh rotation-x={-Math.PI / 2} receiveShadow material={surface("grass")}>
         <planeGeometry args={[WORLD_HALF * 2, WORLD_HALF * 2]} />
+      </mesh>
+      <Horizon />
+      {/* The seawall where the land meets the Mediterranean */}
+      <mesh position={[0, -0.75, WORLD_HALF + 0.6]} material={surface("granite", "#cfc6b8")} receiveShadow>
+        <boxGeometry args={[WORLD_HALF * 2, 1.7, 1.2]} />
       </mesh>
     </group>
   );
@@ -276,6 +285,58 @@ function PlazaStatues() {
           </Text>
         </group>
       ))}
+    </group>
+  );
+}
+
+/**
+ * The Corniche: Tripoli's seaside promenade along the southern edge of the hub. Wide paving, a
+ * white railing over the sea, palms and lampposts every few meters, and benches facing the water.
+ */
+const CORNICHE = { z0: WORLD_HALF - 12, z1: WORLD_HALF, half: 120 };
+const CORNICHE_LAMPS = Array.from({ length: 13 }, (_, i) => ({ x: -CORNICHE.half + 10 + i * 19, z: CORNICHE.z1 - 2.2, rot: -Math.PI / 2 }));
+const CORNICHE_PALMS: FoliageItem[] = Array.from({ length: 12 }, (_, i) => ({
+  key: i % 3 === 0 ? "palmBend" : "palm",
+  x: -CORNICHE.half + 19 + i * 19,
+  z: CORNICHE.z0 + 2,
+  rot: i * 1.7,
+  size: 0.95 + (i % 3) * 0.1,
+  palette: "spring",
+}));
+const CORNICHE_BENCHES: Seat[] = Array.from({ length: 12 }, (_, i) => ({
+  id: `corniche-bench-${i}`,
+  x: -CORNICHE.half + 19 + i * 19 + 4,
+  y: 0,
+  z: CORNICHE.z1 - 4.2,
+  facing: 0,
+}));
+
+function Corniche() {
+  const { z0, z1, half } = CORNICHE;
+  const rail = useMemo(() => {
+    const posts: THREE.BufferGeometry[] = [];
+    for (let x = -half; x <= half; x += 2.4) posts.push(new THREE.BoxGeometry(0.1, 1.05, 0.1).translate(x, 0.52, z1 - 0.5));
+    posts.push(new THREE.BoxGeometry(half * 2, 0.08, 0.14).translate(0, 1.05, z1 - 0.5));
+    posts.push(new THREE.BoxGeometry(half * 2, 0.05, 0.08).translate(0, 0.6, z1 - 0.5));
+    return mergeGeometries(posts.map((g) => g.toNonIndexed()))!;
+  }, [half, z1]);
+  return (
+    <group>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, (z0 + z1) / 2]} receiveShadow material={surface("pavers")}>
+        <planeGeometry args={[half * 2, z1 - z0]} />
+      </mesh>
+      <mesh position={[0, 0.06, z0 - 0.12]} castShadow receiveShadow material={surface("granite")}>
+        <boxGeometry args={[half * 2, 0.12, 0.24]} />
+      </mesh>
+      <mesh geometry={rail} castShadow>
+        <meshStandardMaterial color="#f4f1ea" roughness={0.4} metalness={0.3} />
+      </mesh>
+      <StreetLamps points={CORNICHE_LAMPS} />
+      <Foliage items={CORNICHE_PALMS} />
+      <ParkBenches seats={CORNICHE_BENCHES} />
+      <Text position={[0, 1.6, z1 - 0.45]} rotation-y={Math.PI} fontSize={0.5} color="#fde68a" anchorX="center">
+        Corniche · Tripoli
+      </Text>
     </group>
   );
 }

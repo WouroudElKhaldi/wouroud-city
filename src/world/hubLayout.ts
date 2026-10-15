@@ -75,6 +75,8 @@ function scatterTrees(): FoliageItem[] {
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r;
     if (Math.abs(x) > WORLD_HALF - 6 || Math.abs(z) > WORLD_HALF - 6) continue;
+    // Keep the Corniche (the seaside promenade along the south edge) clear.
+    if (z > WORLD_HALF - 17 && Math.abs(x) < 126) continue;
     const nearRoad = spokes.some((s) => {
       // Distance from the point to the spoke's center line, only up to the landmark.
       const along = x * Math.cos(s.angle) + z * Math.sin(s.angle);
