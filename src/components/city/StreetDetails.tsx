@@ -17,6 +17,7 @@ import type { FoliageItem } from "@/world/foliage";
 import { surface } from "./surfaces";
 import { TEXT_FONT } from "@/world/fonts";
 import { Text } from "./Text3D";
+import { track } from "@/state/progress";
 
 function useInstanceMatrices(ref: React.RefObject<THREE.InstancedMesh | null>, matrices: THREE.Matrix4[]) {
   useLayoutEffect(() => {
@@ -276,6 +277,7 @@ export function Fountain() {
       to.y = 0.55;
       flight.current = { from, to, t: 0 };
       playGesture("interact-right");
+      track({ type: "coin" });
       sfx.coin();
       sfx.splash();
     },

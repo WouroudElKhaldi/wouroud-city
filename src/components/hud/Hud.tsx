@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { levelOf, useProgress } from "@/state/progress";
 import { useCityStore } from "@/state/useCityStore";
 import { districtById, landmarkDoorstep } from "@/world/districts";
 import { liveContent } from "@/content/live";
@@ -17,6 +18,7 @@ const WEATHER_ICON = { clear: "🌤️", rain: "🌧️", snow: "❄️", fog: "
 
 /** On-screen controls over the 3D city. Phones get a compact bar, a menu sheet and touch controls. */
 export function Hud() {
+  const xp = useProgress((s) => s.xp);
   const {
     timeMode,
     muted,
@@ -85,6 +87,7 @@ export function Hud() {
     setWaypoint({ x: door.x, z: door.z, label: districtById(next).name });
   };
 
+  const level = levelOf(xp);
   const secondary = (
     <>
       {p && (
@@ -104,6 +107,9 @@ export function Hud() {
       )}
       <button type="button" className="hud-panel hud-button pointer-events-auto" onClick={() => useCityStore.getState().takePhoto()}>
         📸 Photo
+      </button>
+      <button type="button" className="hud-panel hud-button pointer-events-auto" onClick={() => useProgress.getState().setJournalOpen(true)}>
+        📖 Journal <span className="text-amber-200">Lv {level}</span>
       </button>
       <a href="/resume" className="hud-panel hud-button pointer-events-auto">
         Résumé page

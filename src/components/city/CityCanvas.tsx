@@ -21,6 +21,7 @@ import { HubScene } from "./HubScene";
 import { keyboardMap, Player } from "./Player";
 import { Particles } from "./Particles";
 import { Birds } from "./Birds";
+import { Ducks } from "./Ducks";
 import { PlayerSpotlight } from "./PlayerSpotlight";
 import { WaypointGuide } from "./Guidance";
 import { Weather } from "./Weather";
@@ -102,6 +103,7 @@ export default function CityCanvas() {
           <Physics key={scene}>
             {scene === "hub" ? <HubScene /> : parseRoom(scene) ? <InteriorScene scene={scene as RoomScene} /> : <DistrictScene id={scene as DistrictId} />}
             <Player position={playerPosition} spawn={spawn.position} facing={spawn.facing} />
+            <Ducks scene={scene} />
           </Physics>
         </Suspense>
         {!parseRoom(scene) && <Birds />}

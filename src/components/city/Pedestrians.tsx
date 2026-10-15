@@ -13,6 +13,7 @@ import { NPC_PEOPLE } from "@/world/outfits";
 import { Person, type PersonLook } from "./Person";
 import type { CharacterAnimation } from "./Person";
 import { useProximity } from "./useProximity";
+import { track } from "@/state/progress";
 
 export type Walker = {
   id: string;
@@ -70,6 +71,7 @@ function Pedestrian({ walker }: { walker: Walker }) {
       talkingUntil.current = performance.now() + 6000;
       setAnimation("emote-yes");
       playGesture("interact-right");
+      track({ type: "talk" });
       sfx.talk();
     },
   });
@@ -219,6 +221,7 @@ function Chat({ group, index }: { group: ChatGroup; index: number }) {
     run: () => {
       setLine(lines[Math.floor(Math.random() * lines.length)]?.text ?? "Welcome to Wouroud's City!");
       sfx.talk();
+      track({ type: "talk" });
       window.setTimeout(() => setLine(null), 6000);
     },
   });

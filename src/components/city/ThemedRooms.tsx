@@ -20,6 +20,7 @@ import { SkillCenterpiece, SkillDressing, skillTheme } from "./SkillRooms";
 import { Seats } from "./StreetDetails";
 import { Text } from "./Text3D";
 import { useProximity } from "./useProximity";
+import { track } from "@/state/progress";
 
 /**
  * Rooms for every district that isn't an office or a project studio, built from the
@@ -845,6 +846,7 @@ function CrochetCorner({ x, z, accent }: { x: number; z: number; accent: string 
     if (rows + 1 === max) {
       emitBurst({ position: new THREE.Vector3(x, 1.6, z), kind: "sparkle", count: 30, colors: ["#f9a8d4", "#fde68a", "#ffffff"], spread: 0.8 });
       useCityStore.getState().toast("A little crochet bunny, finished! Click again to start a new one.", "Crochet");
+      track({ type: "crochet" });
     }
   };
   const where = useMemo(() => new THREE.Vector3(x, 0, z + 1.4), [x, z]);

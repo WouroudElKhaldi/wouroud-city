@@ -15,6 +15,7 @@ import { Person } from "./Person";
 import { box, font, Panel, useCanvas, wrap } from "./roomKit";
 import { Seats } from "./StreetDetails";
 import { useProximity } from "./useProximity";
+import { track } from "@/state/progress";
 
 /**
  * Inside a neighborhood shop. Cafés and restaurants have a counter with a menu: order with
@@ -253,6 +254,7 @@ function ServedDish({ shop, x, z }: { shop: string; x: number; z: number }) {
       if (Math.floor(before * 6) !== Math.floor(eaten.current * 6)) sfx.pop();
       if (eaten.current >= 1) {
         store.finishOrder();
+        track({ type: "meal", shop });
         store.toast(`That ${o.item.name} was delicious. You feel rested and ready to explore again!`, shop);
         sfx.coin();
         emitBurst({ position: new THREE.Vector3(x, 1.4, z), kind: "sparkle", count: 30, colors: ["#fde68a", "#f0abfc", "#ffffff"], spread: 0.8 });

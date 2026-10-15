@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useCityStore } from "@/state/useCityStore";
 import { sfx } from "@/world/sfx";
+import { track } from "@/state/progress";
 
 /**
  * XO (tic-tac-toe) against a bot, in the Arcade Pier's XO Lounge. You are X and start;
@@ -135,8 +136,11 @@ export function XoGame() {
   };
 
   const finish = (who: "X" | "O" | null) => {
-    if (who === "X") sfx.coin();
-    else if (who === "O") sfx.clunk();
+    if (who === "X") {
+      sfx.coin();
+      track({ type: "xo-win", level });
+    }
+    if (who === "O") sfx.clunk();
     setScore((s) => ({
       you: s.you + (who === "X" ? 1 : 0),
       bot: s.bot + (who === "O" ? 1 : 0),

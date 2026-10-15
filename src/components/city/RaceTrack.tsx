@@ -11,6 +11,7 @@ import { sfx } from "@/world/sfx";
 import { CAR_SCALE, CarModel, type CarMotion } from "./CarModel";
 import { Person } from "./Person";
 import { Text } from "./Text3D";
+import { track } from "@/state/progress";
 
 /**
  * "Ring Road Rally" on the Arcade Pier: three bot drivers and you, three laps of the ring
@@ -124,6 +125,7 @@ export function RaceTrack({ radius }: { radius: number }) {
       if (pl.progress >= LAPS * TAU) {
         pl.finishedAt = now;
         store.updateRace({ phase: "finished", position, lap: LAPS, time: (now - r.goAt) / 1000 });
+        track({ type: "race", position });
         if (position === 1) sfx.coin();
         else sfx.clunk();
       } else if (lap !== r.lap || position !== r.position) {

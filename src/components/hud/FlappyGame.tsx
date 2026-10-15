@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useCityStore } from "@/state/useCityStore";
 import { sfx } from "@/world/sfx";
 import { Leaderboard } from "./Leaderboard";
+import { track } from "@/state/progress";
 
 /**
  * "Firewall Flyer": a city pigeon flaps through the gaps in scrolling firewalls.
@@ -120,6 +121,7 @@ export function FlappyGame() {
         if (g.phase === "over") {
           sfx.clunk();
           setPhase("over");
+          track({ type: "flappy", score: g.score });
           if (g.score > readBest()) {
             try {
               localStorage.setItem(BEST_KEY, String(g.score));

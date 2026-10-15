@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useCityStore } from "@/state/useCityStore";
 import { sfx } from "@/world/sfx";
 import { Leaderboard } from "./Leaderboard";
+import { track } from "@/state/progress";
 
 /**
  * "Full Stack": the Arcade Pier game. A block slides across; tap (or press Space)
@@ -118,6 +119,7 @@ export function StackGame() {
       setPhase("over");
       sfx.clunk();
       const s = g.stack.length - 1;
+      track({ type: "stack", score: s });
       if (s > readBest()) {
         try {
           localStorage.setItem(BEST_KEY, String(s));
