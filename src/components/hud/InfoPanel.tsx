@@ -7,6 +7,7 @@ import { type Activity, type Panel, useCityStore } from "@/state/useCityStore";
 import { districtById } from "@/world/districts";
 import { computeDistrictLayout } from "@/world/layout";
 import { sfx } from "@/world/sfx";
+import { MediaGallery } from "./MediaGallery";
 
 function formatDate(date: string | null) {
   if (!date) return "Present";
@@ -162,6 +163,7 @@ function ProjectView({ project }: { project: Project }) {
           ))}
         </div>
       )}
+      <MediaGallery media={project.media} title={project.name} />
       {project.plaque && <p className="panel-plaque">★ {project.plaque}</p>}
     </>
   );
@@ -278,6 +280,7 @@ function PanelBody({ district, id }: { district: string; id: string }) {
           <p className="panel-kicker">Hobby</p>
           <h2 className="panel-title">{h.name}</h2>
           <p className="mt-3">{h.description}</p>
+          <MediaGallery media={h.media} title={h.name} />
           {h.id === "learning" && (
             <>
               <p className="mt-4 text-sm font-semibold text-white">On the desk right now</p>

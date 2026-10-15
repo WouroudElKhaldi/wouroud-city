@@ -43,7 +43,7 @@ P12. 🔄 Fast travel between districts, wet-ground look in rain, statues / kids
 P13. ✅ Batch the skill labels, LOD for far buildings (tasks 35, 36) — LOD: lobby fronts, name signs and street props only within 70 m (`NearOnly` in `Building.tsx`); car models not compressed (CarModel cuts doors from the geometry; quantizing is risky)
 P14. 🔄 Listen to the per-district music; check the car rows in the 7 districts other than Business — car rows checked (see P8); the music still needs a human ear
 P15. 🔄 Data and admin — Vercel deploy ✅; arcade leaderboard ✅ (`/api/scores`); **admin ✅ built**: `/admin` (Auth.js v5, Google, only ADMIN_EMAIL / the owner's address), edit each content section as JSON checked live against the Zod schema, publish to MongoDB (`content` doc "site" + `content_history`), reset to seed, download a backup. The home page and /resume read the published content (`src/server/content.ts`, `"use cache"` + `cacheTag("content")`, refreshed with `updateTag` on publish); the client reads it through `liveContent` (`src/content/live.ts`). **To switch it on**: AUTH_SECRET, AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET and MONGO_DB_URL in `.env` and Vercel. ⛔ still open: media uploads (Cloudflare R2 account)
-P16. ⬜ **Next level** (owner, 2026-10-15: "not just a room in every building, take the city to the next level"). Directions to pick from, in the order the owner chooses:
+P16. 🔄 **Next level** (owner, 2026-10-15: "not just a room in every building, take the city to the next level"). Directions to pick from, in the order the owner chooses:
    a. 🔄 A living city: ✅ live day cycle (🌇 Live in the HUD: 20-minute day, sunrise/sunset colors, moving sun; `DayNight.tsx`), ✅ passers-by wave when you walk up, ✅ chatting groups in the hub and every district (`ChatGroups` in `Pedestrians.tsx`), ✅ bird flocks (`Birds.tsx`), ✅ delivery vans, trucks, ambulance and fire truck in traffic, ✅ birdsong by day and crickets at night; ✅ the Ring Line city bus in every district (drives the ring, waits at its stop, E to ride to the next district; traffic waits behind it; `BusLine` in `StreetLife.tsx`), ✅ dogs on a leash with some walkers (sit when the owner stops; click to make them bark), ✅ plaza event: a street musician with an oud on the north side of the hub plaza (E: drop a coin, hear a maqam hijaz tune); ⬜ scooters
    b. ✅ A story to play: 16 quests with XP and levels, badges and a journal (J or 📖 in the HUD; `state/progress.ts`, `hud/Journal.tsx`, saved in the browser), 5 hidden golden ducks (`Ducks.tsx`, `DUCK_SPOTS`); the recruiter tour already exists ("Guide me: next stop")
    c. ✅ Wouroud herself in the city: her hijab look (`WOUROUD_LOOK`, Female_Adult_06, kept out of the crowd) by the hub fountain (`WouroudGuide.tsx`) waves and turns to you; "Talk to Wouroud" opens Ask Wouroud (`hud/AskWouroud.tsx`): questions answered from the live portfolio content (`world/askWouroud.ts`, keyword intents + skill/project/company names, free and offline) with "Show me the way" waypoints
@@ -76,7 +76,7 @@ Going in order (owner, 2026-10-15). Next: P16 next level, in its listed order (a
 19. ✅ README rewrite (what it is, how to run, controls, credits)
 
 ### C. Content inside buildings
-20. 🔄 Richer info panels: ✅ "used in" links between skills ↔ projects ↔ jobs, ✅ next/previous building; ⬜ project media gallery (needs screenshots from the owner / admin)
+20. 🔄 Richer info panels: ✅ "used in" links between skills ↔ projects ↔ jobs, ✅ next/previous building; ✅ media gallery in project and hobby panels (`hud/MediaGallery.tsx`: images and mp4/webm from `media`, big view with ← →); the media itself still comes from the owner
 21. ✅ Private Vault building explains the private work GitHub
 22. 🔄 Real interiors you can walk into: offices for every job and studios for every project are built (InteriorScene.tsx); ✅ Sahme Trading HQ (SahmeHQ.tsx): big floor with lobby, trading floor and 8 departments (Marketing, Sales, Operations, Risk, Accounting, HR, Software Engineering, Financial Counseling), luxury real-size furniture (Furniture.tsx) with seats fitted to the sitting pose and checked in screenshots; ✅ Develeb community hub (DevelebHub.tsx) in the develeb.org design: stage with the typing hero, audience rows, events, jobs, testimonials, newsletter, founders, partners, the website designs and the design desk; ✅ Reltrix products (8 totems), ecosystem and SAHMEE Group in the Sahme HQ; ✅ Codi Tech campus; ✅ Life Sculptor hub; ⬜ other offices/studios onto the new furniture
 
@@ -85,8 +85,8 @@ Going in order (owner, 2026-10-15). Next: P16 next level, in its listed order (a
 24. ✅ Hobby Quarter: painting easel (2D canvas painting app in the gallery)
 25. 🔄 Hobby Quarter: ✅ photo camera (📸 Photo in the HUD and the Photo Studio, saves a captioned PNG), ✅ library shows what she is learning now; ⬜ gallery of her paintings (needs uploads), ✅ crochet toy (crochet corner in the yarn shop studio)
 26. ✅ Horse riding: a horse waits by the stables in the Hobby Quarter; ride, gallop with Shift, the camera follows behind
-27. ✅ Weather: rain / snow / fog toggle in the HUD (particles follow the player, fog eases in); wet ground look still open
-28. ✅ Driving: all six cars parked in the hub lot and in every district (avenue curb + walkway bays); wheels roll and steer, the driver door swings open and shut getting in and out (CarModel.tsx); W/S/A/D or joystick, Shift boost, Space brake, E to get out; cars stay where you park them (fast travel still open)
+27. ✅ Weather: rain / snow / fog toggle in the HUD (particles follow the player, fog eases in); wet ground look ✅ (P12)
+28. ✅ Driving: all six cars parked in the hub lot and in every district (avenue curb + walkway bays); wheels roll and steer, the driver door swings open and shut getting in and out (CarModel.tsx); W/S/A/D or joystick, Shift boost, Space brake, E to get out; cars stay where you park them; fast travel ✅ (big map M, and the Ring Line bus)
 29. ✅ Ambient music per district (synthesized, mute-aware, slower at night, rain hiss) — runs without errors, not yet listened to by a human
 
 ### E. Data and admin (needs free accounts created by the owner)
@@ -97,8 +97,8 @@ Going in order (owner, 2026-10-15). Next: P16 next level, in its listed order (a
 34. 🔄 Deploy on Vercel Hobby ✅ (https://wouroud-city.vercel.app, Vercel Analytics on); ⬜ custom domain
 
 ### F. Polish and performance
-35. ⬜ Batch / bake troika text labels (skills district has ~43)
-36. ⬜ LOD for far buildings, KTX2 / Draco compression of models (gltf-transform)
+35. ✅ Troika labels: name signs drawn only within 70 m (`NearOnly`, P13); fonts local (`Text3D`)
+36. ✅ LOD for far buildings (`NearOnly`); avatars and clips meshopt-compressed with gltf-transform (cars left as they are, see P13)
 37. ✅ Accessibility: reduced motion (CSS + still emblems), info panels are focused dialogs, screen-reader summary with a résumé link
 38. ✅ Character polish: superseded by the Rocketbox avatars
 39. ✅ New robot avatar (humanoid robot in `Avatar.tsx`)
