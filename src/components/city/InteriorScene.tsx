@@ -18,6 +18,7 @@ import { marbleTexture } from "./luxury";
 import { CodiCampus } from "./CodiCampus";
 import { DevelebHub } from "./DevelebHub";
 import { LifeSculptorHub } from "./LifeSculptorHub";
+import { FreelanceStudio } from "./FreelanceStudio";
 import { SahmeHQ } from "./SahmeHQ";
 import { ThemedRoom } from "./ThemedRooms";
 import { useGlowMaterial } from "./materials";
@@ -100,6 +101,8 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
         <SahmeHQ job={job} accent={accent} />
       ) : branded && job ? (
         <branded.Room job={job} />
+      ) : job?.id === "freelance" ? (
+        <FreelanceStudio job={job} accent={accent} />
       ) : job ? (
         <Office job={job} accent={accent} />
       ) : project ? (

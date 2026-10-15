@@ -22,6 +22,7 @@ import {
   TallPlant,
   workSeat,
 } from "./Furniture";
+import { CodiAdventures } from "./CodiAdventures";
 import { OnWall, Plaque } from "./InteriorScene";
 import { finishes } from "./luxury";
 import { emitBurst } from "./Particles";
@@ -510,6 +511,7 @@ export function CodiCampus({ job }: { job: Experience }) {
         );
       })}
       <GradCap position={[11.2, 0, -1.6]} />
+      <CodiAdventures wallX={W / 2} depth={D} />
 
       {people.map(({ seat, who }) => (
         <Suspense key={seat.id} fallback={null}>
