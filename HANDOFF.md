@@ -43,7 +43,7 @@ What was wrong and how it was fixed (don't regress these):
    outer envelope in cylindrical coordinates (dilate + average around the body and up/down, never
    cutting into it) and makes the fabric hang from the widest point above, starting `hang` meters below
    the top of the chest with a soft blend (no ledge). The neck stays close-fitting under the hijab.
-   `sleeveRoom` adds room on arms. Her outfits use `smooth: 30, hang: 0.09`; everyday tops `hang: 0.12`.
+   `sleeveRoom` adds room on arms. Her outfits use `smooth: 30, hang: 0.05` (BLEND 3 bins, angle reach 12) so the bust reads as one smooth front; everyday tops `hang: 0.12`.
    Skirts/longer tops start a bit above the hips with `topRadius: 1.3` so they overlap the top.
 
 Checked up close (front, side, walking, abaya and blazer): modest, loose, hijab to the neck, realistic face.

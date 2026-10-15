@@ -282,7 +282,7 @@ function hangTorso(cp: Float32Array, region: Region[], count: number, startBelow
       }
     return out;
   };
-  env = pass(env, "angle", 8);
+  env = pass(env, "angle", 12);
   env = pass(env, "height", 3);
 
   // 3. Hang: going down, never narrower than the widest point above (slow taper).
@@ -304,7 +304,7 @@ function hangTorso(cp: Float32Array, region: Region[], count: number, startBelow
 
   // 4. Move each torso point out to the envelope, from the start line down
   //    (blending in over 6 cm so there is no ledge).
-  const BLEND = 6;
+  const BLEND = 3;
   for (const i of torso) {
     const h = heightBin(i);
     const w = THREE.MathUtils.clamp((startH - h) / BLEND, 0, 1);
@@ -423,17 +423,17 @@ export function dressUp(model: THREE.Object3D, kind: OutfitKind, colors: OutfitC
   switch (kind) {
     case "abaya":
       // One flowing garment: everything but hands, feet and face, kept loose.
-      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.09, sleeveRoom: 0.008 }));
+      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.05, sleeveRoom: 0.008 }));
       add(addLayer(b, ["thighs", "calves"], top, { inflate: 0.012, smooth: 3, generous: true }));
       add(addFlare(model, top, -0.06, 1.0, { flare: 1.85, folds: 10, topRadius: 1.3 }));
       break;
     case "blazer-modest":
-      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.09, sleeveRoom: 0.008 }));
+      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.05, sleeveRoom: 0.008 }));
       add(addLayer(b, ["thighs", "calves"], bottom, { inflate: 0.024, smooth: 6, generous: true }));
       add(addFlare(model, top, -0.06, 0.42, { flare: 1.8, folds: 6, topRadius: 1.3 }));
       break;
     case "tunic":
-      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.09, sleeveRoom: 0.008 }));
+      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.05, sleeveRoom: 0.008 }));
       add(addLayer(b, ["thighs", "calves"], bottom, { inflate: 0.024, smooth: 6, generous: true }));
       add(addFlare(model, top, -0.06, 0.5, { flare: 1.85, folds: 7, topRadius: 1.3 }));
       break;
@@ -455,7 +455,7 @@ export function dressUp(model: THREE.Object3D, kind: OutfitKind, colors: OutfitC
     case "tee-women":
       // A relaxed long-sleeve top and loose trousers.
       add(addLayer(b, ["pelvis", "thighs", "calves"], bottom, { inflate: 0.022, smooth: 8, generous: true }));
-      add(addLayer(b, ["chest", "pelvis", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.09, sleeveRoom: 0.008 }));
+      add(addLayer(b, ["chest", "pelvis", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.05, sleeveRoom: 0.008 }));
       break;
   }
   add(addLayer(b, ["feet"], shoes, { inflate: 0.01, smooth: 2, generous: true }));
