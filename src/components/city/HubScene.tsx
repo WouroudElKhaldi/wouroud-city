@@ -1,7 +1,7 @@
 "use client";
 
 import { CuboidCollider, CylinderCollider, RigidBody } from "@react-three/rapier";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { DISTRICTS, HUB, landmarkPlacement } from "@/world/districts";
 import { computeHubLayout, isHubLawn, WORLD_HALF } from "@/world/hubLayout";
@@ -14,6 +14,8 @@ import { Foliage } from "./Foliage";
 import { GrassField } from "./GrassField";
 import { Beacons } from "./Guidance";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
+import { Statue } from "./Person";
+import { NPC_PEOPLE } from "@/world/outfits";
 import { Balls, Knockables, type ParkedCar, ParkedCars, Pigeons } from "./Playthings";
 import { ParkBenches, Planters, planterPlants } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
@@ -87,6 +89,7 @@ export function HubScene() {
       <Foliage items={foliage} />
       <GrassField isLawn={isHubLawn} radius={150} count={26000} seed={3} />
       <PlazaBenches />
+      <PlazaStatues />
       <Beacons />
       <Pigeons center={[0, 0]} radius={13} count={12} />
       <Balls
@@ -226,6 +229,39 @@ function HubRoads({ roads }: { roads: Road[] }) {
       <instancedMesh ref={curbs} args={[undefined, surface("granite"), m.curb.length]} castShadow receiveShadow>
         <boxGeometry args={[1, 1, 1]} />
       </instancedMesh>
+    </group>
+  );
+}
+
+/** Two bronze statues on granite plinths beside the fountain: a developer waving, one looking on. */
+function PlazaStatues() {
+  const spots = useMemo(() => {
+    const a = landmarkPlacement(DISTRICTS[0].id).angle + Math.PI / 2 + Math.PI / DISTRICTS.length;
+    return [0, Math.PI].map((d) => ({ x: Math.cos(a + d) * 8.6, z: Math.sin(a + d) * 8.6, facing: Math.atan2(-Math.cos(a + d), -Math.sin(a + d)) + Math.PI }));
+  }, []);
+  return (
+    <group>
+      {spots.map((p, i) => (
+        <group key={i} position={[p.x, 0, p.z]} rotation-y={p.facing}>
+          <RigidBody type="fixed" colliders={false}>
+            <CylinderCollider args={[0.6, 0.75]} position={[0, 0.6, 0]} />
+          </RigidBody>
+          <mesh position={[0, 0.45, 0]} material={surface("darkStone")} castShadow receiveShadow>
+            <cylinderGeometry args={[0.7, 0.8, 0.9, 32]} />
+          </mesh>
+          <mesh position={[0, 0.92, 0]} material={surface("granite")} receiveShadow>
+            <cylinderGeometry args={[0.75, 0.75, 0.06, 32]} />
+          </mesh>
+          <group position={[0, 0.95, 0]}>
+            <Suspense fallback={null}>
+              <Statue look={NPC_PEOPLE[i === 0 ? 0 : 1]} pose={i === 0 ? "wave" : "idle"} at={i === 0 ? 0.45 : 0.2} />
+            </Suspense>
+          </group>
+          <Text position={[0, 0.5, 0.81]} fontSize={0.09} color="#e2c27a" anchorX="center" anchorY="middle" maxWidth={1.2} textAlign="center">
+            {i === 0 ? "To every developer\nwho shipped it anyway" : "To the mentors\nwho believed in us"}
+          </Text>
+        </group>
+      ))}
     </group>
   );
 }

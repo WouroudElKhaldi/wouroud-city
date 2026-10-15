@@ -327,6 +327,42 @@ function Rig({
   return <primitive object={model} />;
 }
 
+const BRONZE = new THREE.MeshStandardMaterial({ color: "#8c6a3c", metalness: 0.85, roughness: 0.38 });
+
+/**
+ * A bronze statue: a Rocketbox body frozen in a frame of one of the clips (a wave by default),
+ * all in one bronze material. Hair cards and lashes are hidden (they need their alpha texture).
+ */
+export function Statue({ look, pose = "wave", at = 0.45 }: { look: PersonLook; pose?: Source; at?: number }) {
+  const { scene } = useGLTF(MODEL_URL(look.id));
+  const anims = useGLTF(animUrls(look.body));
+  const { clips } = useMemo(() => prepareClips(anims), [anims]);
+  const model = useMemo(() => {
+    const m = cloneSkinned(scene);
+    m.traverse((o) => {
+      const mesh = o as THREE.SkinnedMesh;
+      if (!mesh.isMesh) return;
+      const names = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).map((x) => x.name);
+      if (names.every((n) => n.endsWith("opacity"))) mesh.visible = false;
+      mesh.material = BRONZE;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+    });
+    return m;
+  }, [scene]);
+  useEffect(() => {
+    const clip = clips.find((c) => c.name === pose) ?? clips[0];
+    const mixer = new THREE.AnimationMixer(model);
+    mixer.clipAction(clip).play();
+    mixer.setTime(clip.duration * at);
+    return () => {
+      mixer.stopAllAction();
+    };
+  }, [model, clips, pose, at]);
+  return <primitive object={model} />;
+}
+
 export function preloadPeople(ids: string[]) {
   for (const id of ids) useGLTF.preload(MODEL_URL(id));
   useGLTF.preload(animUrls("female"));
