@@ -6,8 +6,9 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useCityStore } from "@/state/useCityStore";
 
-/** Kenney car models are about 2.5 units long; this makes them car-sized. */
-export const CAR_SCALE = 2.2;
+/** Kenney car models are about 2.5 units long and 1.15 tall; this makes them about 4 m long and
+ *  1.8 m tall: real-car sized next to the 1.7 m people (2.2 made them twice a person's height). */
+export const CAR_SCALE = 1.6;
 
 /** How a car is moving, for its wheels: speed in m/s (negative backing up), steer in -1..1. */
 export type CarMotion = { speed: number; steer: number };

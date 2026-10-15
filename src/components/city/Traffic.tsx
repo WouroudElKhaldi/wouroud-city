@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { playerState, registerNightGlow } from "@/world/env";
 import { sfx } from "@/world/sfx";
+import { CAR_SCALE } from "./CarModel";
 
 /**
  * Cars driving around a district's ring road, one lane each way. They are
@@ -15,7 +16,6 @@ import { sfx } from "@/world/sfx";
  */
 
 const MODELS = ["sedan", "taxi", "suv", "hatchback-sports", "van", "police"];
-const SCALE = 2.2;
 const CRUISE = 6;
 
 type Driver = { model: string; angle: number; lane: number; dir: 1 | -1; speed: number; blockedFor: number };
@@ -82,9 +82,9 @@ function MovingCar({ driver, radius }: { driver: Driver; radius: number }) {
 
   return (
     <group ref={group}>
-      <primitive object={object} scale={SCALE} position={[0, 0.3 * SCALE, 0]} />
+      <primitive object={object} scale={CAR_SCALE} position={[0, 0.3 * CAR_SCALE, 0]} />
       {[-0.45, 0.45].map((hx) => (
-        <mesh key={hx} position={[hx * SCALE, 0.55 * SCALE, 1.28 * SCALE]} material={lights}>
+        <mesh key={hx} position={[hx * CAR_SCALE, 0.55 * CAR_SCALE, 1.28 * CAR_SCALE]} material={lights}>
           <sphereGeometry args={[0.16, 10, 10]} />
         </mesh>
       ))}

@@ -13,6 +13,22 @@ Big source assets (Rocketbox FBX/TGA, ~3.5 GB) are **not** in git (`.assets-src/
 converted web files in `public/models/rb` are. Re-download them only if you need to convert new avatars.
 
 ### Latest work (newest first)
+0. **Luxury pass + Sahme trading floor + sizing (latest).**
+   - Every room (`InteriorScene.tsx` → `Shell`): marble floor with gold inlay, walnut wainscoting,
+     ivory walls, crown molding, walnut pilasters, coffered ceiling, gold chandeliers, sconces, olive
+     trees in brass planters, black-and-gold window frames. Owner wants the **whole city to feel
+     luxury** — next: give the generic office desks/studio sofas walnut/leather/velvet finishes, then
+     carry the same look outdoors (plazas, benches, lamps, building lobbies).
+   - Sahme Trading's office (`TradingFloor.tsx`): live candlestick wall charts, price tickers,
+     triple-monitor trading desks (charts + code), golden bull, floating ₿/Ξ coins, world clocks,
+     server racks, coffee bar, payments-architecture whiteboard, `</>` neon, dev lounge with beanbags,
+     rubber ducks, and a playable **Crypto Slots** machine (`SlotMachine.tsx`: E or click the lever).
+   - Sizing for the Rocketbox people: cars shrunk to real size (`CAR_SCALE` 1.6 in `CarModel.tsx`,
+     used by parked, driven and traffic cars); the avatar's soles now sit exactly on the floor
+     (`REST_HEIGHT` in `Player.tsx` + per-body foot measuring in `Person.tsx`). Chairs (0.46 m) and
+     desks (0.74 m) already fit. Still to check: car rows/spacing in the hub after the shrink, and
+     the bench sitting pose outdoors.
+   - `.claude/` is now git-ignored (it was committed by mistake).
 1. **Walk-in interiors (task 22) — IN PROGRESS, committed but not fully checked.**
    - In the Business District (jobs) and Projects district, the door prompt is now "Go inside X"
      (`BuildingDoors.tsx`) and goes to a room scene `room:<district>:<buildingId>`

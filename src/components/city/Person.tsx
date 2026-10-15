@@ -2,7 +2,7 @@
 
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { playerState } from "@/world/env";
@@ -52,6 +52,10 @@ const CLIPS: Record<CharacterAnimation, Source> = {
   "interact-left": "wave",
 };
 const ONE_SHOT: CharacterAnimation[] = ["pick-up", "emote-yes", "interact-right", "interact-left"];
+/** Frames over which a body measures how far its shoes reach below the floor. */
+const GROUND_FRAMES = 30;
+const probe = new THREE.Vector3();
+const inverse = new THREE.Matrix4();
 
 const textures = new Map<string, THREE.Texture>();
 function texture(url: string, color: boolean) {
@@ -188,6 +192,31 @@ function Rig({
       action.fadeOut(0.25);
     };
   }, [actions, animation]);
+
+  // Stand on the floor: shoes (heels, boots, flats) reach different depths below the rig's
+  // origin, so measure the lowest skinned vertex over the first frames and lift the body by it.
+  const grounding = useRef({ frames: 0, min: Infinity });
+  useFrame(() => {
+    const g = grounding.current;
+    if (g.frames > GROUND_FRAMES) return;
+    // Only standing and walking poses tell where the soles are (not sitting or jumping).
+    if (animation !== "idle" && animation !== "walk" && animation !== "sprint") return;
+    g.frames++;
+    if (g.frames < 3) return; // let the first animation pose apply
+    // Measured in the body's own space, so it doesn't matter if the player is still dropping in.
+    model.updateMatrixWorld(true);
+    inverse.copy(model.matrixWorld).invert();
+    model.traverse((o) => {
+      const mesh = o as THREE.SkinnedMesh;
+      if (!mesh.isSkinnedMesh) return;
+      const count = mesh.geometry.attributes.position.count;
+      for (let i = 0; i < count; i += 5) {
+        mesh.getVertexPosition(i, probe).applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);
+        if (probe.y < g.min) g.min = probe.y;
+      }
+    });
+    if (g.frames === GROUND_FRAMES && Number.isFinite(g.min)) model.position.y = -g.min;
+  });
 
   // Feet keep pace with the ground instead of sliding.
   useFrame(() => {

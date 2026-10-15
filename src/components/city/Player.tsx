@@ -33,6 +33,8 @@ const CAPSULE_RADIUS = 0.3;
 const FLOAT_HEIGHT = 0.3;
 /** Distance from the controller's center down to the ground it floats above (the ground ray adds ~6 cm). */
 const FEET_OFFSET = CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS + FLOAT_HEIGHT + 0.06;
+/** How high the body's center floats above the ground at rest: the avatar's soles go exactly there. */
+const REST_HEIGHT = CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS + FLOAT_HEIGHT;
 
 
 const GESTURE_SECONDS = 1.3;
@@ -231,7 +233,7 @@ export function Player({
           position={
             riding
               ? [0, -(CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS) + SADDLE_HEIGHT + 0.27 - 0.48, -0.15]
-              : [0, -FEET_OFFSET + (seat ? 0.05 : 0), seat ? -0.1 : 0]
+              : [0, seat ? -FEET_OFFSET + 0.05 : -REST_HEIGHT, seat ? -0.1 : 0]
           }
           visible={!driving || riding}
         >
