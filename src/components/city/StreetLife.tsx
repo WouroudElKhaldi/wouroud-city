@@ -513,3 +513,80 @@ function BusStop({ x, z, rot, next }: { x: number; z: number; rot: number; next:
     </group>
   );
 }
+
+// ---------------------------------------------------------------------------
+// E-scooters
+// ---------------------------------------------------------------------------
+
+const SCOOTER = {
+  deck: new THREE.MeshStandardMaterial({ color: "#1f1d24", roughness: 0.6 }),
+  stem: new THREE.MeshStandardMaterial({ color: "#d4d4d8", metalness: 0.8, roughness: 0.3 }),
+  tire: new THREE.MeshStandardMaterial({ color: "#121114", roughness: 0.9 }),
+};
+const SCOOTER_COLORS = ["#22c55e", "#f97316", "#06b6d4"].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.4, metalness: 0.3 }));
+
+/** A kick scooter with its rider standing on the deck, front toward +z. */
+function ScooterRider({ index }: { index: number }) {
+  const accent = SCOOTER_COLORS[index % SCOOTER_COLORS.length];
+  return (
+    <group>
+      <mesh position={[0, 0.16, 0]} material={SCOOTER.deck} castShadow>
+        <boxGeometry args={[0.16, 0.05, 0.75]} />
+      </mesh>
+      <mesh position={[0, 0.19, 0]} material={accent}>
+        <boxGeometry args={[0.165, 0.012, 0.6]} />
+      </mesh>
+      <mesh position={[0, 0.66, 0.38]} rotation-x={-0.12} material={SCOOTER.stem} castShadow>
+        <cylinderGeometry args={[0.022, 0.022, 1.0, 8]} />
+      </mesh>
+      <mesh position={[0, 1.15, 0.44]} rotation-z={Math.PI / 2} material={SCOOTER.stem}>
+        <cylinderGeometry args={[0.016, 0.016, 0.5, 8]} />
+      </mesh>
+      {[0.36, -0.36].map((z) => (
+        <mesh key={z} position={[0, 0.1, z]} rotation-z={Math.PI / 2} material={SCOOTER.tire} castShadow>
+          <cylinderGeometry args={[0.1, 0.1, 0.05, 14]} />
+        </mesh>
+      ))}
+      <group position={[0, 0.19, -0.08]}>
+        <Suspense fallback={null}>
+          <Person look={NPC_PEOPLE[(index * 5 + 2) % NPC_PEOPLE.length]} animation="idle" detail={false} />
+        </Suspense>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * People on e-scooters riding a district's ring road along the inner curb, the same way as the inner
+ * lane's traffic, far enough over that the cars pass them. Like the cars, they stop for you.
+ */
+export function ScooterRiders({ radius, count = 2 }: { radius: number; count?: number }) {
+  const riders = useRef<(THREE.Group | null)[]>([]);
+  const state = useRef(Array.from({ length: count }, (_, i) => ({ angle: (i / count) * Math.PI * 2 + 1.1, speed: 3.6 })));
+  const ahead = useMemo(() => new THREE.Vector3(), []);
+  useFrame((_, rawDelta) => {
+    const delta = Math.min(rawDelta, 0.05);
+    const r = radius - 3.3;
+    state.current.forEach((s, i) => {
+      const look = s.angle - 3 / r;
+      ahead.set(Math.sin(look) * r, 0, Math.cos(look) * r);
+      const blocked = ahead.distanceTo(playerState.position) < 2.4;
+      s.speed = THREE.MathUtils.damp(s.speed, blocked ? 0 : 3.6 + i * 0.4, blocked ? 6 : 1, delta);
+      s.angle -= (s.speed * delta) / r;
+      const g = riders.current[i];
+      if (g) {
+        g.position.set(Math.sin(s.angle) * r, 0, Math.cos(s.angle) * r);
+        g.rotation.y = Math.atan2(Math.cos(s.angle), -Math.sin(s.angle)) + Math.PI;
+      }
+    });
+  });
+  return (
+    <group>
+      {Array.from({ length: count }, (_, i) => (
+        <group key={i} ref={(el) => void (riders.current[i] = el)}>
+          <ScooterRider index={i} />
+        </group>
+      ))}
+    </group>
+  );
+}

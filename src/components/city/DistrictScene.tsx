@@ -22,7 +22,7 @@ import { NPC_PEOPLE } from "@/world/outfits";
 import { Balls, Knockables, ParkedCars, Pigeons } from "./Playthings";
 import { Portal } from "./Portal";
 import { RaceTrack } from "./RaceTrack";
-import { BusLine } from "./StreetLife";
+import { BusLine, ScooterRiders } from "./StreetLife";
 import { CodeBillboards, Fountain, ParkBenches, Planters, planterPlants } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 import { MarketStalls, Traffic } from "./Traffic";
@@ -256,6 +256,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
         ))}
       {!(id === "arcade" && racing) && <Traffic radius={ringRadius} count={Math.max(4, Math.round(ringRadius / 7))} />}
       {!(id === "arcade" && racing) && <BusLine radius={ringRadius} district={id} />}
+      {!(id === "arcade" && racing) && <ScooterRiders radius={ringRadius} />}
       {id === "arcade" && <RaceTrack radius={ringRadius} />}
     </group>
   );
