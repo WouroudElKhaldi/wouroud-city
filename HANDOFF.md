@@ -23,33 +23,31 @@ Type-check, lint and `next build` pass.
   bench shaking (kinematic seat), long dress shows no skin at full stride.
 - Guy: new fitted hair + eyebrows from Quaternius Universal Base Characters (`Hair.tsx`).
 
-### IN PROGRESS — new character bodies (owner asked for this; NOT live yet)
-Goal: replace the Quaternius low-poly people with **Universal Base Characters** bodies (CC0, in
-`public/models/people2/female.glb`, `male.glb`) animated by the **Universal Animation Library**
-(CC0, `public/models/people2/animations.glb`, same UE-style rig: pelvis, spine_01..03, upperarm_l, thigh_l,
-Head...). The bodies come in underwear only, so clothes are generated in code.
-- `src/components/city/Person.tsx`: new character component (body + shared clips + skin tint + clothes +
-  hijab via existing `buildHijab` + kit hair). Animation name map in `CLIPS`.
-- `src/components/city/clothes.ts`: `addLayer` (copies body triangles of regions, smooths, inflates;
-  skinned to the same skeleton), `addFlare` (lathe skirt / long top on pelvis), `dressUp(kind)` outfits:
-  abaya, blazer-modest, tunic (hers, always with hijab = fully covering, LOOSE), shirt, tee, suit.
-- `src/world/outfits.ts` → `playerLook()` maps the welcome-screen choices to a PersonLook.
-- Conversion script: `.assets-src/tools/convert.mjs` (git-ignored; run with `node convert.mjs` there).
-  Source zips are in the owner's Downloads and unpacked in `.assets-src/ubc`, `.assets-src/ual`.
-- **Player.tsx still uses the old `Character`** (reverted on purpose). To test: in Player, render
-  `<Person look={playerLook(...)} animation={animation} matchPlayerSpeed />` instead of `<Character …/>`.
+### DONE (2026-10-15, later) — new character bodies are live
+The player and every NPC now use **Universal Base Characters** bodies (CC0, `public/models/people2/`)
+animated by the **Universal Animation Library** (`animations.glb`), via `Person.tsx` + `clothes.ts`.
+`src/world/flags.ts` → `USE_NEW_BODIES` (default on; add `?oldbody` to the URL to compare with the old
+Quaternius people, still in `Character.tsx`). NPC looks: `NPC_PEOPLE` in `src/world/outfits.ts`.
 
-**Open bugs found in the first test (must fix before switching her over):**
-1. Clothes have big holes on the chest/belly and the console throws
-   `applyBoneTransform … reading 'matrixWorld'` from `SkinnedMesh.computeBoundingSphere`: the fabric
-   layers are bound to the skeleton but likely need `layer.boundingSphere` set (or the clone's
-   `skeleton` is wrong) — probably both issues share a cause in `addLayer` (check `body.skeleton`
-   after `SkeletonUtils.clone`, and set `frustumCulled = false` + precompute the bounding sphere).
-2. Skin: base texture is now lightened in `convert.mjs` (fair base, tint for darker NPCs) — re-check.
-3. The kit body is "Superhero" (muscular/curvy). Her outfits must stay LOOSE (smooth more, add the
-   flare from higher up), and the hijab must cover down to the top of the neck. **Check her up close
-   from the front after every change; never leave her immodest on screen.**
-4. Then: NPCs (`Pedestrians.tsx` uses `Character` + `NPC_LOOKS`) → move to `Person` with varied looks.
+What was wrong and how it was fixed (don't regress these):
+1. **Holes / NaN in clothes**: the converted GLBs store vertices **interleaved** (stride 56), so
+   `position.array` is the whole packed buffer. `addLayer` now de-interleaves every attribute of the
+   cloned geometry first (`InterleavedBufferAttribute.clone()`).
+2. **Torn seams**: the body is split along UV seams; smoothing moved each copy separately. `addLayer`
+   welds points by position (1 mm) and smooths/pushes the welded points.
+3. **Bounding sphere errors**: layers get precomputed `boundingSphere/boundingBox`, `frustumCulled =
+   false` and a no-op `raycast`, so three never walks the skeleton for them.
+4. **T-pose after a body rebuild**: animations live in an inner `Rig` component keyed by `model.uuid`,
+   so a rebuilt body gets a fresh mixer bound to its own bones.
+5. **Skin-tight fabric on the athletic body** (bust, abs, waist showing): `hangTorso` builds a smoothed
+   outer envelope in cylindrical coordinates (dilate + average around the body and up/down, never
+   cutting into it) and makes the fabric hang from the widest point above, starting `hang` meters below
+   the top of the chest with a soft blend (no ledge). The neck stays close-fitting under the hijab.
+   `sleeveRoom` adds room on arms. Her outfits use `smooth: 30, hang: 0.09`; everyday tops `hang: 0.12`.
+   Skirts/longer tops start a bit above the hips with `topRadius: 1.3` so they overlap the top.
+
+Checked up close (front, side, walking, abaya and blazer): modest, loose, hijab to the neck, realistic face.
+Polish left: jagged front hem on the women's casual top; the female base body has broad shoulders.
 
 ### Not started
 Walk-in interiors (22), paintings gallery (needs owner's images), crochet toy, label batching / LOD /

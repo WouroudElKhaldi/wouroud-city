@@ -139,3 +139,17 @@ export function playerLook(avatar: "girl" | "guy", outfit: GirlOutfit, hijab: bo
     brows: "#2b1a14",
   };
 }
+
+/** City people on the new bodies, in the city palette and with natural skin tints. */
+export const NPC_PEOPLE: PersonLook[] = [
+  { body: "female", outfit: "blazer-modest", colors: { top: "#0f766e", bottom: "#2d2a4a", shoes: "#1a103d" }, skin: "#f3d9c6", hijab: "#efe3d0", brows: "#3b2a20" },
+  { body: "male", outfit: "suit", colors: { top: "#3b2d63", bottom: "#2d2a4a", shoes: "#1a103d", accent: "#f5f0ff" }, skin: "#e2b79a", hair: { style: "parted", color: "#2b1d16" }, brows: "#2b1d16" },
+  { body: "female", outfit: "tee-women", colors: { top: "#f6c453", bottom: "#4c1d95", shoes: "#f5f0ff" }, skin: "#fbe3d3", hair: { style: "long", color: "#5a3a26" }, brows: "#5a3a26" },
+  { body: "male", outfit: "tee", colors: { top: "#a78bfa", bottom: "#2d2a4a", shoes: "#1a103d" }, skin: "#a7775a", hair: { style: "buzzed", color: "#1c1410" }, brows: "#1c1410" },
+  { body: "female", outfit: "abaya", colors: { top: "#d69e2e", bottom: "#d69e2e", shoes: "#2d1f52" }, skin: "#e6be9f", hijab: "#2f2b5c", brows: "#2b1a14" },
+  { body: "male", outfit: "shirt", colors: { top: "#14b8a6", bottom: "#3b2d63", shoes: "#1a103d" }, skin: "#f1d1bb", hair: { style: "parted", color: "#6b4a2e" }, brows: "#6b4a2e", },
+  { body: "female", outfit: "tee-women", colors: { top: "#f472b6", bottom: "#2d2a4a", shoes: "#ffffff" }, skin: "#c99272", hair: { style: "buns", color: "#2b1a14" }, brows: "#2b1a14" },
+  { body: "male", outfit: "shirt", colors: { top: "#f5f0ff", bottom: "#2d2a4a", shoes: "#3b2d63" }, skin: "#f3d9c6", hair: { style: "buzzed", color: "#8a6a45" }, brows: "#8a6a45" },
+  { body: "female", outfit: "tunic", colors: { top: "#4c1d95", bottom: "#2d2a4a", shoes: "#1a103d" }, skin: "#f3d9c6", hijab: "#b7a2e0", brows: "#3b2a20" },
+  { body: "male", outfit: "tee", colors: { top: "#5eead4", bottom: "#4c1d95", shoes: "#f5f0ff" }, skin: "#8d5e45", hair: { style: "parted", color: "#140e0b", beard: true }, brows: "#140e0b" },
+];

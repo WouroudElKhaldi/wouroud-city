@@ -24,12 +24,15 @@ import { WaypointGuide } from "./Guidance";
 import { Weather } from "./Weather";
 import { PhotoCapture } from "./PhotoCapture";
 import { preloadCharacters } from "./Character";
+import { preloadPeople } from "./Person";
+import { USE_NEW_BODIES } from "@/world/flags";
 import { preloadFoliage } from "./Foliage";
 import { preloadPlaythings } from "./Playthings";
 
 preloadFoliage();
 preloadPlaythings();
-preloadCharacters([...new Set([...Object.values(GIRL_OUTFITS).map((o) => o.file), GUY_OUTFIT.file, ...NPC_LOOKS.map((l) => l.file)])]);
+if (USE_NEW_BODIES) preloadPeople();
+else preloadCharacters([...new Set([...Object.values(GIRL_OUTFITS).map((o) => o.file), GUY_OUTFIT.file, ...NPC_LOOKS.map((l) => l.file)])]);
 
 const HUB_SPAWN: [number, number, number] = [0, 2, 12];
 

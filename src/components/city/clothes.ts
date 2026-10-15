@@ -56,6 +56,14 @@ export type LayerOptions = {
   smooth?: number;
   /** Also take triangles with only some corners in the regions (closes gaps at seams) */
   generous?: boolean;
+  /**
+   * Loose drape for the torso: below `hang` meters under the shoulders, the fabric falls
+   * from the widest point above it instead of following the waist and chest, like a loose
+   * top. The value is how far below the shoulder line the hanging starts.
+   */
+  hang?: number;
+  /** Extra room for sleeves (meters added to inflate on arms and forearms) */
+  sleeveRoom?: number;
 };
 
 /** A skinned fabric layer over the given body regions. Returns the mesh (already added next to the body). */
@@ -66,7 +74,11 @@ export function addLayer(body: THREE.SkinnedMesh, regions: Region[], material: T
   const skinWeight = g.attributes.skinWeight as THREE.BufferAttribute;
   const bones = body.skeleton.bones;
   const inRegion = new Uint8Array(g.attributes.position.count);
-  for (let i = 0; i < inRegion.length; i++) inRegion[i] = regions.includes(regionOf(bones[dominant(skinIndex, skinWeight, i)]?.name ?? "")) ? 1 : 0;
+  const regionOfVertex: Region[] = new Array(inRegion.length);
+  for (let i = 0; i < inRegion.length; i++) {
+    regionOfVertex[i] = regionOf(bones[dominant(skinIndex, skinWeight, i)]?.name ?? "");
+    inRegion[i] = regions.includes(regionOfVertex[i]) ? 1 : 0;
+  }
 
   const keep: number[] = [];
   for (let t = 0; t < index.count; t += 3) {
@@ -78,61 +90,106 @@ export function addLayer(body: THREE.SkinnedMesh, regions: Region[], material: T
   }
 
   const layer = g.clone();
+  // The converted bodies store vertices interleaved (all attributes packed per vertex).
+  // Copy each attribute into its own plain array so positions can be edited directly.
+  for (const name of Object.keys(layer.attributes)) {
+    const attr = layer.attributes[name];
+    if ((attr as THREE.InterleavedBufferAttribute).isInterleavedBufferAttribute) {
+      layer.setAttribute(name, (attr as THREE.InterleavedBufferAttribute).clone());
+    }
+  }
   layer.setIndex(keep);
   const pos = layer.attributes.position as THREE.BufferAttribute;
-  // The skin's own surface and normals, to keep the fabric outside it after smoothing.
-  layer.computeVertexNormals();
-  const skin = (pos.array as Float32Array).slice();
-  const skinNormal = (layer.attributes.normal.array as Float32Array).slice();
+  const p = pos.array as Float32Array;
 
-  // Laplacian smoothing over the kept surface: fabric skims over muscle and curves.
+  // The body is split along texture seams (the same point appears as several
+  // vertices). Weld by position so smoothing and pushing move every copy of a
+  // point together; otherwise the seams tear open into holes.
+  const canon = new Int32Array(pos.count).fill(-1);
+  const keyToId = new Map<string, number>();
+  const used = [...new Set(keep)];
+  for (const v of used) {
+    const key = `${Math.round(p[v * 3] * 1e3)},${Math.round(p[v * 3 + 1] * 1e3)},${Math.round(p[v * 3 + 2] * 1e3)}`;
+    let id = keyToId.get(key);
+    if (id === undefined) keyToId.set(key, (id = keyToId.size));
+    canon[v] = id;
+  }
+  const count = keyToId.size;
+  const pointRegion: Region[] = new Array(count);
+  for (const v of used) pointRegion[canon[v]] ??= regionOfVertex[v];
+  const cp = new Float32Array(count * 3);
+  for (const v of used) cp.set([p[v * 3], p[v * 3 + 1], p[v * 3 + 2]], canon[v] * 3);
+
+  // Skin normals per welded point (area-weighted face normals).
+  const cn = new Float32Array(count * 3);
+  const e1 = new THREE.Vector3();
+  const e2 = new THREE.Vector3();
+  const fn = new THREE.Vector3();
+  for (let t = 0; t < keep.length; t += 3) {
+    const [i0, i1, i2] = [canon[keep[t]], canon[keep[t + 1]], canon[keep[t + 2]]];
+    e1.set(cp[i1 * 3] - cp[i0 * 3], cp[i1 * 3 + 1] - cp[i0 * 3 + 1], cp[i1 * 3 + 2] - cp[i0 * 3 + 2]);
+    e2.set(cp[i2 * 3] - cp[i0 * 3], cp[i2 * 3 + 1] - cp[i0 * 3 + 1], cp[i2 * 3 + 2] - cp[i0 * 3 + 2]);
+    fn.crossVectors(e1, e2);
+    for (const i of [i0, i1, i2]) {
+      cn[i * 3] += fn.x;
+      cn[i * 3 + 1] += fn.y;
+      cn[i * 3 + 2] += fn.z;
+    }
+  }
+  for (let i = 0; i < count; i++) {
+    const l = Math.hypot(cn[i * 3], cn[i * 3 + 1], cn[i * 3 + 2]) || 1;
+    cn[i * 3] /= l;
+    cn[i * 3 + 1] /= l;
+    cn[i * 3 + 2] /= l;
+  }
+  const skin = cp.slice();
+
+  // Laplacian smoothing on the welded surface: fabric skims over muscle and curves.
   const passes = opts.smooth ?? 0;
   if (passes > 0) {
-    const neighbors = new Map<number, Set<number>>();
+    const neighbors: Set<number>[] = Array.from({ length: count }, () => new Set<number>());
     for (let t = 0; t < keep.length; t += 3) {
-      const tri = [keep[t], keep[t + 1], keep[t + 2]];
-      for (const v of tri) {
-        let set = neighbors.get(v);
-        if (!set) neighbors.set(v, (set = new Set()));
-        for (const w of tri) if (w !== v) set.add(w);
-      }
+      const tri = [canon[keep[t]], canon[keep[t + 1]], canon[keep[t + 2]]];
+      for (const v of tri) for (const w of tri) if (w !== v) neighbors[v].add(w);
     }
-    const p = pos.array as Float32Array;
     for (let pass = 0; pass < passes; pass++) {
-      const next = p.slice();
-      for (const [v, set] of neighbors) {
+      const next = cp.slice();
+      for (let v = 0; v < count; v++) {
+        const set = neighbors[v];
+        if (!set.size) continue;
         let x = 0;
         let y = 0;
         let z = 0;
         for (const w of set) {
-          x += p[w * 3];
-          y += p[w * 3 + 1];
-          z += p[w * 3 + 2];
+          x += cp[w * 3];
+          y += cp[w * 3 + 1];
+          z += cp[w * 3 + 2];
         }
         const n = set.size;
-        next[v * 3] = p[v * 3] * 0.5 + (x / n) * 0.5;
-        next[v * 3 + 1] = p[v * 3 + 1] * 0.5 + (y / n) * 0.5;
-        next[v * 3 + 2] = p[v * 3 + 2] * 0.5 + (z / n) * 0.5;
+        next[v * 3] = cp[v * 3] * 0.5 + (x / n) * 0.5;
+        next[v * 3 + 1] = cp[v * 3 + 1] * 0.5 + (y / n) * 0.5;
+        next[v * 3 + 2] = cp[v * 3 + 2] * 0.5 + (z / n) * 0.5;
       }
-      p.set(next);
+      cp.set(next);
     }
   }
   // Smoothing shrinks a surface, so measure each point against the skin it came from
   // and push it back out until it is at least `inflate` above the skin.
-  const p = pos.array as Float32Array;
-  for (const v of new Set(keep)) {
-    const i = v * 3;
-    const nx = skinNormal[i];
-    const ny = skinNormal[i + 1];
-    const nz = skinNormal[i + 2];
-    const above = (p[i] - skin[i]) * nx + (p[i + 1] - skin[i + 1]) * ny + (p[i + 2] - skin[i + 2]) * nz;
-    const push = Math.max(0, opts.inflate - above);
-    p[i] += nx * push;
-    p[i + 1] += ny * push;
-    p[i + 2] += nz * push;
+  for (let i = 0; i < count; i++) {
+    const k = i * 3;
+    const above = (cp[k] - skin[k]) * cn[k] + (cp[k + 1] - skin[k + 1]) * cn[k + 1] + (cp[k + 2] - skin[k + 2]) * cn[k + 2];
+    const room = pointRegion[i] === "arms" || pointRegion[i] === "forearms" ? (opts.sleeveRoom ?? 0) : 0;
+    const push = Math.max(0, opts.inflate + room - above);
+    cp[k] += cn[k] * push;
+    cp[k + 1] += cn[k + 1] * push;
+    cp[k + 2] += cn[k + 2] * push;
   }
+  if (opts.hang !== undefined) hangTorso(cp, pointRegion, count, opts.hang);
+  for (const v of used) p.set([cp[canon[v] * 3], cp[canon[v] * 3 + 1], cp[canon[v] * 3 + 2]], v * 3);
   pos.needsUpdate = true;
   layer.computeVertexNormals();
+  layer.computeBoundingBox();
+  layer.computeBoundingSphere();
 
   const mesh = new THREE.SkinnedMesh(layer, material);
   mesh.bind(body.skeleton, body.bindMatrix);
@@ -141,8 +198,125 @@ export function addLayer(body: THREE.SkinnedMesh, regions: Region[], material: T
   mesh.scale.copy(body.scale);
   mesh.castShadow = true;
   mesh.frustumCulled = false;
+  mesh.boundingSphere = layer.boundingSphere!.clone();
+  mesh.boundingBox = layer.boundingBox!.clone();
+  // Fabric layers are decoration: don't let pointer raycasts walk the skeleton.
+  mesh.raycast = () => {};
   body.parent?.add(mesh);
   return mesh;
+}
+
+/**
+ * Makes torso fabric loose. In cylindrical coordinates around the body's vertical
+ * axis, the fabric takes a smoothed outer envelope of the body: it bridges over
+ * muscles, curves and the waist instead of dipping into them. Below `startBelow`
+ * meters under the top of the torso, it also hangs: it never gets narrower than the
+ * widest point above it in the same direction (tapering slowly), like a loose top
+ * falling from the chest and shoulders.
+ */
+function hangTorso(cp: Float32Array, region: Region[], count: number, startBelow: number) {
+  const torso: number[] = [];
+  let top = -Infinity;
+  let bottom = Infinity;
+  let cx = 0;
+  let cz = 0;
+  for (let i = 0; i < count; i++) {
+    // The neck stays close-fitting under the hijab; only chest and hips go loose.
+    if (region[i] !== "chest" && region[i] !== "pelvis") continue;
+    torso.push(i);
+    top = Math.max(top, cp[i * 3 + 1]);
+    bottom = Math.min(bottom, cp[i * 3 + 1]);
+    cx += cp[i * 3];
+    cz += cp[i * 3 + 2];
+  }
+  if (!torso.length) return;
+  cx /= torso.length;
+  cz /= torso.length;
+
+  const A = 96; // angle bins
+  const STEP = 0.015; // meters per height bin
+  const H = Math.ceil((top - bottom) / STEP) + 1;
+  const angleBin = (i: number) => {
+    const ang = Math.atan2(cp[i * 3 + 2] - cz, cp[i * 3] - cx);
+    return Math.floor(((ang + Math.PI) / (Math.PI * 2)) * A) % A;
+  };
+  const heightBin = (i: number) => Math.min(H - 1, Math.max(0, Math.round((cp[i * 3 + 1] - bottom) / STEP)));
+  const radius = (i: number) => Math.hypot(cp[i * 3] - cx, cp[i * 3 + 2] - cz);
+
+  // 1. Widest radius per cell.
+  let env = new Float32Array(A * H).fill(-1);
+  for (const i of torso) {
+    const k = heightBin(i) * A + angleBin(i);
+    env[k] = Math.max(env[k], radius(i));
+  }
+  // 2. Smooth outer envelope: dilate then average, around the body and then up/down.
+  // Every averaged value is a max over a window containing the original cell, so the
+  // envelope never cuts into the body.
+  const pass = (src: Float32Array, along: "angle" | "height", reach: number) => {
+    const dil = new Float32Array(src.length).fill(-1);
+    const out = new Float32Array(src.length).fill(-1);
+    const at = (h: number, a: number) => src[h * A + (((a % A) + A) % A)];
+    for (let h = 0; h < H; h++)
+      for (let ai = 0; ai < A; ai++) {
+        let m = -1;
+        for (let d = -reach; d <= reach; d++) {
+          const v = along === "angle" ? at(h, ai + d) : h + d >= 0 && h + d < H ? at(h + d, ai) : -1;
+          if (v > m) m = v;
+        }
+        dil[h * A + ai] = m;
+      }
+    for (let h = 0; h < H; h++)
+      for (let ai = 0; ai < A; ai++) {
+        let sum = 0;
+        let n = 0;
+        for (let d = -reach; d <= reach; d++) {
+          const hh = along === "height" ? h + d : h;
+          const aa = along === "angle" ? (((ai + d) % A) + A) % A : ai;
+          if (hh < 0 || hh >= H) continue;
+          const v = dil[hh * A + aa];
+          if (v < 0) continue;
+          sum += v;
+          n++;
+        }
+        out[h * A + ai] = n ? sum / n : -1;
+      }
+    return out;
+  };
+  env = pass(env, "angle", 8);
+  env = pass(env, "height", 3);
+
+  // 3. Hang: going down, never narrower than the widest point above (slow taper).
+  const startH = Math.round((top - startBelow - bottom) / STEP);
+  const taper = 0.12; // narrows 12% per meter of fall
+  for (let ai = 0; ai < A; ai++) {
+    let widest = -1;
+    let widestH = H - 1;
+    for (let h = H - 1; h >= 0; h--) {
+      const k = h * A + ai;
+      if (env[k] < 0) continue;
+      if (h < startH && widest > 0) env[k] = Math.max(env[k], widest * (1 - taper * (widestH - h) * STEP));
+      if (env[k] > widest) {
+        widest = env[k];
+        widestH = h;
+      }
+    }
+  }
+
+  // 4. Move each torso point out to the envelope, from the start line down
+  //    (blending in over 6 cm so there is no ledge).
+  const BLEND = 6;
+  for (const i of torso) {
+    const h = heightBin(i);
+    const w = THREE.MathUtils.clamp((startH - h) / BLEND, 0, 1);
+    if (w <= 0) continue;
+    const r = radius(i);
+    const target = r + (env[h * A + angleBin(i)] - r) * w;
+    if (target > r && r > 1e-6) {
+      const k = target / r;
+      cp[i * 3] = cx + (cp[i * 3] - cx) * k;
+      cp[i * 3 + 2] = cz + (cp[i * 3 + 2] - cz) * k;
+    }
+  }
 }
 
 /** Ripple a lathe's radius into soft folds, stronger toward the hem. */
@@ -162,7 +336,13 @@ function folds(geometry: THREE.BufferGeometry, top: number, height: number, coun
  * A flared skirt or the lower part of a long top, hanging from the pelvis.
  * `from` and `to` are heights as fractions of the hip→ankle length (0 = hips, 1 = ankles).
  */
-export function addFlare(model: THREE.Object3D, material: THREE.Material, from: number, to: number, opts: { flare?: number; folds?: number } = {}) {
+export function addFlare(
+  model: THREE.Object3D,
+  material: THREE.Material,
+  from: number,
+  to: number,
+  opts: { flare?: number; folds?: number; topRadius?: number } = {},
+) {
   model.updateMatrixWorld(true);
   const toModel = new THREE.Matrix4().copy(model.matrixWorld).invert();
   const at = (name: string) => {
@@ -180,7 +360,7 @@ export function addFlare(model: THREE.Object3D, material: THREE.Material, from: 
   const top = pelvis.y + length * 0.12 - length * from;
   const bottom = pelvis.y - length * to;
   const height = top - bottom;
-  const rTop = hip * 1.02;
+  const rTop = hip * (opts.topRadius ?? 1.02);
   const rBottom = hip * (opts.flare ?? 1.7);
   const profile = [
     new THREE.Vector2(rTop * 0.96, top),
@@ -243,33 +423,39 @@ export function dressUp(model: THREE.Object3D, kind: OutfitKind, colors: OutfitC
   switch (kind) {
     case "abaya":
       // One flowing garment: everything but hands, feet and face, kept loose.
-      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.022, smooth: 8, generous: true }));
+      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.09, sleeveRoom: 0.008 }));
       add(addLayer(b, ["thighs", "calves"], top, { inflate: 0.012, smooth: 3, generous: true }));
-      add(addFlare(model, top, 0, 1.0, { flare: 1.75, folds: 10 }));
+      add(addFlare(model, top, -0.06, 1.0, { flare: 1.85, folds: 10, topRadius: 1.3 }));
       break;
     case "blazer-modest":
-      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.022, smooth: 7, generous: true }));
-      add(addLayer(b, ["thighs", "calves"], bottom, { inflate: 0.02, smooth: 4, generous: true }));
-      add(addFlare(model, top, 0, 0.42, { flare: 1.35, folds: 6 }));
+      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.09, sleeveRoom: 0.008 }));
+      add(addLayer(b, ["thighs", "calves"], bottom, { inflate: 0.024, smooth: 6, generous: true }));
+      add(addFlare(model, top, -0.06, 0.42, { flare: 1.8, folds: 6, topRadius: 1.3 }));
       break;
     case "tunic":
-      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 7, generous: true }));
-      add(addLayer(b, ["thighs", "calves"], bottom, { inflate: 0.02, smooth: 4, generous: true }));
-      add(addFlare(model, top, 0, 0.5, { flare: 1.4, folds: 7 }));
+      add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.09, sleeveRoom: 0.008 }));
+      add(addLayer(b, ["thighs", "calves"], bottom, { inflate: 0.024, smooth: 6, generous: true }));
+      add(addFlare(model, top, -0.06, 0.5, { flare: 1.85, folds: 7, topRadius: 1.3 }));
       break;
+    // Everyday clothes sit naturally: tops drape from the chest and cover the waistband,
+    // trousers have a little room, so no outfit traces the athletic base body.
     case "shirt":
-      add(addLayer(b, ["chest", "arms", "forearms"], top, { inflate: 0.014, smooth: 4, generous: true }));
-      add(addLayer(b, ["pelvis", "thighs", "calves"], bottom, { inflate: 0.012, smooth: 3, generous: true }));
+      add(addLayer(b, ["pelvis", "thighs", "calves"], bottom, { inflate: 0.016, smooth: 6, generous: true }));
+      add(addLayer(b, ["chest", "pelvis", "arms", "forearms"], top, { inflate: 0.02, smooth: 20, generous: true, hang: 0.12, sleeveRoom: 0.006 }));
       break;
     case "suit":
-      add(addLayer(b, ["chest", "arms", "forearms"], top, { inflate: 0.018, smooth: 5, generous: true }));
-      add(addLayer(b, ["pelvis", "thighs", "calves"], bottom, { inflate: 0.013, smooth: 3, generous: true }));
+      add(addLayer(b, ["pelvis", "thighs", "calves"], bottom, { inflate: 0.016, smooth: 6, generous: true }));
+      add(addLayer(b, ["chest", "pelvis", "arms", "forearms"], top, { inflate: 0.024, smooth: 20, generous: true, hang: 0.12, sleeveRoom: 0.006 }));
       if (colors.accent) add(addLayer(b, ["neck"], fabric(colors.accent), { inflate: 0.006, smooth: 1, generous: true }));
       break;
     case "tee":
+      add(addLayer(b, ["pelvis", "thighs", "calves"], bottom, { inflate: 0.016, smooth: 6, generous: true }));
+      add(addLayer(b, ["chest", "pelvis", "arms"], top, { inflate: 0.02, smooth: 20, generous: true, hang: 0.12, sleeveRoom: 0.006 }));
+      break;
     case "tee-women":
-      add(addLayer(b, ["chest", "arms"], top, { inflate: 0.012, smooth: 4, generous: true }));
-      add(addLayer(b, ["pelvis", "thighs", "calves"], bottom, { inflate: 0.012, smooth: 3, generous: true }));
+      // A relaxed long-sleeve top and loose trousers.
+      add(addLayer(b, ["pelvis", "thighs", "calves"], bottom, { inflate: 0.022, smooth: 8, generous: true }));
+      add(addLayer(b, ["chest", "pelvis", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.09, sleeveRoom: 0.008 }));
       break;
   }
   add(addLayer(b, ["feet"], shoes, { inflate: 0.01, smooth: 2, generous: true }));

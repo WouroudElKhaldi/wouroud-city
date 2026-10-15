@@ -9,7 +9,9 @@ import { seedContent } from "@/content/seed";
 import { useCityStore } from "@/state/useCityStore";
 import { playerState } from "@/world/env";
 import { sfx } from "@/world/sfx";
-import { NPC_LOOKS } from "@/world/outfits";
+import { USE_NEW_BODIES } from "@/world/flags";
+import { NPC_LOOKS, NPC_PEOPLE } from "@/world/outfits";
+import { Person, type PersonLook } from "./Person";
 import type { ModestLayers } from "./garments";
 import { Character, type CharacterAnimation, type PersonFile } from "./Character";
 import { useProximity } from "./useProximity";
@@ -21,6 +23,8 @@ export type Walker = {
   colors: Record<string, string>;
   hijab?: string;
   modest?: ModestLayers;
+  /** The same person on the new bodies */
+  person: PersonLook;
   /** Closed loop of waypoints on the ground */
   path: [number, number][];
   speed: number;
@@ -120,14 +124,18 @@ function Pedestrian({ walker }: { walker: Walker }) {
         <CapsuleCollider args={[0.45, 0.35]} />
       </RigidBody>
       <group ref={visual}>
-        <Character
-          file={walker.file}
-          colors={walker.colors}
-          hijab={Boolean(walker.hijab)}
-          hijabColor={walker.hijab}
-          modest={walker.modest}
-          animation={animation}
-        />
+        {USE_NEW_BODIES ? (
+          <Person look={walker.person} animation={animation} />
+        ) : (
+          <Character
+            file={walker.file}
+            colors={walker.colors}
+            hijab={Boolean(walker.hijab)}
+            hijabColor={walker.hijab}
+            modest={walker.modest}
+            animation={animation}
+          />
+        )}
         {line && (
           <Html position={[0, 2.25, 0]} center distanceFactor={9} zIndexRange={[20, 0]}>
             <div className="npc-bubble">
@@ -177,6 +185,7 @@ export function makeWalkers(
       id: `${prefix}-${i}`,
       name: NAMES[(i + prefix.length) % NAMES.length],
       ...NPC_LOOKS[(i * 3 + prefix.length) % NPC_LOOKS.length],
+      person: NPC_PEOPLE[(i * 3 + prefix.length) % NPC_PEOPLE.length],
       path,
       speed: 1.1 + (i % 3) * 0.25,
       district,

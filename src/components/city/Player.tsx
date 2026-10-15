@@ -13,6 +13,9 @@ import { touchInput } from "@/world/touch";
 import { Avatar } from "./Avatar";
 import { GIRL_OUTFITS, GUY_OUTFIT } from "@/world/outfits";
 import { Character, type CharacterAnimation } from "./Character";
+import { Person } from "./Person";
+import { USE_NEW_BODIES as NEW_BODY } from "@/world/flags";
+import { playerLook } from "@/world/outfits";
 import { HorseModel, SADDLE_HEIGHT } from "./Horse";
 
 export const keyboardMap = [
@@ -240,17 +243,21 @@ export function Player({
             <Avatar kind="robot" hijab={false} controller={controller} />
           ) : (
             <Suspense fallback={<Avatar kind={avatar} hijab={hijab} controller={controller} />}>
-              <Character
-                file={outfit.file}
-                colors={outfit.colors}
-                // Wearing a hijab always means a fully covering outfit.
-                modest={wearsHijab || outfit.alwaysModest ? outfit.modest : undefined}
-                animation={animation}
-                matchPlayerSpeed
-                hair={outfit.hair}
-                hijab={wearsHijab}
-                hijabColor={hijabColor}
-              />
+              {NEW_BODY ? (
+                <Person look={playerLook(avatar, outfitKey, hijab, hijabColor)} animation={animation} matchPlayerSpeed />
+              ) : (
+                <Character
+                  file={outfit.file}
+                  colors={outfit.colors}
+                  // Wearing a hijab always means a fully covering outfit.
+                  modest={wearsHijab || outfit.alwaysModest ? outfit.modest : undefined}
+                  animation={animation}
+                  matchPlayerSpeed
+                  hair={outfit.hair}
+                  hijab={wearsHijab}
+                  hijabColor={hijabColor}
+                />
+              )}
             </Suspense>
           )}
         </group>

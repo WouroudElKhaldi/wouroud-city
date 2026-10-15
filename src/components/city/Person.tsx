@@ -2,7 +2,7 @@
 
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo } from "react";
 import * as THREE from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { playerState } from "@/world/env";
@@ -63,7 +63,6 @@ export function Person({
 }) {
   const { scene } = useGLTF(BODY_URL(look.body));
   const { animations } = useGLTF(ANIM_URL);
-  const root = useRef<THREE.Group>(null);
 
   const { model, scale } = useMemo(() => {
     const m = cloneSkinned(scene);
@@ -107,7 +106,31 @@ export function Person({
     return () => hijab?.removeFromParent();
   }, [model, look.hijab]);
 
-  const { actions } = useAnimations(animations, root);
+  return (
+    <group scale={scale}>
+      {/* Keyed by the model: a rebuilt body gets a fresh animation mixer bound to its own bones. */}
+      <Rig key={model.uuid} model={model} clips={animations} animation={animation} matchPlayerSpeed={matchPlayerSpeed} />
+      {look.hair && !look.hijab && <Hair model={model} style={look.hair.style} color={look.hair.color} beard={look.hair.beard} />}
+    </group>
+  );
+}
+
+/** Plays the shared animation clips on one body. */
+function Rig({
+  model,
+  clips,
+  animation,
+  matchPlayerSpeed,
+}: {
+  model: THREE.Object3D;
+  clips: THREE.AnimationClip[];
+  animation: CharacterAnimation;
+  matchPlayerSpeed: boolean;
+}) {
+  const { actions, mixer } = useAnimations(clips, model);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") Object.assign(window, { __person: { actions, mixer, model } });
+  }, [actions, mixer, model]);
 
   useEffect(() => {
     const action = actions[CLIPS[animation]];
@@ -131,12 +154,7 @@ export function Person({
     if (action) action.timeScale = THREE.MathUtils.clamp(playerState.speed / stride, 0.7, 2.4);
   });
 
-  return (
-    <group ref={root} scale={scale}>
-      <primitive object={model} />
-      {look.hair && !look.hijab && <Hair model={model} style={look.hair.style} color={look.hair.color} beard={look.hair.beard} />}
-    </group>
-  );
+  return <primitive object={model} />;
 }
 
 export function preloadPeople() {
