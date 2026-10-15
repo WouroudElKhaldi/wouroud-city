@@ -15,6 +15,7 @@ import { DistrictProps, Roof, roofHeight, styleFor, tinted } from "./Architectur
 import { useFacade, useGlowMaterial } from "./materials";
 
 import { DARK, FLOOR, STONE } from "./buildingTheme";
+import { Balconies, Shopfront } from "./Facades";
 import { TEXT_FONT } from "@/world/fonts";
 import { Text } from "./Text3D";
 
@@ -55,8 +56,14 @@ export function Building({ spec: raw }: { spec: BuildingSpec }) {
       {spec.variant === "lowrise" && <LowriseBuilding spec={spec} />}
       {spec.variant === "workshop" && <WorkshopBuilding spec={spec} />}
       {spec.variant === "tower" && <SkillTower spec={spec} shape={signature?.shape ?? "box"} accent={signature?.accent} />}
+      {spec.variant === "lowrise" && (
+        <NearOnly x={spec.x} z={spec.z} range={120}>
+          <Balconies spec={spec} seed={seedOf(spec)} />
+        </NearOnly>
+      )}
       <NearOnly x={spec.x} z={spec.z} range={70}>
         <Entrance spec={spec} />
+        {spec.id.startsWith("filler-") && <Shopfront spec={spec} />}
         <DistrictProps kind={style.props} spec={spec} accent={signature?.accent ?? accents.gold} />
       </NearOnly>
       <Roof kind={style.roof} width={width} depth={depth} y={height + 0.3} color={style.roofColor} />

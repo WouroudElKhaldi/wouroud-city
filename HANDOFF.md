@@ -24,7 +24,8 @@ converted web files in `public/models/rb` are. Re-download them only if you need
    moderation in `/admin`) and the arcade Hall of Fame by the rally start line; both read
    `state/liveData.ts` and say "resting" while MONGO_DB_URL isn't set. Street life (`StreetLife.tsx`): dogs
    with walkers, the hub's oud player, and the Ring Line bus + stop in each district (ride it with E).
-   `useProximity` now refreshes a prompt whose label changes while you stand in it.
+   `useProximity` now refreshes a prompt whose label changes while you stand in it. Facades (`Facades.tsx`):
+   balconies aligned to the facade texture's window columns (`windowColumns`), shop awnings and blade signs.
 -4. **Admin + live content (cloud).** `/admin` (`src/app/admin/*`, `src/auth.ts`, Auth.js v5 beta with Google;
    only ADMIN_EMAIL, default the owner's address) edits content sections as JSON (live Zod check), publishes to
    MongoDB and calls `updateTag("content")`. `getContent()` (`src/server/content.ts`) is `"use cache"` +
