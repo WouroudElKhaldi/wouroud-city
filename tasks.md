@@ -25,28 +25,28 @@ See `HANDOFF.md` for architecture, rules and gotchas.
 ## ⭐ Owner's priority list (open requests, in this order)
 
 P1. ✅ **Loading time**: avatars and clips meshopt-compressed (anim 5.4 MB → 0.9 MB, each avatar 480 KB → 107 KB), only the visitor's own body is preloaded (the crowd streams in), sky light map 1.4 MB → 0.3 MB, and 3D labels use a local font instead of waiting on the jsdelivr CDN (that wait blocked the whole scene). Startup download ~20 MB → ~4.5 MB
-P2. ⬜ **Realistic outdoors** in the Rocketbox style (not photoreal, no more low-poly toy look): grass, trees and plants, balls/cones/pigeons, streets/sidewalks/curbs/crosswalks, benches/lamps/planters, the ground in the hub and every district. CC0 assets only, small downloads, keep every interaction and instancing, frame rate no worse
-P3. ⬜ **Codi Tech building: adventures and activities** with her mentors (they did a lot together), much more fun inside
-P4. ⬜ **Freelance office: fill it** with everything from the freelance work (the projects and things built together)
-P5. ⬜ **Every building in every district enterable AND interactive inside** (not only Business and Projects): skills, campus, training, languages, hobbies, arcade too; each room has things to do
-P5b. ⬜ **Arcade Pier games** (owner, 2026-10-15): today only "Full Stack" can be entered. Add: **XO (tic-tac-toe) vs a bot** with Easy / Medium / Hard; a **flying bird between walls** game (flappy style); a **car race against bots** using the city's cars and people. Each game in its own arcade building
-P5c. ⬜ **Hyperfocus studio built from the app itself** (owner, 2026-10-15): everything inside its building comes from Hyperfocus (what it is, its features, the companion pet, the music player…) plus **real screenshots**. The Hyperfocus source is on the owner's laptop, not in the cloud: the local session should take screenshots of the running app and save them as `public/images/projects/hyperfocus/*.png` (the studio shows any images listed in the project's `media`)
-P5d. ⬜ **A unique interior for every skill** (owner, 2026-10-15): each skill tower's room in that skill's own colors, design and theme, with its own interactive things (React component tree that re-renders, Docker containers to stack, Git branches to commit, SQL tables to query, CSS box model to restyle…)
-P5e. ⬜ **Restaurants and cafés you can really use** (owner, 2026-10-15): enter, sit and rest, read the menu, order, the food is served and you eat it
-P6. ⬜ **Luxury everywhere** (from the interiors pass): walnut/leather/velvet office desks and studio sofas, then the same luxury look outdoors (plazas, benches, lamps, building lobbies)
-P7. ⬜ Verify the walk-in interiors (Office company wall, a project Studio, sitting on chairs/sofas, leaving by the door), then tick task 22
+P2. ✅ **Realistic outdoors** in the Rocketbox style (not photoreal, no more low-poly toy look): grass, trees and plants, balls/cones/pigeons, streets/sidewalks/curbs/crosswalks, benches/lamps/planters, the ground in the hub and every district. CC0 assets only, small downloads, keep every interaction and instancing, frame rate no worse — DONE: generated CC0 textures (`tools/textures/make_textures.py` → `public/textures`, bark from Poly Haven), procedural trees/plants (`plants.ts`), world-mapped surfaces (`surfaces.ts`), new lawn, balls, cones, crates, pigeons, benches, lampposts, planters, curbs, crosswalk. Frame rate could not be measured here (no GPU in the cloud); instancing kept everywhere, draw calls similar. Check on a real machine
+P3. ✅ **Codi Tech building: adventures and activities** with her mentors (they did a lot together), much more fun inside — DONE: `CodiAdventures.tsx` (photo wall with stories, foosball, mentor riddles). Captions are general: **owner to send the real adventures and mentors' names** (edit `ADVENTURES`)
+P4. ✅ **Freelance office: fill it** with everything from the freelance work (the projects and things built together) — DONE: `FreelanceStudio.tsx` (Jamrex Miniyeh live on screen: EN/AR, light/dark, Telegram alert; city model; process wall; side projects; desk)
+P5. ✅ **Every building in every district enterable AND interactive inside** (not only Business and Projects): skills, campus, training, languages, hobbies, arcade too; each room has things to do — DONE: `ThemedRooms.tsx` (skill lab, lecture hall, certificate gallery, language café, hobby studios, arcade halls); shops via `Shops.tsx`
+P5b. ✅ **Arcade Pier games** (owner, 2026-10-15): today only "Full Stack" can be entered. Add: **XO (tic-tac-toe) vs a bot** with Easy / Medium / Hard; a **flying bird between walls** game (flappy style); a **car race against bots** using the city's cars and people. Each game in its own arcade building — DONE: `hud/XoGame.tsx`, `hud/FlappyGame.tsx` (Firewall Flyer), `city/RaceTrack.tsx` + `hud/RaceHud.tsx` (Ring Road Rally); arcade buildings in `layout.ts`
+P5c. 🔄 **Hyperfocus studio built from the app itself** (owner, 2026-10-15): everything inside its building comes from Hyperfocus (what it is, its features, the companion pet, the music player…) plus **real screenshots**. The Hyperfocus source is on the owner's laptop, not in the cloud: the local session should take screenshots of the running app and save them as `public/images/projects/hyperfocus/*.png` (the studio shows any images listed in the project's `media`) — BUILT (`HyperfocusStudio.tsx`); **screenshots still to add** from the owner's laptop (put paths in the project's `media`)
+P5d. ✅ **A unique interior for every skill** (owner, 2026-10-15): each skill tower's room in that skill's own colors, design and theme, with its own interactive things (React component tree that re-renders, Docker containers to stack, Git branches to commit, SQL tables to query, CSS box model to restyle…) — DONE: `SkillRooms.tsx` (`SKILL_THEMES`: colors, tagline, code, words and one of 14 centerpieces per skill)
+P5e. ✅ **Restaurants and cafés you can really use** (owner, 2026-10-15): enter, sit and rest, read the menu, order, the food is served and you eat it — DONE: Mezze House, Shawarma Corner, Pizza & Code added; every shop enterable (`Shops.tsx`, menus in `world/shops.ts`, `hud/MenuCard.tsx`)
+P6. 🔄 **Luxury everywhere** (from the interiors pass): walnut/leather/velvet office desks and studio sofas, then the same luxury look outdoors (plazas, benches, lamps, building lobbies) — offices/studios now use the walnut/leather `Furniture.tsx` pieces; outdoor benches (walnut + cast iron + brass) and lamps (black iron + brass) done; **building lobbies still open**
+P7. 🔄 Verify the walk-in interiors (Office company wall, a project Studio, sitting on chairs/sofas, leaving by the door), then tick task 22 — checked by screenshots: an office (CodSoft), the skill labs, a café with ordering + eating, Freelance and Hyperfocus studios; still to check: leaving by the door on every room type
 P8. ⬜ Check the car rows/spacing in the hub after the car shrink, and the bench sitting pose outdoors
-P9. ⬜ Crochet toy in the Hobby Quarter (task 25)
-P10. ⬜ New robot avatar (task 39)
-P11. ⬜ Jump/fall animations; delete the old character code (clothes.ts, hijab.ts, Hair.tsx, garments.ts, body.ts, Character.tsx, public/models/people*, public/models/hair)
-P12. ⬜ Fast travel between districts, wet-ground look in rain, statues / kids playing in plazas
+P9. ✅ Crochet toy in the Hobby Quarter (task 25) — the crochet corner in the yarn-shop hobby studio (`CrochetCorner` in `ThemedRooms.tsx`)
+P10. ✅ New robot avatar (task 39) — `Avatar.tsx` → `Robot`
+P11. 🔄 Jump/fall animations; delete the old character code (clothes.ts, hijab.ts, Hair.tsx, garments.ts, body.ts, Character.tsx, public/models/people*, public/models/hair) — old Quaternius code and models deleted; **jump/fall clips still missing** (Rocketbox has none; consider a Mixamo-free CC0 clip or a procedural pose)
+P12. 🔄 Fast travel between districts, wet-ground look in rain, statues / kids playing in plazas — fast travel in the big map (M) and wet ground in rain done; **statues / kids playing still open** (Rocketbox has no children)
 P13. ⬜ Batch the skill labels, LOD for far buildings (tasks 35, 36)
 P14. ⬜ Listen to the per-district music; check the car rows in the 7 districts other than Business
 P15. ⛔ Needs the owner's free accounts: admin, MongoDB, R2 uploads, leaderboard, Vercel deploy (tasks 30–34)
 
 ## 🔄 In progress
 
-P2 Realistic outdoors (see the priority list above)
+Next: P5c screenshots (local session), P6 lobbies, P8 car rows / bench pose, P11 jump clip, P12 statues, P13 labels/LOD
 
 ## Roadmap (in build order)
 

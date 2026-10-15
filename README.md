@@ -61,6 +61,9 @@ architecture and `tasks.md` for the roadmap.
 
 ## Credits
 
-- Characters: [Quaternius](https://quaternius.com) (CC0)
-- Nature and cars: [Kenney](https://kenney.nl) Nature Kit and Car Kit (CC0)
+- People: [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) avatars and animations (MIT)
+- Cars: [Kenney](https://kenney.nl) Car Kit (CC0)
+- Sky light: [Poly Haven](https://polyhaven.com) (CC0); bark texture: Poly Haven "Bark Brown 02" (CC0)
+- Font for 3D labels: Inter (SIL OFL 1.1), via Fontsource
+- Everything else (trees and plants, outdoor textures, buildings, rooms, games, sounds) is generated in code
 - Everything else (landmarks, buildings, emblems, hijab, sounds) is generated in code.
