@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { createContext, useContext, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import type { Experience, Project } from "@/content/schema";
 import { useCityStore, type Seat } from "@/state/useCityStore";
 import type { DistrictId } from "@/world/districts";
@@ -54,13 +54,13 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
   const room = parseRoom(scene)!;
   const spec = useMemo(
     () =>
-      computeDistrictLayout(seedContent, room.district).buildings.find(
+      computeDistrictLayout(liveContent, room.district).buildings.find(
         (b) => b.id === room.id,
       ),
     [room.district, room.id],
   );
-  const job = seedContent.experience.find((e) => e.id === room.id);
-  const project = seedContent.projects.find((p) => p.id === room.id);
+  const job = liveContent.experience.find((e) => e.id === room.id);
+  const project = liveContent.projects.find((p) => p.id === room.id);
   const size = roomSize(room.id);
   const hq = room.id === "sahme";
   // These bring their own room, in their brand's look

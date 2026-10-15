@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseRoom, sceneDistrict } from "@/world/interiors";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import { type SceneId, useCityStore } from "@/state/useCityStore";
 import { DISTRICTS, type DistrictId, HUB, landmarkDoorstep, landmarkPlacement } from "@/world/districts";
 import { playerState } from "@/world/env";
@@ -66,7 +66,7 @@ function useMapData(scene: SceneId, highlights: DistrictId[]): MapData {
     }
 
     // Rooms have no map of their own; build the district one so hooks stay in order (hidden below).
-    const layout = computeDistrictLayout(seedContent, sceneDistrict(scene) ?? "business");
+    const layout = computeDistrictLayout(liveContent, sceneDistrict(scene) ?? "business");
     const places: MapPlace[] = layout.buildings
       .filter((b) => !b.filler)
       .map((b) => ({

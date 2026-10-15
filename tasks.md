@@ -42,7 +42,7 @@ P11. ✅ Jump/fall animations; delete the old character code (clothes.ts, hijab.
 P12. 🔄 Fast travel between districts, wet-ground look in rain, statues / kids playing in plazas — fast travel in the big map (M) and wet ground in rain done; **statues / kids playing still open** (Rocketbox has no children) — bronze statues by the hub fountain DONE (`Statue` in `Person.tsx`); kids still open (no child models)
 P13. ✅ Batch the skill labels, LOD for far buildings (tasks 35, 36) — LOD: lobby fronts, name signs and street props only within 70 m (`NearOnly` in `Building.tsx`); car models not compressed (CarModel cuts doors from the geometry; quantizing is risky)
 P14. 🔄 Listen to the per-district music; check the car rows in the 7 districts other than Business — car rows checked (see P8); the music still needs a human ear
-P15. 🔄 Data and admin: Vercel deploy ✅; MongoDB Atlas account ✅ (owner has MONGO_DB_* env vars locally); still to build: /admin (Auth.js + Google), content in MongoDB, leaderboard; ⛔ Cloudflare R2 account for uploads — **arcade leaderboard DONE**: `/api/scores` (MongoDB driver, `src/server/db.ts`, Zod-checked, rate-limited) and `hud/Leaderboard.tsx` on the Full Stack, Firewall Flyer and rally result screens; needs `MONGO_DB_URL` on Vercel. **Admin next**: needs Google OAuth keys (AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET) and AUTH_SECRET from the owner
+P15. 🔄 Data and admin — Vercel deploy ✅; arcade leaderboard ✅ (`/api/scores`); **admin ✅ built**: `/admin` (Auth.js v5, Google, only ADMIN_EMAIL / the owner's address), edit each content section as JSON checked live against the Zod schema, publish to MongoDB (`content` doc "site" + `content_history`), reset to seed, download a backup. The home page and /resume read the published content (`src/server/content.ts`, `"use cache"` + `cacheTag("content")`, refreshed with `updateTag` on publish); the client reads it through `liveContent` (`src/content/live.ts`). **To switch it on**: AUTH_SECRET, AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET and MONGO_DB_URL in `.env` and Vercel. ⛔ still open: media uploads (Cloudflare R2 account)
 P16. ⬜ **Next level** (owner, 2026-10-15: "not just a room in every building, take the city to the next level"). Directions to pick from, in the order the owner chooses:
    a. A living city: real day/night cycle, buses and scooters, people sitting in cafés / walking dogs / chatting, people who react to you, birds, plaza events, ambient sound per place
    b. A story to play: quests and Easter eggs, XP, badges, a journal, a guided "Meet Wouroud" tour for recruiters
@@ -53,7 +53,7 @@ P16. ⬜ **Next level** (owner, 2026-10-15: "not just a room in every building, 
 
 ## 🔄 In progress
 
-Going in order (owner, 2026-10-15). Next: P15 admin (needs Google OAuth keys), then P16 next level. P5c waits for screenshots from the laptop; P14 music needs a human ear.
+Going in order (owner, 2026-10-15). Next: P16 next level, in its listed order (a living city first). P5c waits for screenshots from the laptop; P14 music needs a human ear.
 
 ## Roadmap (in build order)
 
@@ -90,8 +90,8 @@ Going in order (owner, 2026-10-15). Next: P15 admin (needs Google OAuth keys), t
 29. ✅ Ambient music per district (synthesized, mute-aware, slower at night, rain hiss) — runs without errors, not yet listened to by a human
 
 ### E. Data and admin (needs free accounts created by the owner)
-30. ⛔ Admin dashboard `/admin` (Auth.js, only the owner's Google account)
-31. ⛔ Content in MongoDB Atlas M0, validated by the Zod schema, static generation + on-demand revalidation (seed.ts stays as fallback)
+30. ✅ Admin dashboard `/admin` (Auth.js, only the owner's Google account): needs the Google OAuth keys in the environment
+31. ✅ Content in MongoDB Atlas M0, validated by the Zod schema, cached pages refreshed on publish (seed.ts stays as fallback)
 32. ⛔ Media uploads to Cloudflare R2 (paintings, screenshots, videos), compressed on upload
 33. ✅ Arcade leaderboard in MongoDB (`/api/scores`, needs MONGO_DB_URL on Vercel)
 34. 🔄 Deploy on Vercel Hobby ✅ (https://wouroud-city.vercel.app, Vercel Analytics on); ⬜ custom domain

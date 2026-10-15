@@ -13,6 +13,13 @@ Big source assets (Rocketbox FBX/TGA, ~3.5 GB) are **not** in git (`.assets-src/
 converted web files in `public/models/rb` are. Re-download them only if you need to convert new avatars.
 
 ### Latest work (newest first)
+-4. **Admin + live content (cloud).** `/admin` (`src/app/admin/*`, `src/auth.ts`, Auth.js v5 beta with Google;
+   only ADMIN_EMAIL, default the owner's address) edits content sections as JSON (live Zod check), publishes to
+   MongoDB and calls `updateTag("content")`. `getContent()` (`src/server/content.ts`) is `"use cache"` +
+   `cacheTag("content")` and feeds `/` and `/resume`; `CityClient` gets it as a prop and calls
+   `setLiveContent`; **client code reads `liveContent` from `@/content/live`, never `seedContent`**
+   (`seed.ts` is only the fallback and the default). JSON-LD/OG image still use the seed (profile rarely changes).
+   Env: AUTH_SECRET, AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET, MONGO_DB_URL (+ optional ADMIN_EMAIL, MONGO_DB_NAME).
 -3. **Order of tasks.md, continued (cloud).** Lobby fronts on every building (`lobbyFront` in `Building.tsx`),
    LOD (`NearOnly`), chairs in cafés and lecture halls, Arabic 3D text in `/fonts/inter-arabic-400.woff`
    (Inter + Noto Sans Arabic merged with fontTools; `Text3D` picks it for Arabic strings), benches fitted to

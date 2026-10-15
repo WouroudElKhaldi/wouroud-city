@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { seedContent } from "@/content/seed";
+import { getContent } from "@/server/content";
 import type { Experience, Language, Project, SkillCategory } from "@/content/schema";
 
 export const metadata: Metadata = {
@@ -78,8 +78,8 @@ function Tag({ children }: { children: ReactNode }) {
 }
 
 /** A clean 2D résumé built from the same content as the 3D city. */
-export default function ResumePage() {
-  const c = seedContent;
+export default async function ResumePage() {
+  const c = await getContent();
   const p = c.profile;
   const categories = [...new Set(c.skills.map((s) => s.category))];
   const projects = [...c.projects].sort((a, b) => tierOrder[a.tier] - tierOrder[b.tier] || b.year - a.year);

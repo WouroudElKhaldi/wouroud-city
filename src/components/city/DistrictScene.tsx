@@ -3,7 +3,7 @@
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import type { Seat } from "@/state/useCityStore";
 import { useCityStore } from "@/state/useCityStore";
 import { type DistrictId, districtById } from "@/world/districts";
@@ -51,7 +51,7 @@ const CAR_CHOICES = ["sedan", "taxi", "suv", "police", "hatchback-sports", "van"
  * outside the ring, all facing the center. The entry avenue comes in from the south.
  */
 export function DistrictScene({ id }: { id: DistrictId }) {
-  const layout = useMemo(() => computeDistrictLayout(seedContent, id), [id]);
+  const layout = useMemo(() => computeDistrictLayout(liveContent, id), [id]);
   const district = districtById(id);
   const goTo = useCityStore((s) => s.goTo);
   const openPanel = useCityStore((s) => s.openPanel);

@@ -2,7 +2,7 @@
 
 import { useProgress } from "@react-three/drei";
 import { useEffect, useState } from "react";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import { type AvatarKind, useCityStore } from "@/state/useCityStore";
 import { LOOKS } from "@/world/outfits";
 import { PERSONAS, type Persona } from "@/world/personas";
@@ -49,7 +49,7 @@ function useCityReady() {
 export function WelcomeScreen() {
   const { persona, avatar, outfit, start, setAvatar, setOutfit } = useCityStore();
   const [choice, setChoice] = useState<Persona | null>(persona);
-  const profile = seedContent.profile;
+  const profile = liveContent.profile;
   const touch = useIsTouch();
   const { ready, progress } = useCityReady();
 

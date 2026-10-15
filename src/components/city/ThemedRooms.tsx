@@ -4,7 +4,7 @@ import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import type { Education, Hobby, Language, Skill, Training } from "@/content/schema";
 import { type Activity, useCityStore, type Seat } from "@/state/useCityStore";
 import type { DistrictId } from "@/world/districts";
@@ -33,7 +33,7 @@ import { useProximity } from "./useProximity";
  *  - Arcade: a game hall with the cabinet for that building's game, or the rally garage
  */
 export function ThemedRoom({ district, id, accent, label }: { district: DistrictId; id: string; accent: string; label: string }) {
-  const c = seedContent;
+  const c = liveContent;
   if (id.startsWith("filler-")) return <ShopRoom label={label} />;
   switch (district) {
     case "skills": {
@@ -187,8 +187,8 @@ function usedIn(skill: Skill) {
   const n = norm(skill.name);
   const hit = (tech: string[]) => tech.some((t) => norm(t) === n || norm(t).startsWith(n) || n.startsWith(norm(t)));
   return {
-    projects: seedContent.projects.filter((p) => hit(p.tech)).map((p) => p.name),
-    jobs: seedContent.experience.filter((j) => hit(j.tech)).map((j) => j.company),
+    projects: liveContent.projects.filter((p) => hit(p.tech)).map((p) => p.name),
+    jobs: liveContent.experience.filter((j) => hit(j.tech)).map((j) => j.company),
   };
 }
 
@@ -740,7 +740,7 @@ function HobbyStudio({ hobby, accent }: { hobby: Hobby; accent: string }) {
   const setActivity = useCityStore((s) => s.setActivity);
   const takePhoto = useCityStore((s) => s.takePhoto);
   const toast = useCityStore((s) => s.toast);
-  const learning = seedContent.trainings.filter((t) => t.status === "in-progress").map((t) => `${t.name} (${t.provider})`);
+  const learning = liveContent.trainings.filter((t) => t.status === "in-progress").map((t) => `${t.name} (${t.provider})`);
   let centerpiece: React.ReactNode = <Pedestal accent={accent} emblemId={hobby.id} label={hobby.name} onClick={() => toast(hobby.description, hobby.name)} />;
   if (hobby.building === "gallery" || hobby.building === "drawing-studio")
     centerpiece = <Station x={0} z={-3.2} label="Paint on the easel" accent={accent} run={() => setActivity("paint")} kind="easel" />;

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useCityStore } from "@/state/useCityStore";
 import { districtById, landmarkDoorstep } from "@/world/districts";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import { parseRoom, roomSize, sceneDistrict } from "@/world/interiors";
 import { computeDistrictLayout } from "@/world/layout";
 import { PERSONAS } from "@/world/personas";
@@ -58,7 +58,7 @@ export function Hud() {
 
   const room = parseRoom(scene);
   const district = sceneDistrict(scene);
-  const roomLabel = room && computeDistrictLayout(seedContent, room.district).buildings.find((b) => b.id === room.id)?.label;
+  const roomLabel = room && computeDistrictLayout(liveContent, room.district).buildings.find((b) => b.id === room.id)?.label;
   const place = !district ? "Central Plaza" : room ? `${roomLabel ?? "Inside"} · ${districtById(district).name}` : districtById(district).name;
   const driving = useCityStore((st) => st.driving);
   const riding = driving?.model === "horse";
@@ -73,7 +73,7 @@ export function Hud() {
       return;
     }
     if (district) {
-      const { exit } = computeDistrictLayout(seedContent, district);
+      const { exit } = computeDistrictLayout(liveContent, district);
       setWaypoint({ x: exit.x, z: exit.z - 3, label: "the exit to Central Plaza" });
       return;
     }

@@ -17,6 +17,7 @@
     "ecctrl": "^2.0.2",
     "mongodb": "^6.21.0",
     "next": "16.4.1",
+    "next-auth": "^5.0.0-beta.32",
     "postprocessing": "^6.39.5",
     "react": "19.3.0",
     "react-dom": "19.3.0",

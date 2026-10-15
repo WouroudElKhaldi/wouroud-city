@@ -7,6 +7,8 @@ import { InfoPanel } from "@/components/hud/InfoPanel";
 import { PaintStudio } from "@/components/hud/PaintStudio";
 import { StackGame } from "@/components/hud/StackGame";
 import { WelcomeScreen } from "@/components/hud/WelcomeScreen";
+import type { Content } from "@/content/schema";
+import { setLiveContent } from "@/content/live";
 import { FlappyGame } from "@/components/hud/FlappyGame";
 import { MenuCard } from "@/components/hud/MenuCard";
 import { RaceHud } from "@/components/hud/RaceHud";
@@ -21,7 +23,9 @@ const CityCanvas = dynamic(() => import("./CityCanvas"), {
   ),
 });
 
-export function CityClient() {
+export function CityClient({ content }: { content: Content }) {
+  // Everything below reads the published content through liveContent.
+  setLiveContent(content);
   const started = useCityStore((s) => s.started);
   const activity = useCityStore((s) => s.activity);
   return (

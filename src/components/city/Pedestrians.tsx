@@ -5,7 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import { CapsuleCollider, type RapierRigidBody, RigidBody } from "@react-three/rapier";
 import { Suspense, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import { useCityStore } from "@/state/useCityStore";
 import { playerState } from "@/world/env";
 import { sfx } from "@/world/sfx";
@@ -52,7 +52,7 @@ function Pedestrian({ walker }: { walker: Walker }) {
   const talkingUntil = useRef(0);
   const toward = useMemo(() => new THREE.Vector3(), []);
   const lines = useMemo(
-    () => seedContent.npcLines.filter((l) => l.district === "any" || l.district === walker.district),
+    () => liveContent.npcLines.filter((l) => l.district === "any" || l.district === walker.district),
     [walker.district],
   );
   const playGesture = useCityStore((s) => s.playGesture);

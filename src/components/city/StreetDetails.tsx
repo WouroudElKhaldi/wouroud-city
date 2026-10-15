@@ -5,7 +5,7 @@ import { CuboidCollider, CylinderCollider, RigidBody } from "@react-three/rapier
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import { type Seat, useCityStore } from "@/state/useCityStore";
 import { playerState, registerNightGlow, worldEnv } from "@/world/env";
 import { sfx } from "@/world/sfx";
@@ -317,7 +317,7 @@ export function Fountain() {
         coin.current.visible = false;
         flight.current = null;
         emitBurst({ position: f.to, kind: "splash", count: 30, colors: ["#5eead4", "#ccfbf1", "#ffffff"], spread: 0.4 });
-        const facts = seedContent.npcLines;
+        const facts = liveContent.npcLines;
         toast(facts[Math.floor(Math.random() * facts.length)].text, "✨ The fountain whispers…");
       }
     }

@@ -1,5 +1,7 @@
 import { CityClient } from "@/components/city/CityClient";
+import { getContent } from "@/server/content";
 
-export default function Home() {
-  return <CityClient />;
+export default async function Home() {
+  const content = await getContent();
+  return <CityClient content={content} />;
 }

@@ -4,7 +4,7 @@ import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import type { Experience } from "@/content/schema";
 import { useCityStore, type Seat } from "@/state/useCityStore";
 import { DISTRICTS } from "@/world/districts";
@@ -40,7 +40,7 @@ const pointer = {
 
 export function FreelanceStudio({ job, accent }: { job: Experience; accent: string }) {
   const { width: W, depth: D } = useRoom();
-  const jamrex = seedContent.projects.find((p) => p.id === "jamrex");
+  const jamrex = liveContent.projects.find((p) => p.id === "jamrex");
   const seats = useMemo<Seat[]>(() => [workSeat("freelance-desk", -6.5, 2.2, Math.PI), ...sofaSeats("freelance-sofa", 5.5, 3.4, Math.PI, 2.2)], []);
   const figma = useCanvas(640, 400, drawFigma);
   const code = useCanvas(640, 400, drawCode);
@@ -291,7 +291,7 @@ function ProcessWall({ accent }: { accent: string }) {
 function SideProjects({ accent }: { accent: string }) {
   const { width: W } = useRoom();
   const openPanel = useCityStore((s) => s.openPanel);
-  const projects = SIDE_PROJECTS.map((id) => seedContent.projects.find((p) => p.id === id)).filter((p) => !!p);
+  const projects = SIDE_PROJECTS.map((id) => liveContent.projects.find((p) => p.id === id)).filter((p) => !!p);
   const { texture } = useCanvas(
     1600,
     900,

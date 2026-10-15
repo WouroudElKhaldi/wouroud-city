@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import type { Experience, Project, Skill, Training } from "@/content/schema";
 import { type Activity, type Panel, useCityStore } from "@/state/useCityStore";
 import { districtById } from "@/world/districts";
@@ -16,11 +16,20 @@ function formatDate(date: string | null) {
 }
 
 const norm = (s: string) => s.toLowerCase().replace(/.js$|s+|[./-]/g, "");
-const SKILL_BY_NAME = new Map(seedContent.skills.flatMap((sk) => [[norm(sk.name), sk.id], [norm(sk.id), sk.id]]));
+let skillByName: Map<string, string> | null = null;
+let skillsSeen: unknown = null;
+/** Skill ids by normalized name, rebuilt if the content changes. */
+function skillIndex() {
+  if (!skillByName || skillsSeen !== liveContent.skills) {
+    skillsSeen = liveContent.skills;
+    skillByName = new Map(liveContent.skills.flatMap((sk) => [[norm(sk.name), sk.id], [norm(sk.id), sk.id]]));
+  }
+  return skillByName;
+}
 
 /** The skill building a technology name points to, if the city has one. */
 function skillFor(tech: string) {
-  return SKILL_BY_NAME.get(norm(tech)) ?? SKILL_BY_NAME.get(norm(tech.split(" ")[0]));
+  return skillIndex().get(norm(tech)) ?? skillIndex().get(norm(tech.split(" ")[0]));
 }
 
 /** Chips that jump to another building's panel when it exists: tech → skill tower, skill → project. */
@@ -91,8 +100,8 @@ function ExperienceView({ job }: { job: Experience }) {
 function SkillView({ skill }: { skill: Skill }) {
   const uses = (tech: string[]) => tech.some((t) => skillFor(t) === skill.id);
   const usedIn = [
-    ...seedContent.projects.filter((p) => uses(p.tech)).map((p) => ({ label: p.name, to: { district: "projects", id: p.id } as Panel })),
-    ...seedContent.experience.filter((j) => uses(j.tech)).map((j) => ({ label: j.company, to: { district: "business", id: j.id } as Panel })),
+    ...liveContent.projects.filter((p) => uses(p.tech)).map((p) => ({ label: p.name, to: { district: "projects", id: p.id } as Panel })),
+    ...liveContent.experience.filter((j) => uses(j.tech)).map((j) => ({ label: j.company, to: { district: "business", id: j.id } as Panel })),
   ];
   return (
     <>
@@ -132,7 +141,7 @@ function ProjectView({ project }: { project: Project }) {
       <h2 className="panel-title">{project.name}</h2>
       <p className="mt-2 text-lg text-violet-50">{project.pitch}</p>
       {project.category === "work-private" && (
-        <p className="panel-plaque">🔒 {seedContent.profile.privateWorkNote}</p>
+        <p className="panel-plaque">🔒 {liveContent.profile.privateWorkNote}</p>
       )}
       {project.description.map((d) => (
         <p key={d} className="mt-3">
@@ -208,7 +217,7 @@ function PhotoButton() {
 }
 
 function PanelBody({ district, id }: { district: string; id: string }) {
-  const c = seedContent;
+  const c = liveContent;
   switch (district) {
     case "business": {
       const job = c.experience.find((e) => e.id === id);
@@ -356,7 +365,7 @@ export function InfoPanel() {
 
   // Every real building of this district, in map order, for the previous / next arrows.
   const siblings = useMemo(
-    () => (panel ? computeDistrictLayout(seedContent, panel.district).buildings.filter((b) => !b.filler).map((b) => b.id) : []),
+    () => (panel ? computeDistrictLayout(liveContent, panel.district).buildings.filter((b) => !b.filler).map((b) => b.id) : []),
     [panel],
   );
   const index = panel ? siblings.indexOf(panel.id) : -1;

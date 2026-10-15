@@ -15,7 +15,7 @@ import { isTouchDevice } from "@/world/touch";
 import { DayNight } from "./DayNight";
 import { DistrictScene } from "./DistrictScene";
 import { InteriorScene } from "./InteriorScene";
-import { seedContent } from "@/content/seed";
+import { liveContent } from "@/content/live";
 import { computeDistrictLayout, doorPoint } from "@/world/layout";
 import { HubScene } from "./HubScene";
 import { keyboardMap, Player } from "./Player";
@@ -51,7 +51,7 @@ export default function CityCanvas() {
     const room = parseRoom(scene);
     if (room) return { position: [0, 2, roomSize(room.id).depth / 2 - 4] as [number, number, number], facing: Math.PI };
     if (scene !== "hub") {
-      const layout = computeDistrictLayout(seedContent, scene as DistrictId);
+      const layout = computeDistrictLayout(liveContent, scene as DistrictId);
       // Walking out of a building puts you on its doorstep, facing away from it.
       const room = cameFrom && parseRoom(cameFrom);
       const building = room && room.district === scene && layout.buildings.find((b) => b.id === room.id);
