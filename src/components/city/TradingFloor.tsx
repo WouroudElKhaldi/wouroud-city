@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useEffect, useMemo, useRef } from "react";
@@ -9,6 +8,7 @@ import { useCityStore } from "@/state/useCityStore";
 import { accents } from "@/world/palette";
 import { emitBurst } from "./Particles";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * Trading-floor pieces for Sahme Trading's HQ (SahmeHQ.tsx): live candlestick screens,

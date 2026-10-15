@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -10,6 +9,7 @@ import { accents } from "@/world/palette";
 import { emitBurst } from "./Particles";
 import { useProximity } from "./useProximity";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * A crypto slot machine. Walk up and press E (or click the lever): the three reels

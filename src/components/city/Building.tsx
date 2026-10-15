@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useMemo, useRef } from "react";
@@ -15,6 +14,7 @@ import { useFacade, useGlowMaterial } from "./materials";
 
 import { DARK, FLOOR, STONE } from "./buildingTheme";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 export { DARK, FLOOR, STONE };
 

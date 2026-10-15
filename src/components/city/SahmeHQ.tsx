@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { Suspense, useMemo, useRef } from "react";
@@ -60,6 +59,7 @@ import {
   Whiteboard,
 } from "./TradingFloor";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * Sahme Trading's headquarters floor (44 × 32 m): a lobby with reception and a

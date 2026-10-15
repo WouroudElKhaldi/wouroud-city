@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -13,6 +12,7 @@ import { box, dots, font, Panel, useCanvas, wrap } from "./roomKit";
 import { rng, walk, type Candle } from "./TradingFloor";
 import { useProximity } from "./useProximity";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * Reltrix, the trading-technology infrastructure Wouroud's team builds (SAHMEE Technology

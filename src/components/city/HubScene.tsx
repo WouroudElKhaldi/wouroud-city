@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { CuboidCollider, CylinderCollider, RigidBody } from "@react-three/rapier";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -20,6 +19,7 @@ import { ParkBenches, Planters, planterPlants } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 import type { Seat } from "@/state/useCityStore";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /** Central Plaza and the ring of district landmarks. */
 export function HubScene() {

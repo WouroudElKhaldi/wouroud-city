@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, CylinderCollider, RigidBody } from "@react-three/rapier";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -17,6 +16,7 @@ import { palette } from "@/world/palette";
 import type { FoliageItem } from "@/world/foliage";
 import { surface } from "./surfaces";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 function useInstanceMatrices(ref: React.RefObject<THREE.InstancedMesh | null>, matrices: THREE.Matrix4[]) {
   useLayoutEffect(() => {

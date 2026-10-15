@@ -1,12 +1,12 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useGlowMaterial } from "./materials";
 import { useProximity } from "./useProximity";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * A glowing doorway. Standing in front of it shows the "Press E" prompt.

@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -30,6 +29,7 @@ import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { box, font, ModernShell, Panel, type ShellLook, useCanvas, wrap } from "./roomKit";
 import { Seats } from "./StreetDetails";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * Codi Tech, the coding bootcamp where Wouroud trained as a full-stack developer

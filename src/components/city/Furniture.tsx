@@ -1,6 +1,6 @@
 "use client";
 
-import { RoundedBox, Text } from "@react-three/drei";
+import { RoundedBox } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useLayoutEffect, useMemo, useRef } from "react";
@@ -9,6 +9,7 @@ import type { Seat } from "@/state/useCityStore";
 import { batchStatic, finishes } from "./luxury";
 import { Person } from "./Person";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * Luxury office furniture at real-world sizes (meters): desks 0.75 high, seats cut to the

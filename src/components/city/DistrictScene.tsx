@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -25,6 +24,7 @@ import { CodeBillboards, Fountain, ParkBenches, Planters, planterPlants } from "
 import { StreetLamps } from "./StreetProps";
 import { MarketStalls, Traffic } from "./Traffic";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /** A car waiting by each district's gate, ready to drive around the ring. */
 const DISTRICT_CAR: Record<DistrictId, string> = {

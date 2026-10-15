@@ -28,7 +28,8 @@ P1. ✅ **Loading time**: avatars and clips meshopt-compressed (anim 5.4 MB → 
 P2. ⬜ **Realistic outdoors** in the Rocketbox style (not photoreal, no more low-poly toy look): grass, trees and plants, balls/cones/pigeons, streets/sidewalks/curbs/crosswalks, benches/lamps/planters, the ground in the hub and every district. CC0 assets only, small downloads, keep every interaction and instancing, frame rate no worse
 P3. ⬜ **Codi Tech building: adventures and activities** with her mentors (they did a lot together), much more fun inside
 P4. ⬜ **Freelance office: fill it** with everything from the freelance work (the projects and things built together)
-P5. ⬜ **Enter buildings in every district**, not only Business (experience): skills, campus, training, languages, hobbies, arcade too
+P5. ⬜ **Every building in every district enterable AND interactive inside** (not only Business and Projects): skills, campus, training, languages, hobbies, arcade too; each room has things to do
+P5b. ⬜ **Arcade Pier games** (owner, 2026-10-15): today only "Full Stack" can be entered. Add: **XO (tic-tac-toe) vs a bot** with Easy / Medium / Hard; a **flying bird between walls** game (flappy style); a **car race against bots** using the city's cars and people. Each game in its own arcade building
 P6. ⬜ **Luxury everywhere** (from the interiors pass): walnut/leather/velvet office desks and studio sofas, then the same luxury look outdoors (plazas, benches, lamps, building lobbies)
 P7. ⬜ Verify the walk-in interiors (Office company wall, a project Studio, sitting on chairs/sofas, leaving by the door), then tick task 22
 P8. ⬜ Check the car rows/spacing in the hub after the car shrink, and the bench sitting pose outdoors

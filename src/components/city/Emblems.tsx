@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -8,6 +7,7 @@ import type { Emblem as EmblemKind, Signature } from "@/world/signatures";
 import { DARK } from "./buildingTheme";
 import { useGlowMaterial } from "./materials";
 import { TEXT_FONT, TEXT_FONT_BOLD } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * A building's 3D logo floating over its roof: React's atom, Docker's

@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { CylinderCollider, RigidBody, RoundCylinderCollider } from "@react-three/rapier";
 import { useMemo, useRef } from "react";
@@ -11,6 +10,7 @@ import { useFacade, useGlowMaterial } from "./materials";
 import { Portal } from "./Portal";
 import { useCityStore } from "@/state/useCityStore";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * One landmark per district, standing on the ring around Central Plaza.

@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { createContext, useContext, useMemo, useRef } from "react";
@@ -25,6 +24,7 @@ import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Seats } from "./StreetDetails";
 import { useProximity } from "./useProximity";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /** Rooms designed in their organization's own look (they draw their own shell). */
 const BRANDED: Record<string, { Room: (props: { job: Experience }) => React.ReactNode; accent: string }> = {

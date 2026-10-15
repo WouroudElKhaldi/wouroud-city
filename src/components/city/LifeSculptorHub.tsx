@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { Suspense, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -35,6 +34,7 @@ import { box, font, ModernShell, Panel, type ShellLook, useCanvas, wrap } from "
 import { Seats } from "./StreetDetails";
 import { useProximity } from "./useProximity";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * Life Sculptor, a student-led initiative giving students free virtual sessions to improve

@@ -1,6 +1,5 @@
 "use client";
 
-import { Text } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { Suspense, useEffect, useMemo, useRef } from "react";
@@ -36,6 +35,7 @@ import { box, dots, font, ModernShell, Panel, type ShellLook, useCanvas, wrap } 
 import { canvasTexture } from "./TradingFloor";
 import { useProximity } from "./useProximity";
 import { TEXT_FONT } from "@/world/fonts";
+import { Text } from "./Text3D";
 
 /**
  * Develeb ("Developing Lebanon"), Lebanon's developer community, whose website Wouroud
