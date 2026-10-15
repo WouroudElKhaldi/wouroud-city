@@ -13,7 +13,7 @@ See `HANDOFF.md` for architecture, rules and gotchas.
 2. ✅ Next.js 16 + R3F + Rapier + Ecctrl setup, first scene
 3. ✅ Hub (Central Plaza) with 8 procedural district landmarks; all 8 districts enterable, generated from content
 4. ✅ Day / night cycle: lit windows, lamp light pools, stars, bloom; violet + gold + mint palette
-5. ✅ Adult animated characters (player + NPCs), outfits, hijab with modest outfits, face details, hijab colors
+5. ✅ Realistic people: Microsoft Rocketbox avatars (MIT) in modeled clothes with mocap animations; all 40 adults pickable from a thumbnail grid (incl. hijab, niqab, burqa, thobe looks); the custom hijab option and generated clothes are gone
 6. ✅ Interactive decor: trees, plants, balls, cones, pigeons, cars, lamps, billboards, fountain, benches, NPC chat
 7. ✅ Synthesized sound effects + mute; night spotlight following the player
 8. ✅ Welcome screen: personas (Recruiter / Developer / Just visiting) + avatar and look picker
@@ -32,7 +32,7 @@ _(nothing; next up: 43 Better people)_
 40. ✅ District layout redesign: no more one long street. Each district is a round neighborhood: a central square, ring road, buildings grouped in clusters (by category / company / project type), parks, plazas and decor between groups
 41. ✅ Unique building per item: every building gets its own design from its data (CSS tower ≠ JS tower, Jamrex ≠ FitSync ≠ Hyperfocus). Signature shapes, roofs, colors, rooftop props and logos per skill / project / job
 42. ✅ District-specific architecture: Business = glass towers, Skills = neon downtown, Projects = harbor warehouses and ships, Campus = brick and clock tower, Training = park pavilions, Polyglot = old-town houses, Hobbies = art studios, Arcade = pier with rides
-43. ✅ Better people: new bodies (Universal Base Characters + Universal Animation Library, CC0) are LIVE for the player and all NPCs (Person.tsx / clothes.ts). `?oldbody` in the URL shows the old Quaternius people. Polish left: jagged hem on the women's casual top; broad athletic shoulders on the female base body
+43. ✅ Better people: Rocketbox avatars for the player and the crowd (Person.tsx, /models/rb, converter in .assets-src/rocketbox/tools). Polish left: no jump/fall clip yet (jump shows idle); old unused files clothes.ts, hijab.ts, Hair.tsx, garments.ts, Character.tsx models can be deleted
 44. ✅ More life: cars driving the ring road (they stop for you and honk), market stalls, fountain plaza, benches, tree groves, pigeons, walkers (statues and kids playing still open)
 
 ### A. Phones and tablets
@@ -57,7 +57,7 @@ _(nothing; next up: 43 Better people)_
 25. 🔄 Hobby Quarter: ✅ photo camera (📸 Photo in the HUD and the Photo Studio, saves a captioned PNG), ✅ library shows what she is learning now; ⬜ gallery of her paintings (needs uploads), ⬜ crochet toy
 26. ✅ Horse riding: a horse waits by the stables in the Hobby Quarter; ride, gallop with Shift, the camera follows behind
 27. ✅ Weather: rain / snow / fog toggle in the HUD (particles follow the player, fog eases in); wet ground look still open
-28. ✅ Driving: get into any parked car (hub lot + one by every district gate), W/S/A/D or joystick, Shift boost, Space brake, E to get out; the car stays where you park it (fast travel still open)
+28. ✅ Driving: all six cars parked in the hub lot and in every district (avenue curb + walkway bays); wheels roll and steer, the driver door swings open and shut getting in and out (CarModel.tsx); W/S/A/D or joystick, Shift boost, Space brake, E to get out; cars stay where you park them (fast travel still open)
 29. ✅ Ambient music per district (synthesized, mute-aware, slower at night, rain hiss) — runs without errors, not yet listened to by a human
 
 ### E. Data and admin (needs free accounts created by the owner)
@@ -71,5 +71,5 @@ _(nothing; next up: 43 Better people)_
 35. ⬜ Batch / bake troika text labels (skills district has ~43)
 36. ⬜ LOD for far buildings, KTX2 / Draco compression of models (gltf-transform)
 37. ✅ Accessibility: reduced motion (CSS + still emblems), info panels are focused dialogs, screen-reader summary with a résumé link
-38. 🔄 Character polish: ✅ long dress: wider hem plus fabric leg layer so a striding leg never shows skin; ⬜ blazer tunic seam, ⬜ eyebrows on the dress model
+38. ✅ Character polish: superseded by the Rocketbox avatars
 39. ⬜ New robot avatar (current one is the old procedural model)
