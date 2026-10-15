@@ -4,6 +4,8 @@ import { useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { surface } from "./surfaces";
 import { worldEnv } from "@/world/env";
 import type { BuildingSpec } from "@/world/layout";
 import { accents, palette } from "@/world/palette";
@@ -278,6 +280,49 @@ function SkillTower({ spec, shape, accent }: { spec: BuildingSpec; shape: TowerS
 // Details shared by several variants
 // ---------------------------------------------------------------------------
 
+const LOBBY_BRASS = new THREE.MeshStandardMaterial({ color: "#c9a24a", metalness: 0.9, roughness: 0.28 });
+const LOBBY_CARPET = new THREE.MeshStandardMaterial({ color: "#5a1f3d", roughness: 1 });
+const LOBBY_GREEN = new THREE.MeshStandardMaterial({ color: "#3f6b34", roughness: 0.95 });
+
+/** The lobby front's pieces, merged per material (a handful of draw calls per building). */
+function lobbyFront(front: number, facing: number, doorWidth: number) {
+  const out = (d: number) => front + facing * d;
+  const strip = (list: THREE.BufferGeometry[]) =>
+    mergeGeometries(
+      list.map((g) => {
+        const n = g.index ? g.toNonIndexed() : g;
+        for (const k of Object.keys(n.attributes)) if (!["position", "normal", "uv"].includes(k)) n.deleteAttribute(k);
+        return n;
+      }),
+    )!;
+  const halfW = doorWidth / 2;
+  // Granite: a wide threshold slab, and two pots.
+  const granite: THREE.BufferGeometry[] = [new THREE.BoxGeometry(1.6, 0.12, doorWidth + 2.6).translate(out(0.8), 0.06, 0)];
+  const green: THREE.BufferGeometry[] = [];
+  for (const z of [-(halfW + 0.85), halfW + 0.85]) {
+    granite.push(new THREE.CylinderGeometry(0.32, 0.24, 0.6, 20).translate(out(0.55), 0.42, z));
+    // Clipped topiary: a ball on a short stem.
+    green.push(new THREE.IcosahedronGeometry(0.42, 2).translate(out(0.55), 1.15, z));
+    green.push(new THREE.CylinderGeometry(0.03, 0.03, 0.3, 6).translate(out(0.55), 0.8, z));
+  }
+  // Brass: door frame posts, a header, a center mullion, handles, the canopy's edge and lantern frames.
+  const brass: THREE.BufferGeometry[] = [];
+  for (const z of [-halfW, 0, halfW]) brass.push(new THREE.BoxGeometry(0.08, 2.55, 0.08).translate(out(0.06), 0.4 + 1.27, z));
+  brass.push(new THREE.BoxGeometry(0.08, 0.1, doorWidth + 0.08).translate(out(0.06), 0.4 + 2.55, 0));
+  for (const z of [-0.12, 0.12]) brass.push(new THREE.BoxGeometry(0.06, 0.55, 0.03).translate(out(0.14), 0.4 + 1.1, z));
+  brass.push(new THREE.BoxGeometry(0.06, 0.06, doorWidth + 1.25).translate(out(1.6), 3.07, 0));
+  const lamps: THREE.BufferGeometry[] = [];
+  for (const z of [-(halfW + 0.35), halfW + 0.35]) {
+    brass.push(new THREE.BoxGeometry(0.22, 0.04, 0.22).translate(out(0.16), 2.62, z));
+    brass.push(new THREE.BoxGeometry(0.22, 0.04, 0.22).translate(out(0.16), 2.18, z));
+    brass.push(new THREE.ConeGeometry(0.16, 0.14, 4).rotateY(Math.PI / 4).translate(out(0.16), 2.71, z));
+    lamps.push(new THREE.BoxGeometry(0.16, 0.4, 0.16).translate(out(0.16), 2.4, z));
+  }
+  // Carpet runner from the door down over the threshold.
+  const carpet: THREE.BufferGeometry[] = [new THREE.PlaneGeometry(1.5, Math.min(doorWidth, 2.2)).rotateX(-Math.PI / 2).translate(out(0.78), 0.125, 0)];
+  return { granite: strip(granite), brass: strip(brass), green: strip(green), lamps: strip(lamps), carpet: strip(carpet) };
+}
+
 /** Doorway, canopy with a glow strip, and the neon name sign facing the street. */
 function Entrance({ spec }: { spec: BuildingSpec }) {
   const { width, depth, facing } = spec;
@@ -288,6 +333,9 @@ function Entrance({ spec }: { spec: BuildingSpec }) {
   const doorMat = useGlowMaterial(palette.lampLight, 0.1, 1.2, "#2a1f55");
   const isTower = spec.variant === "tower";
   const signY = isTower ? 3.2 : 4.4;
+  const lanternGlow = useGlowMaterial(palette.lampLight, 0.4, 2.4, "#3a2a10");
+
+  const lobby = useMemo(() => lobbyFront(front, facing, doorWidth), [front, facing, doorWidth]);
 
   return (
     <group>
@@ -295,6 +343,12 @@ function Entrance({ spec }: { spec: BuildingSpec }) {
       <mesh position={[front + facing * 0.03, 0.4 + 1.25, 0]} rotation-y={rot} material={doorMat}>
         <planeGeometry args={[doorWidth, 2.5]} />
       </mesh>
+      {/* A luxury lobby front: granite threshold, carpet runner, brass door frames and lanterns, topiaries */}
+      <mesh geometry={lobby.granite} material={surface("granite", "#d6cfc4")} receiveShadow castShadow />
+      <mesh geometry={lobby.brass} material={LOBBY_BRASS} castShadow />
+      <mesh geometry={lobby.carpet} material={LOBBY_CARPET} receiveShadow />
+      <mesh geometry={lobby.green} material={LOBBY_GREEN} castShadow />
+      <mesh geometry={lobby.lamps} material={lanternGlow} />
       {/* Canopy */}
       <Box size={[1.6, 0.16, doorWidth + 1.2]} position={[front + facing * 0.8, 3.15, 0]} color={DARK} />
       <mesh position={[front + facing * 1.6, 3.15, 0]} material={signMat}>
