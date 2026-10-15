@@ -16,6 +16,8 @@ import { signatureFor } from "@/world/signatures";
 import { Emblem } from "./Emblems";
 import { marbleTexture } from "./luxury";
 import { CodiCampus } from "./CodiCampus";
+import { Sofa, sofaSeats, Table, Workstation } from "./Furniture";
+import { useCanvas } from "./roomKit";
 import { DevelebHub } from "./DevelebHub";
 import { LifeSculptorHub } from "./LifeSculptorHub";
 import { FreelanceStudio } from "./FreelanceStudio";
@@ -914,65 +916,25 @@ function Office({ job, accent }: { job: Experience; accent: string }) {
   );
 }
 
+/** A walnut desk with brass legs, a monitor showing code and a leather executive chair. */
 function Desk({ x, z, accent }: { x: number; z: number; accent: string }) {
-  const screen = useGlowMaterial(accent, 0.7, 1.4, "#140d2e");
-  return (
-    <group position={[x, 0, z]}>
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[0.9, 0.38, 0.42]} position={[0, 0.38, 0]} />
-      </RigidBody>
-      <mesh position={[0, 0.74, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.8, 0.06, 0.85]} />
-        <meshStandardMaterial color="#e9dcc6" roughness={0.6} />
-      </mesh>
-      {[-0.8, 0.8].map((lx) => (
-        <mesh key={lx} position={[lx, 0.36, 0]} castShadow>
-          <boxGeometry args={[0.06, 0.72, 0.75]} />
-          <meshStandardMaterial color="#3b2d63" />
-        </mesh>
-      ))}
-      {/* Monitor, keyboard and a mug */}
-      <mesh position={[0, 1.12, -0.28]} material={screen} castShadow>
-        <boxGeometry args={[0.95, 0.56, 0.04]} />
-      </mesh>
-      {[0.2, 0.32, 0.44].map((y, i) => (
-        <mesh key={y} position={[-0.25 + i * 0.08, 0.98 + y * 0.6, -0.255]}>
-          <planeGeometry args={[0.5 - i * 0.12, 0.035]} />
-          <meshBasicMaterial
-            color={i === 1 ? accents.gold : "#e9d8fd"}
-            toneMapped={false}
-          />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.82, -0.28]}>
-        <boxGeometry args={[0.06, 0.16, 0.06]} />
-        <meshStandardMaterial color="#2d1f52" />
-      </mesh>
-      <mesh position={[0, 0.78, 0.08]}>
-        <boxGeometry args={[0.6, 0.02, 0.2]} />
-        <meshStandardMaterial color="#2d1f52" />
-      </mesh>
-      <mesh position={[0.6, 0.83, 0.05]}>
-        <cylinderGeometry args={[0.05, 0.05, 0.12, 12]} />
-        <meshStandardMaterial color={accents.mint} />
-      </mesh>
-      {/* Chair */}
-      <group position={[0, 0, 0.95]}>
-        <mesh position={[0, 0.46, 0]} castShadow>
-          <boxGeometry args={[0.55, 0.08, 0.55]} />
-          <meshStandardMaterial color="#4c3a7a" />
-        </mesh>
-        <mesh position={[0, 0.82, 0.26]} castShadow>
-          <boxGeometry args={[0.55, 0.65, 0.07]} />
-          <meshStandardMaterial color="#4c3a7a" />
-        </mesh>
-        <mesh position={[0, 0.22, 0]}>
-          <cylinderGeometry args={[0.04, 0.04, 0.44, 8]} />
-          <meshStandardMaterial color="#2d1f52" />
-        </mesh>
-      </group>
-    </group>
+  const screen = useCanvas(
+    512,
+    320,
+    (ctx, w, h) => {
+      ctx.fillStyle = "#0b1020";
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = accent;
+      ctx.fillRect(0, 0, w, 18);
+      for (let i = 0; i < 9; i++) {
+        ctx.fillStyle = i % 3 === 0 ? accent : i % 3 === 1 ? "#e9d8fd" : "#94a3b8";
+        ctx.fillRect(24 + (i % 4) * 18, 40 + i * 30, 120 + ((i * 53) % 220), 12);
+      }
+      void h;
+    },
+    accent,
   );
+  return <Workstation x={x} z={z + 0.95} facing={Math.PI} screens={[screen.texture]} extras={["mug", "papers"]} leather="black" />;
 }
 
 export function Plaque({ text, x = -3.2 }: { text: string; x?: number }) {
@@ -1009,19 +971,7 @@ function Studio({ project, accent }: { project: Project; accent: string }) {
     () => signatureFor(project.id, project.name),
     [project.id, project.name],
   );
-  const seats = useMemo<Seat[]>(
-    () =>
-      [-3.4, 3.4].flatMap((x) =>
-        [-0.6, 0.6].map((dx) => ({
-          id: `sofa-${x}-${dx}`,
-          x: x + dx,
-          y: 0,
-          z: 2.6,
-          facing: Math.PI,
-        })),
-      ),
-    [],
-  );
+  const seats = useMemo<Seat[]>(() => [-3.4, 3.4].flatMap((x) => sofaSeats(`sofa-${x}`, x, 2.6, Math.PI, 2.2)), []);
   return (
     <group>
       {/* The big screen */}
@@ -1101,32 +1051,11 @@ function Studio({ project, accent }: { project: Project; accent: string }) {
         />
       </OnWall>
 
-      {/* Two sofas facing the screen, with a coffee table */}
+      {/* Two Chesterfield sofas facing the screen, with a marble coffee table */}
       {[-3.4, 3.4].map((x) => (
-        <group key={x} position={[x, 0, 2.6]}>
-          <RigidBody type="fixed" colliders={false}>
-            <CuboidCollider args={[1.3, 0.3, 0.2]} position={[0, 0.6, 0.45]} />
-          </RigidBody>
-          <mesh position={[0, 0.25, 0]} castShadow receiveShadow>
-            <boxGeometry args={[2.6, 0.5, 0.9]} />
-            <meshStandardMaterial color="#6b46c1" roughness={0.9} />
-          </mesh>
-          <mesh position={[0, 0.7, 0.42]} castShadow>
-            <boxGeometry args={[2.6, 0.8, 0.22]} />
-            <meshStandardMaterial color="#6b46c1" roughness={0.9} />
-          </mesh>
-          {[-1.25, 1.25].map((ax) => (
-            <mesh key={ax} position={[ax, 0.45, 0]} castShadow>
-              <boxGeometry args={[0.2, 0.5, 0.9]} />
-              <meshStandardMaterial color="#553c9a" roughness={0.9} />
-            </mesh>
-          ))}
-        </group>
+        <Sofa key={x} position={[x, 0, 2.6]} facing={Math.PI} leather={x < 0 ? "oxblood" : "navy"} />
       ))}
-      <mesh position={[0, 0.3, 1.2]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.8, 0.8, 0.08, 28]} />
-        <meshStandardMaterial color="#e9dcc6" />
-      </mesh>
+      <Table position={[0, 0, 1.2]} width={1.4} depth={0.7} height={0.42} />
       <Seats seats={seats} />
 
       {project.plaque && (
