@@ -3,6 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { setWetness } from "./surfaces";
 import { useCityStore, type Weather as WeatherKind } from "@/state/useCityStore";
 import { playerState } from "@/world/env";
 
@@ -30,7 +31,13 @@ export function Weather() {
   const indoors = useCityStore((s) => s.scene.startsWith("room:"));
   const weather = indoors ? "clear" : outside;
   const { scene } = useThree();
+  const wet = useRef(0);
   useFrame((_, delta) => {
+    // Puddle-shine on the ground while it rains; it dries slowly afterwards.
+    const target = weather === "rain" ? 1 : 0;
+    const next = THREE.MathUtils.damp(wet.current, target, target ? 0.8 : 0.25, delta);
+    if (Math.abs(next - wet.current) > 0.001) setWetness(next);
+    wet.current = next;
     const fog = scene.fog as THREE.Fog | null;
     if (!fog) return;
     const [near, far] = FOG[weather];

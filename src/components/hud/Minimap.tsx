@@ -175,6 +175,23 @@ export function Minimap() {
               waypoint={waypoint}
               onPick={(p) => setWaypoint({ x: p.target.x, z: p.target.z, label: p.label })}
             />
+            <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Fast travel">
+              <span className="mr-1 self-center text-xs tracking-widest text-violet-200 uppercase">Fast travel</span>
+              {[{ id: "hub", name: "Central Plaza" }, ...DISTRICTS].map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  disabled={scene === d.id}
+                  className="hud-chip text-sm text-white disabled:opacity-40"
+                  onClick={() => {
+                    setMapOpen(false);
+                    useCityStore.getState().goTo(d.id as SceneId);
+                  }}
+                >
+                  {d.name}
+                </button>
+              ))}
+            </div>
             {highlights.length > 0 && scene === "hub" && (
               <p className="mt-2 text-xs text-amber-100">✦ Glowing pins are recommended for you as a {PERSONAS[persona!].label.toLowerCase()}.</p>
             )}

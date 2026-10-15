@@ -167,3 +167,22 @@ export function paint(color: string) {
   }
   return m;
 }
+
+/**
+ * Rain makes the ground wet: paving, asphalt and stone get glossy and a little darker. `amount`
+ * 0..1, eased by Weather. Only the outdoor ground surfaces react (not bark or wood).
+ */
+const WET_KINDS = ["asphalt", "pavers", "stone", "granite", "darkStone"];
+const dryRoughness = new Map<THREE.MeshStandardMaterial, number>();
+const dryColor = new Map<THREE.MeshStandardMaterial, THREE.Color>();
+export function setWetness(amount: number) {
+  for (const [key, m] of materials) {
+    if (!WET_KINDS.includes(key.split("|")[0])) continue;
+    if (!dryRoughness.has(m)) {
+      dryRoughness.set(m, m.roughness);
+      dryColor.set(m, m.color.clone());
+    }
+    m.roughness = THREE.MathUtils.lerp(dryRoughness.get(m)!, 0.12, amount);
+    m.color.copy(dryColor.get(m)!).multiplyScalar(1 - amount * 0.25);
+  }
+}
