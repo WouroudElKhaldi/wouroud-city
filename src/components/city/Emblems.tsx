@@ -6,7 +6,7 @@ import * as THREE from "three";
 import type { Emblem as EmblemKind, Signature } from "@/world/signatures";
 import { DARK } from "./buildingTheme";
 import { useGlowMaterial } from "./materials";
-import { TEXT_FONT, TEXT_FONT_BOLD } from "@/world/fonts";
+import { TEXT_FONT_BOLD } from "@/world/fonts";
 import { Text } from "./Text3D";
 
 /**

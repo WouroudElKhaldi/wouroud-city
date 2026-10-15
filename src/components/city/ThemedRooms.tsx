@@ -16,6 +16,7 @@ import { OnWall, useRoom } from "./InteriorScene";
 import { emitBurst } from "./Particles";
 import { box, font, Panel, useCanvas, wrap } from "./roomKit";
 import { ShopRoom } from "./Shops";
+import { SkillCenterpiece, SkillDressing, skillTheme } from "./SkillRooms";
 import { Seats } from "./StreetDetails";
 import { Text } from "./Text3D";
 import { useProximity } from "./useProximity";
@@ -195,54 +196,42 @@ function usedIn(skill: Skill) {
 // Skills: a lab
 // ---------------------------------------------------------------------------
 
-const SNIPPETS: Record<string, string[]> = {
-  languages: ["const ship = (idea) => build(idea).then(test).then(deploy);", "type Result<T> = { ok: true; value: T } | { ok: false; error: string };"],
-  frontend: ["<Button onClick={() => setOpen(true)}>Open</Button>", "useEffect(() => { document.title = page; }, [page]);"],
-  backend: ["Route::middleware('auth')->get('/orders', OrderController::class);", "app.get('/health', (c) => c.json({ ok: true }));"],
-  databases: ["SELECT name, COUNT(*) FROM orders GROUP BY name;", "db.users.createIndex({ email: 1 }, { unique: true })"],
-  tools: ["git commit -m \"ship it, not perfect\"", "docker compose up -d --build"],
-  state: ["const useCart = create((set) => ({ items: [], add: … }))", "queryClient.invalidateQueries({ queryKey: ['todos'] })"],
-  hosting: ["vercel --prod", "server { listen 443 ssl; server_name city.dev; }"],
-  design: ["Grid: 12 columns · 8px rhythm · 4.5:1 contrast", "Figma → tokens → Tailwind config"],
-  architecture: ["Client → API gateway → services → queue → workers", "Every query carries tenant_id. No exceptions."],
-  ai: ["const reply = await llm.chat({ messages, tools });", "embed(text) → vector store → top-k → answer"],
-};
-
 function SkillLab({ skill, accent }: { skill: Skill; accent: string }) {
   const { width: W, depth: D } = useRoom();
-  const toast = useCityStore((s) => s.toast);
   const uses = useMemo(() => usedIn(skill), [skill]);
-  const snippets = SNIPPETS[skill.category] ?? SNIPPETS.languages;
+  const theme = useMemo(() => skillTheme(skill), [skill]);
+  const color = useMemo(() => signatureFor(skill.id, skill.name)?.accent ?? accent, [skill, accent]);
   return (
     <group>
+      <SkillDressing skill={skill} theme={theme} accent={color} />
       <OnWall side="back">
         <Board
-          position={[0, 2.9, -D / 2 + 0.06]}
-          width={9}
-          height={3.2}
-          accent={accent}
+          position={[W / 2 - 4.4, 2.5, -D / 2 + 0.07]}
+          width={6.4}
+          height={2.6}
+          accent={color}
           kicker={`Skill · ${skill.category}`}
           title={skill.name}
-          lines={[`Level ${skill.level} out of 10`, `${skill.years} year${skill.years === 1 ? "" : "s"} of use`, ...(skill.note ? [skill.note] : [])]}
+          lines={[`Level ${skill.level} out of 10 · ${skill.years} year${skill.years === 1 ? "" : "s"}`, ...(skill.note ? [skill.note] : [])]}
         />
       </OnWall>
-      <Pedestal accent={accent} emblemId={skill.id} label={skill.name} onClick={() => toast(skill.note ?? `${skill.name}: level ${skill.level}/10 after ${skill.years} years.`, skill.name)} />
-      <LevelMeter level={skill.level} accent={accent} />
+      <SkillCenterpiece skill={skill} theme={theme} accent={color} />
+      <LevelMeter level={skill.level} accent={color} />
       <OnWall side="left">
         <Board
           position={[-W / 2 + 0.06, 2.7, -2.5]}
           rotationY={Math.PI / 2}
           width={6}
           height={3.4}
-          accent={accent}
+          accent={color}
           kicker="Where it's used"
           title={uses.projects.length || uses.jobs.length ? "Projects and jobs" : "Learning in progress"}
           lines={[...uses.jobs.map((j) => `At ${j}`), ...uses.projects.map((p) => `Project: ${p}`)].slice(0, 7)}
         />
       </OnWall>
-      <CodeTerminal x={5.5} z={-2} lines={snippets} accent={accent} />
-      <Lounge id={`lab-${skill.id}`} x={-5} z={2.4} leather="black" />
-      <TallPlant position={[W / 2 - 1.2, 0, -D / 2 + 1.2]} seed={3} />
+      <CodeTerminal x={6} z={-1} lines={theme.code} accent={color} />
+      <Lounge id={`lab-${skill.id}`} x={-5} z={2.6} leather="black" />
+      <TallPlant position={[W / 2 - 1.2, 0, D / 2 - 1.6]} seed={3} />
     </group>
   );
 }
