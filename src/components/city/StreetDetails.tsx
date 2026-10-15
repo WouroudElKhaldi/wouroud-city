@@ -14,6 +14,7 @@ import { emitBurst } from "./Particles";
 import { useProximity } from "./useProximity";
 import { type Billboard, type LampSpot, STREET } from "@/world/layout";
 import { palette } from "@/world/palette";
+import type { FoliageItem } from "@/world/foliage";
 import { surface } from "./surfaces";
 import { TEXT_FONT } from "@/world/fonts";
 
@@ -463,3 +464,66 @@ export function ParkBenches({ seats }: { seats: Seat[] }) {
     </group>
   );
 }
+
+/** Height of a planter's soil, where its shrub stands. */
+export const PLANTER_TOP = 0.86;
+
+/** The shrubs that grow in planters (add them to the scene's Foliage items). */
+export function planterPlants(spots: { x: number; z: number }[]): FoliageItem[] {
+  return spots.map((p, i) => ({
+    key: i % 3 === 0 ? "bushLarge" : "bushDetailed",
+    x: p.x,
+    z: p.z,
+    y: PLANTER_TOP,
+    rot: i * 1.3,
+    size: i % 3 === 0 ? 1.05 : 1.6,
+    palette: (["spring", "blossom", "spring", "lilac"] as const)[i % 4],
+  }));
+}
+
+/** Granite urn planters with a brass band, instanced. Their shrubs come from planterPlants(). */
+export function Planters({ spots }: { spots: { x: number; z: number }[] }) {
+  const urns = useRef<THREE.InstancedMesh>(null);
+  const bands = useRef<THREE.InstancedMesh>(null);
+  const soil = useRef<THREE.InstancedMesh>(null);
+  const geo = useMemo(() => {
+    const v = (pts: number[][]) => pts.map(([x, y]) => new THREE.Vector2(x, y));
+    const urn = new THREE.LatheGeometry(
+      v([
+        [0, 0],
+        [0.42, 0],
+        [0.42, 0.1],
+        [0.3, 0.16],
+        [0.26, 0.3],
+        [0.34, 0.45],
+        [0.52, 0.72],
+        [0.6, 0.84],
+        [0.6, 0.9],
+        [0.53, 0.9],
+        [0.5, 0.84],
+      ]),
+      28,
+    );
+    const band = new THREE.TorusGeometry(0.55, 0.018, 6, 40).rotateX(Math.PI / 2).translate(0, 0.78, 0);
+    const dirt = new THREE.CircleGeometry(0.51, 24).rotateX(-Math.PI / 2).translate(0, PLANTER_TOP - 0.02, 0);
+    return { urn, band, dirt };
+  }, []);
+  const matrices = useMemo(() => spots.map((p) => at(p.x, 0, p.z)), [spots]);
+  useInstanceMatrices(urns, matrices);
+  useInstanceMatrices(bands, matrices);
+  useInstanceMatrices(soil, matrices);
+  return (
+    <group>
+      <RigidBody type="fixed" colliders={false}>
+        {spots.map((p) => (
+          <CylinderCollider key={`${p.x}:${p.z}`} args={[0.45, 0.5]} position={[p.x, 0.45, p.z]} />
+        ))}
+      </RigidBody>
+      <instancedMesh ref={urns} args={[geo.urn, surface("granite", "#d8d0c4"), spots.length]} castShadow receiveShadow />
+      <instancedMesh ref={bands} args={[geo.band, GOLD_TRIM, spots.length]} />
+      <instancedMesh ref={soil} args={[geo.dirt, SOIL, spots.length]} receiveShadow />
+    </group>
+  );
+}
+
+const SOIL = new THREE.MeshStandardMaterial({ color: "#3b2a1e", roughness: 1 });

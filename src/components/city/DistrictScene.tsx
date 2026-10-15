@@ -21,7 +21,7 @@ import { paint, surface } from "./surfaces";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Balls, Knockables, ParkedCars, Pigeons } from "./Playthings";
 import { Portal } from "./Portal";
-import { CodeBillboards, Fountain, ParkBenches } from "./StreetDetails";
+import { CodeBillboards, Fountain, ParkBenches, Planters, planterPlants } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 import { MarketStalls, Traffic } from "./Traffic";
 import { TEXT_FONT } from "@/world/fonts";
@@ -87,6 +87,13 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       ),
     [id],
   );
+
+  // An urn planter between the two benches of each pair.
+  const planters = useMemo(
+    () => SPOKES.map((s) => s + Math.PI / 4).map((a) => ({ x: Math.sin(a) * (RING.plazaRadius - 1.9), z: Math.cos(a) * (RING.plazaRadius - 1.9) })),
+    [],
+  );
+  const foliage = useMemo(() => [...layout.foliage, ...planterPlants(planters)], [layout, planters]);
 
   const toys = useMemo(() => {
     const at = (a: number, r: number) => ({ x: Math.sin(a) * r, z: Math.cos(a) * r });
@@ -210,7 +217,8 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       ))}
 
       <StreetLamps points={layout.lamps} />
-      <Foliage items={layout.foliage} />
+      <Planters spots={planters} />
+      <Foliage items={foliage} />
       <GrassField isLawn={lawn} radius={layout.outerRadius + 40} count={16000} seed={id.length * 13} />
       <CodeBillboards spots={layout.billboards} />
       <Pedestrians walkers={walkers} />

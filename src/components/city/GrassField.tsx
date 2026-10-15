@@ -3,6 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { seeded } from "@/world/foliage";
 
 /**
@@ -12,8 +13,9 @@ import { seeded } from "@/world/foliage";
  * grass off roads, plazas and floors.
  */
 
-const GRASS_COLORS = ["#4ade80", "#22c55e", "#65a30d", "#84cc16", "#16a34a", "#a3e635"];
-const FLOWER_COLORS = ["#f472b6", "#fb7185", "#facc15", "#fb923c", "#a78bfa", "#38bdf8", "#ffffff", "#f0abfc"];
+// Natural lawn greens, from shaded deep green to sunlit straw-tipped blades.
+const GRASS_COLORS = ["#5f8f3a", "#6b9a40", "#557f33", "#79a44a", "#62913c", "#86ad55", "#4f7a30"];
+const FLOWER_COLORS = ["#f4f1ea", "#f4f1ea", "#f2c230", "#e36a8a", "#a88ad8", "#f08a4b", "#ffffff", "#d8344a"];
 
 const wind = { value: 0 };
 
@@ -36,44 +38,61 @@ function windy(material: THREE.MeshStandardMaterial) {
 }
 
 function clumpGeometry() {
-  // Five slim blades leaning outward, darker at the root.
+  // Nine curved, tapered blades (three segments each) leaning outward, dark at the root.
+  // Normals lean up so the lawn shades softly instead of showing every blade's flat side.
   const positions: number[] = [];
+  const normals: number[] = [];
   const colors: number[] = [];
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2 + i * 0.4;
-    const lean = 0.08 + (i % 2) * 0.06;
-    const h = 0.38 + (i % 3) * 0.1;
-    const w = 0.035;
-    const cx = Math.cos(a) * 0.05;
-    const cz = Math.sin(a) * 0.05;
-    const px = -Math.sin(a) * w;
-    const pz = Math.cos(a) * w;
-    positions.push(cx - px, 0, cz - pz, cx + px, 0, cz + pz, cx + Math.cos(a) * lean, h, cz + Math.sin(a) * lean);
-    colors.push(0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 1, 1, 1);
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2 + i * 1.7;
+    const h = 0.26 + ((i * 7) % 5) * 0.045;
+    const lean = 0.06 + (i % 3) * 0.05;
+    const w = 0.022;
+    const r = 0.03 + (i % 4) * 0.015;
+    const dx = Math.cos(a);
+    const dz = Math.sin(a);
+    const row = (t: number) => {
+      const width = w * (1 - t * 0.92);
+      const x = dx * (r + lean * t * t);
+      const z = dz * (r + lean * t * t);
+      return [x - dz * width, t * h, z + dx * width, x + dz * width, t * h, z - dx * width];
+    };
+    for (let k = 0; k < 3; k++) {
+      const t0 = k / 3;
+      const t1 = (k + 1) / 3;
+      const [ax, ay, az, bx, by, bz] = row(t0);
+      const [cx, cy, cz, ex, ey, ez] = row(t1);
+      positions.push(ax, ay, az, bx, by, bz, ex, ey, ez, ax, ay, az, ex, ey, ez, cx, cy, cz);
+      for (const t of [t0, t0, t1, t0, t1, t1]) {
+        normals.push(dx * 0.35, 1, dz * 0.35);
+        const v = 0.42 + t * 0.68;
+        colors.push(v, v, v * (0.9 + t * 0.1));
+      }
+    }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
   g.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-  g.computeVertexNormals();
   return g;
 }
 
 function flowerGeometry() {
-  // A stem with a little round bloom on top.
-  const stem = new THREE.CylinderGeometry(0.012, 0.012, 0.4, 4).translate(0, 0.2, 0);
-  const bloom = new THREE.IcosahedronGeometry(0.075, 0).translate(0, 0.42, 0);
-  const paint = (g: THREE.BufferGeometry, v: number) =>
-    g.setAttribute("color", new THREE.Float32BufferAttribute(new Array(g.attributes.position.count * 3).fill(v), 3));
-  // Stem tinted green by keeping it dark; the bloom takes the instance color.
-  paint(stem, 0.35);
-  paint(bloom, 1);
-  const merged = new THREE.BufferGeometry();
-  const pos = [...stem.toNonIndexed().attributes.position.array, ...bloom.toNonIndexed().attributes.position.array];
-  const col = [...stem.toNonIndexed().attributes.color.array, ...bloom.toNonIndexed().attributes.color.array];
-  merged.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  merged.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
-  merged.computeVertexNormals();
-  return merged;
+  // A thin stem with a flat five-petal bloom and a golden eye: a daisy / buttercup in the lawn.
+  const parts: THREE.BufferGeometry[] = [];
+  const paint = (g: THREE.BufferGeometry, r: number, gr: number, b: number) => {
+    const n = g.index ? g.toNonIndexed() : g;
+    n.deleteAttribute("uv");
+    n.setAttribute("color", new THREE.Float32BufferAttribute(new Array(n.attributes.position.count).fill([r, gr, b]).flat(), 3));
+    return n;
+  };
+  parts.push(paint(new THREE.CylinderGeometry(0.006, 0.008, 0.36, 4).translate(0, 0.18, 0), 0.32, 0.5, 0.22));
+  for (let k = 0; k < 5; k++) {
+    const petal = new THREE.CircleGeometry(0.035, 8).scale(1, 0.45, 1).translate(0.04, 0, 0).rotateX(-Math.PI / 2 + 0.2).rotateY((k / 5) * Math.PI * 2);
+    parts.push(paint(petal.translate(0, 0.365, 0), 1, 1, 1));
+  }
+  parts.push(paint(new THREE.SphereGeometry(0.016, 8, 6).scale(1, 0.6, 1).translate(0, 0.372, 0), 0.95, 0.72, 0.15));
+  return mergeGeometries(parts)!;
 }
 
 export function GrassField({
@@ -94,8 +113,8 @@ export function GrassField({
   const blooms = useRef<THREE.InstancedMesh>(null);
   const grassGeo = useMemo(() => clumpGeometry(), []);
   const flowerGeo = useMemo(() => flowerGeometry(), []);
-  const grassMat = useMemo(() => windy(new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.9 })), []);
-  const flowerMat = useMemo(() => windy(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6 })), []);
+  const grassMat = useMemo(() => windy(new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.85 })), []);
+  const flowerMat = useMemo(() => windy(new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.6 })), []);
 
   const spots = useMemo(() => {
     const random = seeded(seed);

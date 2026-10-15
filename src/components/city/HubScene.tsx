@@ -16,7 +16,7 @@ import { GrassField } from "./GrassField";
 import { Beacons } from "./Guidance";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Balls, Knockables, type ParkedCar, ParkedCars, Pigeons } from "./Playthings";
-import { ParkBenches } from "./StreetDetails";
+import { ParkBenches, Planters, planterPlants } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 import type { Seat } from "@/state/useCityStore";
 import { TEXT_FONT } from "@/world/fonts";
@@ -24,6 +24,7 @@ import { TEXT_FONT } from "@/world/fonts";
 /** Central Plaza and the ring of district landmarks. */
 export function HubScene() {
   const layout = useMemo(() => computeHubLayout(), []);
+  const foliage = useMemo(() => [...layout.foliage, ...planterPlants(PLAZA_PLANTERS)], [layout]);
   const ring = useGlowMaterial(palette.neon, 0.3, 2.2);
   const goldRing = useGlowMaterial(accents.gold, 0.3, 2);
   const monument = useGlowMaterial(palette.neon, 0.6, 3);
@@ -82,7 +83,8 @@ export function HubScene() {
       })}
 
       <StreetLamps points={layout.lamps} />
-      <Foliage items={layout.foliage} />
+      <Planters spots={PLAZA_PLANTERS} />
+      <Foliage items={foliage} />
       <GrassField isLawn={isHubLawn} radius={150} count={26000} seed={3} />
       <PlazaBenches />
       <Beacons />
@@ -151,6 +153,13 @@ const HUB_CARS: ParkedCar[] = (() => {
     return { id: `hub-${model}`, model, x: Math.cos(a) * r, z: Math.sin(a) * r, rot: -a };
   });
 })();
+
+/** Urn planters on both sides of every plaza bench. */
+const PLAZA_PLANTERS = DISTRICTS.flatMap((d) => {
+  const a = landmarkPlacement(d.id).angle + Math.PI / DISTRICTS.length;
+  const r = HUB.plazaRadius - 2.4;
+  return [-1, 1].map((side) => ({ x: Math.cos(a + side * 0.17) * r, z: Math.sin(a + side * 0.17) * r }));
+});
 
 /** Benches around the plaza, between the road openings. Press E next to one to sit. */
 function PlazaBenches() {
