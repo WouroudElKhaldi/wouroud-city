@@ -2,7 +2,8 @@
 
 import { Text } from "@react-three/drei";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
+import * as THREE from "three";
 import { seedContent } from "@/content/seed";
 import type { Seat } from "@/state/useCityStore";
 import { useCityStore } from "@/state/useCityStore";
@@ -16,10 +17,11 @@ import { GrassField } from "./GrassField";
 import { ParkedHorse } from "./Horse";
 import { WorldGround } from "./HubScene";
 import { useGlowMaterial } from "./materials";
+import { paint, surface } from "./surfaces";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Balls, Knockables, ParkedCars, Pigeons } from "./Playthings";
 import { Portal } from "./Portal";
-import { CodeBillboards, Fountain, Seats } from "./StreetDetails";
+import { CodeBillboards, Fountain, ParkBenches } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 import { MarketStalls, Traffic } from "./Traffic";
 import { TEXT_FONT } from "@/world/fonts";
@@ -119,30 +121,41 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       <WorldGround />
 
       {/* Outer sidewalk in front of the buildings, then the ring road */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.015, 0]} receiveShadow>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.015, 0]} receiveShadow material={surface("pavers")}>
         <ringGeometry args={[ringRadius + RING.roadHalfWidth, innerRadius + 1, 128]} />
-        <meshStandardMaterial color={palette.sidewalk} />
       </mesh>
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, 0]} receiveShadow>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, 0]} receiveShadow material={surface("asphalt")}>
         <ringGeometry args={[ringRadius - RING.roadHalfWidth, ringRadius + RING.roadHalfWidth, 128]} />
-        <meshStandardMaterial color={palette.road} roughness={0.9} />
       </mesh>
       <RoadDashes radius={ringRadius} />
-      {/* Inner curb ring around the park */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.03, 0]}>
-        <ringGeometry args={[parkEdge - 0.5, parkEdge, 128]} />
-        <meshStandardMaterial color="#e9dcc6" />
-      </mesh>
+      {/* Raised granite curbs on both sides of the ring road */}
+      <CurbRing radius={parkEdge - 0.12} />
+      <CurbRing radius={ringRadius + RING.roadHalfWidth + 0.12} />
 
       {/* Entry avenue from the gate to the ring */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, (ringRadius + gateZ + 8) / 2]} receiveShadow>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.021, (ringRadius + gateZ + 8) / 2]} receiveShadow material={surface("asphalt")}>
         <planeGeometry args={[RING.roadHalfWidth * 2, gateZ + 8 - ringRadius]} />
-        <meshStandardMaterial color={palette.road} roughness={0.9} />
       </mesh>
       {[-1, 1].map((s) => (
-        <mesh key={s} rotation-x={-Math.PI / 2} position={[s * (RING.roadHalfWidth + 1.5), 0.015, (innerRadius + gateZ + 8) / 2]} receiveShadow>
-          <planeGeometry args={[3, gateZ + 8 - innerRadius]} />
-          <meshStandardMaterial color={palette.sidewalk} />
+        <group key={s}>
+          <mesh rotation-x={-Math.PI / 2} position={[s * (RING.roadHalfWidth + 1.5), 0.016, (innerRadius + gateZ + 8) / 2]} receiveShadow material={surface("pavers")}>
+            <planeGeometry args={[3, gateZ + 8 - innerRadius]} />
+          </mesh>
+          <mesh position={[s * (RING.roadHalfWidth + 0.12), 0.06, (ringRadius + RING.roadHalfWidth + gateZ + 8) / 2]} castShadow receiveShadow material={surface("granite")}>
+            <boxGeometry args={[0.24, 0.12, gateZ + 8 - ringRadius - RING.roadHalfWidth]} />
+          </mesh>
+        </group>
+      ))}
+      {/* Zebra crossing where the avenue meets the ring */}
+      {Array.from({ length: Math.floor((RING.roadHalfWidth * 2 - 0.6) / 1.1) }, (_, k) => (
+        <mesh
+          key={k}
+          rotation-x={-Math.PI / 2}
+          position={[-RING.roadHalfWidth + 0.85 + k * 1.1, 0.03, ringRadius + RING.roadHalfWidth + 3]}
+          material={paint("#f4f1ea")}
+          receiveShadow
+        >
+          <planeGeometry args={[0.55, 3.2]} />
         </mesh>
       ))}
 
@@ -153,18 +166,15 @@ export function DistrictScene({ id }: { id: DistrictId }) {
           rotation={[-Math.PI / 2, 0, a]}
           position={[Math.sin(a) * (RING.plazaRadius + parkEdge) * 0.5, 0.025, Math.cos(a) * (RING.plazaRadius + parkEdge) * 0.5]}
           receiveShadow
+          material={surface("pavers")}
         >
           <planeGeometry args={[3.2, parkEdge - RING.plazaRadius]} />
-          <meshStandardMaterial color={palette.sidewalk} />
         </mesh>
       ))}
 
       <CentralPlaza color={district.color} accent={district.accent} name={district.name} />
       <Fountain />
-      <Seats seats={benches} />
-      {benches.map((seat) => (
-        <Bench key={seat.id} seat={seat} />
-      ))}
+      <ParkBenches seats={benches} />
 
       <DistrictArch name={district.name} tagline={district.tagline} accent={district.accent} color={district.color} z={gateZ - 2} />
       <Portal
@@ -215,14 +225,12 @@ export function DistrictScene({ id }: { id: DistrictId }) {
         .filter((c) => c.x === BAY_X)
         .map((c) => (
           <group key={c.id} position={[BAY_X, 0, c.z]}>
-            <mesh rotation-x={-Math.PI / 2} position={[0, 0.022, 0]} receiveShadow>
+            <mesh rotation-x={-Math.PI / 2} position={[0, 0.022, 0]} receiveShadow material={surface("asphalt")}>
               <planeGeometry args={[4, 6.4]} />
-              <meshStandardMaterial color={palette.road} roughness={0.9} />
             </mesh>
             {[-3.1, 3.1].map((dz) => (
-              <mesh key={dz} rotation-x={-Math.PI / 2} position={[0, 0.026, dz]}>
+              <mesh key={dz} rotation-x={-Math.PI / 2} position={[0, 0.026, dz]} material={paint("#f4f1ea")}>
                 <planeGeometry args={[3.6, 0.12]} />
-                <meshStandardMaterial color={palette.roadLine} />
               </mesh>
             ))}
           </group>
@@ -234,20 +242,40 @@ export function DistrictScene({ id }: { id: DistrictId }) {
 
 /** Dashed center line around the ring road. */
 function RoadDashes({ radius }: { radius: number }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
   const count = Math.round((Math.PI * 2 * radius) / 6);
-  return (
-    <group>
-      {Array.from({ length: count }, (_, k) => {
-        const a = (k / count) * Math.PI * 2;
-        return (
-          <mesh key={k} rotation={[-Math.PI / 2, 0, a]} position={[Math.sin(a) * radius, 0.03, Math.cos(a) * radius]}>
-            <planeGeometry args={[2.6, 0.22]} />
-            <meshStandardMaterial color={palette.roadLine} />
-          </mesh>
-        );
-      })}
-    </group>
+  const geometry = useMemo(() => new THREE.PlaneGeometry(2.6, 0.16).rotateX(-Math.PI / 2), []);
+  useLayoutEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const m = new THREE.Matrix4();
+    for (let k = 0; k < count; k++) {
+      const a = (k / count) * Math.PI * 2;
+      m.makeRotationY(a).setPosition(Math.sin(a) * radius, 0.03, Math.cos(a) * radius);
+      mesh.setMatrixAt(k, m);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [count, radius]);
+  return <instancedMesh ref={ref} args={[geometry, paint(palette.roadLine), count]} receiveShadow />;
+}
+
+/** A raised granite curb all the way round (a lathe of the curb's square profile). */
+function CurbRing({ radius }: { radius: number }) {
+  const geometry = useMemo(
+    () =>
+      new THREE.LatheGeometry(
+        [
+          [radius - 0.12, 0],
+          [radius - 0.12, 0.12],
+          [radius + 0.12, 0.12],
+          [radius + 0.12, 0],
+        ].map(([x, y]) => new THREE.Vector2(x, y)),
+        160,
+      ),
+    [radius],
   );
+  return <mesh geometry={geometry} material={surface("granite")} castShadow receiveShadow />;
 }
 
 /** The paved plaza in the middle with a glowing ring and the district's colors. */
@@ -255,13 +283,12 @@ function CentralPlaza({ color, accent, name }: { color: string; accent: string; 
   const glow = useGlowMaterial(accent, 0.5, 2.2);
   return (
     <group>
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.03, 0]} receiveShadow>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.03, 0]} receiveShadow material={surface("stone")}>
         <circleGeometry args={[RING.plazaRadius, 64]} />
-        <meshStandardMaterial color={palette.plaza} />
       </mesh>
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.04, 0]} receiveShadow>
+      {/* A band of polished stone in the district's color */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.04, 0]} receiveShadow material={surface("darkStone", color)}>
         <ringGeometry args={[RING.plazaRadius - 3.6, RING.plazaRadius - 3, 64]} />
-        <meshStandardMaterial color={color} />
       </mesh>
       <mesh rotation-x={-Math.PI / 2} position={[0, 0.045, 0]} material={glow}>
         <ringGeometry args={[RING.plazaRadius - 0.35, RING.plazaRadius, 96]} />
@@ -272,9 +299,8 @@ function CentralPlaza({ color, accent, name }: { color: string; accent: string; 
           <RigidBody type="fixed" colliders={false}>
             <CuboidCollider args={[0.5, 2, 0.5]} position={[0, 2, 0]} />
           </RigidBody>
-          <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
+          <mesh position={[0, 0.3, 0]} castShadow receiveShadow material={surface("darkStone")}>
             <boxGeometry args={[1.4, 0.6, 1.4]} />
-            <meshStandardMaterial color={DARK} />
           </mesh>
           <mesh position={[0, 2.3, 0]} castShadow>
             <cylinderGeometry args={[0.28, 0.5, 3.6, 4]} />
@@ -287,30 +313,6 @@ function CentralPlaza({ color, accent, name }: { color: string; accent: string; 
             {name}
           </Text>
         </group>
-      ))}
-    </group>
-  );
-}
-
-function Bench({ seat }: { seat: Seat }) {
-  return (
-    <group position={[seat.x, 0, seat.z]} rotation-y={seat.facing}>
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[1.1, 0.5, 0.35]} position={[0, 0.5, -0.45]} />
-      </RigidBody>
-      <mesh position={[0, 0.48, -0.25]} castShadow receiveShadow>
-        <boxGeometry args={[2.2, 0.1, 0.55]} />
-        <meshStandardMaterial color={palette.bench} roughness={0.6} />
-      </mesh>
-      <mesh position={[0, 0.85, -0.52]} castShadow>
-        <boxGeometry args={[2.2, 0.55, 0.08]} />
-        <meshStandardMaterial color={palette.bench} roughness={0.6} />
-      </mesh>
-      {[-0.9, 0.9].map((x) => (
-        <mesh key={x} position={[x, 0.24, -0.3]} castShadow>
-          <boxGeometry args={[0.1, 0.48, 0.5]} />
-          <meshStandardMaterial color={palette.lampPole} metalness={0.5} roughness={0.4} />
-        </mesh>
       ))}
     </group>
   );

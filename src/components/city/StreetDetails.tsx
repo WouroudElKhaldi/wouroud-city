@@ -2,9 +2,10 @@
 
 import { Text } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
-import { CylinderCollider, RigidBody } from "@react-three/rapier";
+import { CuboidCollider, CylinderCollider, RigidBody } from "@react-three/rapier";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { seedContent } from "@/content/seed";
 import { type Seat, useCityStore } from "@/state/useCityStore";
 import { playerState, registerNightGlow, worldEnv } from "@/world/env";
@@ -13,6 +14,7 @@ import { emitBurst } from "./Particles";
 import { useProximity } from "./useProximity";
 import { type Billboard, type LampSpot, STREET } from "@/world/layout";
 import { palette } from "@/world/palette";
+import { surface } from "./surfaces";
 import { TEXT_FONT } from "@/world/fonts";
 
 function useInstanceMatrices(ref: React.RefObject<THREE.InstancedMesh | null>, matrices: THREE.Matrix4[]) {
@@ -387,4 +389,77 @@ export function Seats({ seats }: { seats: Seat[] }) {
     },
   });
   return null;
+}
+
+/** One bench's geometry, split into wooden slats and the cast-iron frame (local: you sit facing +z). */
+function benchGeometry() {
+  const wood: THREE.BufferGeometry[] = [];
+  const iron: THREE.BufferGeometry[] = [];
+  // Seat: five slats with small gaps, sloping slightly back.
+  for (let i = 0; i < 5; i++) {
+    const z = -0.04 - i * 0.095;
+    wood.push(new THREE.BoxGeometry(1.9, 0.035, 0.08).translate(0, 0.45 - i * 0.006, z));
+  }
+  // Backrest: three slats leaning back.
+  for (let i = 0; i < 3; i++) {
+    const y = 0.6 + i * 0.12;
+    wood.push(new THREE.BoxGeometry(1.9, 0.09, 0.03).rotateX(-0.22).translate(0, y, -0.52 - (y - 0.6) * 0.22));
+  }
+  // Two cast-iron ends: front leg, rear leg rising into the backrest support, seat rail, armrest.
+  for (const x of [-0.84, 0.84]) {
+    iron.push(new THREE.BoxGeometry(0.05, 0.44, 0.05).translate(x, 0.22, -0.02));
+    iron.push(new THREE.BoxGeometry(0.05, 0.92, 0.05).rotateX(-0.22).translate(x, 0.46, -0.48));
+    iron.push(new THREE.BoxGeometry(0.05, 0.05, 0.5).translate(x, 0.41, -0.25));
+    iron.push(new THREE.BoxGeometry(0.06, 0.04, 0.5).translate(x, 0.66, -0.22));
+    iron.push(new THREE.CylinderGeometry(0.03, 0.03, 0.24, 10).translate(x, 0.55, 0.0));
+    // Feet.
+    iron.push(new THREE.BoxGeometry(0.09, 0.03, 0.12).translate(x, 0.015, -0.02));
+    iron.push(new THREE.BoxGeometry(0.09, 0.03, 0.12).translate(x, 0.015, -0.58));
+  }
+  const strip = (g: THREE.BufferGeometry) => {
+    const n = g.index ? g.toNonIndexed() : g;
+    for (const k of Object.keys(n.attributes)) if (!["position", "normal", "uv"].includes(k)) n.deleteAttribute(k);
+    return n;
+  };
+  return { wood: mergeGeometries(wood.map(strip))!, iron: mergeGeometries(iron.map(strip))! };
+}
+
+const IRON = new THREE.MeshStandardMaterial({ color: "#1c1b20", metalness: 0.75, roughness: 0.38 });
+const GOLD_TRIM = new THREE.MeshStandardMaterial({ color: "#c9a24a", metalness: 0.9, roughness: 0.3 });
+
+/**
+ * Park benches: walnut slats on black cast-iron ends with brass caps, instanced (three draw calls
+ * for every bench in the scene). Press E next to one to sit.
+ */
+export function ParkBenches({ seats }: { seats: Seat[] }) {
+  const geo = useMemo(() => benchGeometry(), []);
+  const caps = useMemo(() => {
+    const g = new THREE.SphereGeometry(0.035, 10, 8);
+    return mergeGeometries([g.clone().translate(-0.84, 0.69, 0.03), g.clone().translate(0.84, 0.69, 0.03)])!;
+  }, []);
+  const wood = useRef<THREE.InstancedMesh>(null);
+  const iron = useRef<THREE.InstancedMesh>(null);
+  const gold = useRef<THREE.InstancedMesh>(null);
+  const matrices = useMemo(() => seats.map((s) => at(s.x, s.y, s.z, s.facing)), [seats]);
+  useInstanceMatrices(wood, matrices);
+  useInstanceMatrices(iron, matrices);
+  useInstanceMatrices(gold, matrices);
+  return (
+    <group>
+      <Seats seats={seats} />
+      <RigidBody type="fixed" colliders={false}>
+        {seats.map((s) => (
+          <CuboidCollider
+            key={s.id}
+            args={[1.0, 0.5, 0.33]}
+            position={[s.x - Math.sin(s.facing) * 0.3, 0.5, s.z - Math.cos(s.facing) * 0.3]}
+            rotation={[0, s.facing, 0]}
+          />
+        ))}
+      </RigidBody>
+      <instancedMesh ref={wood} args={[geo.wood, surface("wood", "#a8744a", [2, 0.25]), seats.length]} castShadow receiveShadow />
+      <instancedMesh ref={iron} args={[geo.iron, IRON, seats.length]} castShadow />
+      <instancedMesh ref={gold} args={[caps, GOLD_TRIM, seats.length]} />
+    </group>
+  );
 }

@@ -4,6 +4,7 @@ import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CylinderCollider, RigidBody } from "@react-three/rapier";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { registerNightGlow, worldEnv } from "@/world/env";
 import type { LampSpot } from "@/world/layout";
 import { palette } from "@/world/palette";
@@ -31,8 +32,60 @@ function at(x: number, y: number, z: number, rotY = 0, scale = 1) {
 
 const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
 
+const LANTERN_Y = 4.25;
+const IRON = new THREE.MeshStandardMaterial({ color: "#17161b", metalness: 0.7, roughness: 0.35 });
+const BRASS = new THREE.MeshStandardMaterial({ color: "#c9a24a", metalness: 0.9, roughness: 0.28 });
+const DARK_GLASS = new THREE.MeshStandardMaterial({ color: "#3d3a44", roughness: 0.1, metalness: 0.2 });
+
+function strip(g: THREE.BufferGeometry) {
+  const n = g.index ? g.toNonIndexed() : g;
+  for (const k of Object.keys(n.attributes)) if (!["position", "normal", "uv"].includes(k)) n.deleteAttribute(k);
+  return n;
+}
+
+/** Lamppost parts, built once. */
+const LAMP = (() => {
+  const v = (pts: number[][]) => pts.map(([x, y]) => new THREE.Vector2(x, y));
+  // Post: flared base, plinth rings, slim fluted shaft, collar under the lantern.
+  const post = new THREE.LatheGeometry(
+    v([
+      [0.0, 0],
+      [0.26, 0],
+      [0.26, 0.12],
+      [0.2, 0.18],
+      [0.2, 0.5],
+      [0.15, 0.62],
+      [0.09, 0.75],
+      [0.075, 1.0],
+      [0.065, 3.7],
+      [0.09, 3.78],
+      [0.07, 3.86],
+      [0.12, 3.98],
+      [0.12, 4.02],
+      [0.0, 4.02],
+    ]),
+    16,
+  );
+  // Lantern frame: four corner bars, a roof and a finial.
+  const frame: THREE.BufferGeometry[] = [];
+  for (let k = 0; k < 4; k++) {
+    const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
+    frame.push(new THREE.BoxGeometry(0.03, 0.5, 0.03).translate(Math.cos(a) * 0.19, LANTERN_Y, Math.sin(a) * 0.19));
+  }
+  frame.push(new THREE.CylinderGeometry(0.05, 0.3, 0.22, 4).rotateY(Math.PI / 4).translate(0, LANTERN_Y + 0.36, 0));
+  frame.push(new THREE.CylinderGeometry(0.17, 0.17, 0.05, 4).rotateY(Math.PI / 4).translate(0, LANTERN_Y - 0.27, 0));
+  const finial = new THREE.SphereGeometry(0.05, 10, 8).translate(0, LANTERN_Y + 0.52, 0);
+  const ring = new THREE.TorusGeometry(0.1, 0.018, 8, 20).rotateX(Math.PI / 2).translate(0, 3.8, 0);
+  const merged = mergeGeometries([strip(post), ...frame.map(strip)])!;
+  const trim = mergeGeometries([strip(finial), strip(ring)])!;
+  // Glass: a tapered four-sided pane box, centered at the lantern's origin.
+  const glass = new THREE.CylinderGeometry(0.2, 0.15, 0.48, 4).rotateY(Math.PI / 4);
+  return { post: merged, trim, glass };
+})();
+
 /**
- * Street lamps: a pole, an arm toward the road and a glowing bulb.
+ * Street lamps: black cast-iron lampposts (fluted post on a flared base) with a glass lantern and
+ * brass trim on top.
  * At night each lamp also paints a warm pool of light on the ground (a cheap fake
  * instead of dozens of real lights, so the frame rate stays high).
  * Click a lamp to switch it off or on.
@@ -51,13 +104,11 @@ export function StreetLamps({ points }: { points: LampSpot[] }) {
     const bulbM: THREE.Matrix4[] = [];
     const poolM: THREE.Matrix4[] = [];
     for (const { x, z, rot } of points) {
-      // Unit vector of the arm direction in world space.
-      const dx = Math.cos(rot);
-      const dz = -Math.sin(rot);
-      poleM.push(at(x, 2.5, z));
-      armM.push(at(x + dx * 0.7, 4.9, z + dz * 0.7, rot));
-      bulbM.push(at(x + dx * 1.35, 4.7, z + dz * 1.35));
-      poolM.push(at(x + dx * 1.6, 0.04, z + dz * 1.6));
+      // A classic lamppost: the lantern sits on top of the post, so the pool is right under it.
+      poleM.push(at(x, 0, z, rot));
+      armM.push(at(x, 0, z, rot));
+      bulbM.push(at(x, LANTERN_Y, z, rot));
+      poolM.push(at(x, 0.04, z));
     }
     return { poleM, armM, bulbM, poolM };
   }, [points]);
@@ -70,7 +121,15 @@ export function StreetLamps({ points }: { points: LampSpot[] }) {
   useInstances(pools, poolM);
 
   const bulbMaterial = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: palette.lampLight, emissive: palette.lampLight, emissiveIntensity: 0.2 }),
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#fff6e0",
+        emissive: palette.lampLight,
+        emissiveIntensity: 0.2,
+        roughness: 0.15,
+        transparent: true,
+        opacity: 0.92,
+      }),
     [],
   );
   useEffect(() => registerNightGlow(bulbMaterial, 0.2, 4), [bulbMaterial]);
@@ -119,26 +178,15 @@ export function StreetLamps({ points }: { points: LampSpot[] }) {
     <group>
       <RigidBody type="fixed" colliders={false}>
         {points.map(({ x, z }) => (
-          <CylinderCollider key={`${x}:${z}`} args={[2.5, 0.15]} position={[x, 2.5, z]} />
+          <CylinderCollider key={`${x}:${z}`} args={[2.3, 0.14]} position={[x, 2.3, z]} />
         ))}
       </RigidBody>
-      <instancedMesh ref={poles} args={[undefined, undefined, points.length]} castShadow onClick={toggle} {...hover}>
-        <cylinderGeometry args={[0.08, 0.12, 5, 8]} />
-        <meshStandardMaterial color={palette.lampPole} metalness={0.4} roughness={0.5} />
-      </instancedMesh>
-      <instancedMesh ref={arms} args={[undefined, undefined, points.length]} castShadow onClick={toggle} {...hover}>
-        <boxGeometry args={[1.5, 0.08, 0.08]} />
-        <meshStandardMaterial color={palette.lampPole} metalness={0.4} roughness={0.5} />
-      </instancedMesh>
-      <instancedMesh ref={bulbs} args={[undefined, undefined, points.length]} material={bulbMaterial} onClick={toggle} {...hover}>
-        <sphereGeometry args={[0.22, 12, 12]} />
-      </instancedMesh>
-      <instancedMesh ref={darkBulbs} args={[undefined, undefined, points.length]} onClick={toggle} {...hover}>
-        <sphereGeometry args={[0.22, 12, 12]} />
-        <meshStandardMaterial color="#4b4560" roughness={0.3} />
-      </instancedMesh>
+      <instancedMesh ref={poles} args={[LAMP.post, IRON, points.length]} castShadow onClick={toggle} {...hover} />
+      <instancedMesh ref={arms} args={[LAMP.trim, BRASS, points.length]} onClick={toggle} {...hover} />
+      <instancedMesh ref={bulbs} args={[LAMP.glass, bulbMaterial, points.length]} onClick={toggle} {...hover} />
+      <instancedMesh ref={darkBulbs} args={[LAMP.glass, DARK_GLASS, points.length]} onClick={toggle} {...hover} />
       <instancedMesh ref={pools} args={[undefined, undefined, points.length]} material={poolMaterial} renderOrder={2}>
-        <cylinderGeometry args={[4, 4, 0.01, 32]} />
+        <cylinderGeometry args={[4.5, 4.5, 0.01, 32]} />
       </instancedMesh>
     </group>
   );

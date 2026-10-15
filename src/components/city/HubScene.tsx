@@ -2,19 +2,21 @@
 
 import { Text } from "@react-three/drei";
 import { CuboidCollider, CylinderCollider, RigidBody } from "@react-three/rapier";
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
+import * as THREE from "three";
 import { DISTRICTS, HUB, landmarkPlacement } from "@/world/districts";
 import { computeHubLayout, isHubLawn, WORLD_HALF } from "@/world/hubLayout";
 import { accents, palette } from "@/world/palette";
 import { Landmark } from "./Landmarks";
 import { useGlowMaterial } from "./materials";
+import { paint, surface } from "./surfaces";
 import { Fountain } from "./StreetDetails";
 import { Foliage } from "./Foliage";
 import { GrassField } from "./GrassField";
 import { Beacons } from "./Guidance";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Balls, Knockables, type ParkedCar, ParkedCars, Pigeons } from "./Playthings";
-import { Seats } from "./StreetDetails";
+import { ParkBenches } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 import type { Seat } from "@/state/useCityStore";
 import { TEXT_FONT } from "@/world/fonts";
@@ -30,10 +32,15 @@ export function HubScene() {
     <group>
       <WorldGround />
 
-      {/* Plaza paving with concentric rings */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.015, 0]} receiveShadow>
+      {/* Plaza: travertine paving with a granite border and glowing inlaid rings */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.015, 0]} receiveShadow material={surface("stone")}>
         <circleGeometry args={[HUB.plazaRadius, 96]} />
-        <meshStandardMaterial color={palette.plaza} roughness={0.75} />
+      </mesh>
+      <mesh position={[0, 0, 0]} receiveShadow castShadow material={surface("granite")}>
+        <cylinderGeometry args={[HUB.plazaRadius + 0.35, HUB.plazaRadius + 0.35, 0.06, 96, 1, true]} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.03, 0]} receiveShadow material={surface("granite")}>
+        <ringGeometry args={[HUB.plazaRadius, HUB.plazaRadius + 0.35, 96]} />
       </mesh>
       {[HUB.plazaRadius - 0.5, 11, 7.5].map((r) => (
         <mesh key={r} rotation-x={-Math.PI / 2} position={[0, 0.025, 0]} material={r === 11 ? goldRing : ring}>
@@ -41,27 +48,8 @@ export function HubScene() {
         </mesh>
       ))}
 
-      {/* Roads to each district */}
-      {layout.roads.map((road, i) => (
-        <group key={i} position={[road.x, 0, road.z]} rotation-y={road.rotationY}>
-          <mesh rotation-x={-Math.PI / 2} position={[0, 0.012, 0]} receiveShadow>
-            <planeGeometry args={[HUB.roadHalfWidth * 2, road.length]} />
-            <meshStandardMaterial color={palette.road} roughness={0.9} />
-          </mesh>
-          {[-1, 1].map((side) => (
-            <mesh key={side} rotation-x={-Math.PI / 2} position={[side * (HUB.roadHalfWidth + 0.15), 0.02, 0]}>
-              <planeGeometry args={[0.3, road.length]} />
-              <meshStandardMaterial color="#f5f0ff" />
-            </mesh>
-          ))}
-          {Array.from({ length: Math.floor(road.length / 5) }, (_, k) => (
-            <mesh key={k} rotation-x={-Math.PI / 2} position={[0, 0.02, -road.length / 2 + 2.5 + k * 5]}>
-              <planeGeometry args={[0.22, 2.2]} />
-              <meshStandardMaterial color={palette.roadLine} />
-            </mesh>
-          ))}
-        </group>
-      ))}
+      {/* Roads to each district: asphalt, painted edge lines, granite curbs */}
+      <HubRoads roads={layout.roads} />
 
       {/* Monument in the fountain */}
       <group>
@@ -69,9 +57,8 @@ export function HubScene() {
         <RigidBody type="fixed" colliders={false}>
           <CylinderCollider args={[1.5, 2.2]} position={[0, 1.5, 0]} />
         </RigidBody>
-        <mesh position={[0, 0.9, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[2, 2.4, 1.8, 32]} />
-          <meshStandardMaterial color="#4c1d95" />
+        <mesh position={[0, 0.9, 0]} castShadow receiveShadow material={surface("darkStone", "#5a3d96")}>
+          <cylinderGeometry args={[2, 2.4, 1.8, 48]} />
         </mesh>
         <Text font={TEXT_FONT} position={[0, 4.2, 0]} fontSize={3.2} material={monument} anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#2d1f52">
           {"</>"}
@@ -126,9 +113,8 @@ export function WorldGround() {
         <CuboidCollider args={[1, 10, WORLD_HALF]} position={[WORLD_HALF, 10, 0]} />
         <CuboidCollider args={[1, 10, WORLD_HALF]} position={[-WORLD_HALF, 10, 0]} />
       </RigidBody>
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
+      <mesh rotation-x={-Math.PI / 2} receiveShadow material={surface("grass")}>
         <planeGeometry args={[WORLD_HALF * 2, WORLD_HALF * 2]} />
-        <meshStandardMaterial color={palette.grass} roughness={1} />
       </mesh>
     </group>
   );
@@ -176,30 +162,61 @@ function PlazaBenches() {
       return { id: `plaza-bench-${i}`, x: Math.cos(a) * r, y: 0, z: Math.sin(a) * r, facing: Math.atan2(-Math.cos(a), -Math.sin(a)) };
     });
   }, []);
+  return <ParkBenches seats={seats} />;
+}
+
+type Road = ReturnType<typeof computeHubLayout>["roads"][number];
+
+/** All hub roads; dashes and curbs are instanced (a few draw calls for the whole network). */
+function HubRoads({ roads }: { roads: Road[] }) {
+  const dashes = useRef<THREE.InstancedMesh>(null);
+  const curbs = useRef<THREE.InstancedMesh>(null);
+  const edges = useRef<THREE.InstancedMesh>(null);
+  const m = useMemo(() => {
+    const dash: THREE.Matrix4[] = [];
+    const curb: THREE.Matrix4[] = [];
+    const edge: THREE.Matrix4[] = [];
+    const q = new THREE.Quaternion();
+    const place = (road: Road, x: number, y: number, z: number, sx: number, sy: number, sz: number) => {
+      q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, road.rotationY);
+      const off = new THREE.Vector3(x, y, z).applyQuaternion(q);
+      return new THREE.Matrix4().compose(new THREE.Vector3(road.x + off.x, off.y, road.z + off.z), q, new THREE.Vector3(sx, sy, sz));
+    };
+    for (const road of roads) {
+      for (let k = 0; k < Math.floor(road.length / 5); k++) dash.push(place(road, 0, 0.02, -road.length / 2 + 2.5 + k * 5, 0.16, 1, 2.2));
+      for (const side of [-1, 1]) {
+        curb.push(place(road, side * (HUB.roadHalfWidth + 0.12), 0.06, 0, 0.24, 0.12, road.length));
+        edge.push(place(road, side * (HUB.roadHalfWidth - 0.3), 0.021, 0, 0.14, 1, road.length));
+      }
+    }
+    return { dash, curb, edge };
+  }, [roads]);
+  useLayoutEffect(() => {
+    for (const [ref, list] of [
+      [dashes, m.dash],
+      [curbs, m.curb],
+      [edges, m.edge],
+    ] as const) {
+      const mesh = ref.current;
+      if (!mesh) continue;
+      list.forEach((mat, i) => mesh.setMatrixAt(i, mat));
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.computeBoundingSphere();
+    }
+  }, [m]);
+  const flat = useMemo(() => new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), []);
   return (
     <group>
-      <Seats seats={seats} />
-      {seats.map((seat) => (
-        <group key={seat.id} position={[seat.x, 0, seat.z]} rotation-y={seat.facing}>
-          <RigidBody type="fixed" colliders={false}>
-            <CuboidCollider args={[1.1, 0.5, 0.35]} position={[0, 0.5, -0.45]} />
-          </RigidBody>
-          <mesh position={[0, 0.48, -0.25]} castShadow receiveShadow>
-            <boxGeometry args={[2.2, 0.1, 0.55]} />
-            <meshStandardMaterial color="#d9a066" roughness={0.6} />
-          </mesh>
-          <mesh position={[0, 0.85, -0.52]} castShadow>
-            <boxGeometry args={[2.2, 0.55, 0.08]} />
-            <meshStandardMaterial color="#d9a066" roughness={0.6} />
-          </mesh>
-          {[-0.9, 0.9].map((x) => (
-            <mesh key={x} position={[x, 0.24, -0.3]} castShadow>
-              <boxGeometry args={[0.1, 0.48, 0.5]} />
-              <meshStandardMaterial color={palette.lampPole} metalness={0.5} roughness={0.4} />
-            </mesh>
-          ))}
-        </group>
+      {roads.map((road, i) => (
+        <mesh key={i} position={[road.x, 0.012, road.z]} rotation={[-Math.PI / 2, 0, road.rotationY]} receiveShadow material={surface("asphalt")}>
+          <planeGeometry args={[HUB.roadHalfWidth * 2, road.length]} />
+        </mesh>
       ))}
+      <instancedMesh ref={dashes} args={[flat, paint(palette.roadLine), m.dash.length]} receiveShadow />
+      <instancedMesh ref={edges} args={[flat, paint("#f4f1ea"), m.edge.length]} receiveShadow />
+      <instancedMesh ref={curbs} args={[undefined, surface("granite"), m.curb.length]} castShadow receiveShadow>
+        <boxGeometry args={[1, 1, 1]} />
+      </instancedMesh>
     </group>
   );
 }

@@ -25,10 +25,8 @@ import { WaypointGuide } from "./Guidance";
 import { Weather } from "./Weather";
 import { PhotoCapture } from "./PhotoCapture";
 import { preloadPeople } from "./Person";
-import { preloadFoliage } from "./Foliage";
 import { preloadPlaythings } from "./Playthings";
 
-preloadFoliage();
 preloadPlaythings();
 // Only the visitor's own body is fetched up front; the crowd streams in after the city appears
 // (each walker has its own Suspense), so it never holds up the first frame.

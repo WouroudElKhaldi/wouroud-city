@@ -1,14 +1,15 @@
 /**
- * Plant catalog (Kenney Nature Kit, CC0) and the palettes that recolor them:
+ * Plant catalog (species generated in code by components/city/plants.ts) and the palettes that recolor them:
  * lush greens with plenty of blossom, sunset and rainbow colors mixed in. Positions are plain data so layouts stay pure.
  */
 
 export type FoliageKind = "tree" | "bush" | "flower" | "grass" | "mushroom" | "rock" | "stump";
 
 export type FoliageModel = {
+  /** Legacy Kenney file name, kept only as a stable id */
   file: string;
   kind: FoliageKind;
-  /** Uniform scale applied to the source model (Kenney models are ~1 unit tall) */
+  /** Uniform scale applied to the generated model (~1 model unit ≈ 4.5 m for trees) */
   scale: number;
   /** Trunk collider radius in world units, for things you can't walk through */
   collider?: number;
@@ -62,24 +63,26 @@ export const FOLIAGE: Record<string, FoliageModel> = {
 
 export type FoliageKey = keyof typeof FOLIAGE;
 
-/** Leaf color palettes; each tree instance picks one color from its palette. */
+/**
+ * Leaf color palettes; each tree instance picks one color from its palette. The leaf textures are
+ * near-white, so these are the real leaf colors: still lush and colorful (jacaranda lilac, cherry
+ * blossom, autumn maple, golden ginkgo, blue spruce), but in natural tones.
+ */
 export const LEAF_PALETTES = {
-  lilac: ["#b794f4", "#9f7aea", "#c4b5fd", "#a78bfa"],
-  blossom: ["#f9a8d4", "#f0abfc", "#fbcfe8", "#f5d0fe"],
-  deep: ["#6d28d9", "#7c3aed", "#5b21b6", "#8b5cf6"],
-  autumn: ["#fbbf24", "#f59e0b", "#fb923c"],
-  mint: ["#86efac", "#6ee7b7", "#a7f3d0"],
-  spring: ["#4ade80", "#22c55e", "#84cc16", "#a3e635", "#34d399"],
-  sunset: ["#fb7185", "#f97316", "#fbbf24", "#f472b6"],
-  citrus: ["#facc15", "#a3e635", "#fde047", "#bef264"],
-  ocean: ["#38bdf8", "#2dd4bf", "#60a5fa", "#5eead4"],
-  rainbow: ["#f472b6", "#fb923c", "#facc15", "#4ade80", "#38bdf8", "#a78bfa"],
+  lilac: ["#a88ad8", "#9677cc", "#b69ce0", "#8c70c2"],
+  blossom: ["#f4bcd4", "#eeaac8", "#f8cde0", "#e89dbd"],
+  deep: ["#7a4a7e", "#6c4378", "#86548a", "#5f3c6c"],
+  autumn: ["#e2a13a", "#d4862c", "#e8b44a"],
+  mint: ["#9cc98a", "#8abd78", "#acd39a"],
+  spring: ["#6fa84a", "#5e983e", "#7db456", "#86ba5a", "#68a046"],
+  sunset: ["#d0623f", "#e08a38", "#e6a83e", "#c4513f"],
+  citrus: ["#c8c24a", "#aec246", "#d6cc62", "#b8c850"],
+  ocean: ["#7aa898", "#6c9e92", "#86b0a2", "#7ba6a8"],
+  rainbow: ["#d888ac", "#e2a13a", "#d0c04a", "#7db456", "#7aa898", "#a88ad8"],
 } as const;
 
 export type LeafPalette = keyof typeof LEAF_PALETTES;
 
-/** Material names (from the Kenney files) that count as leaves and get recolored. */
-export const LEAF_MATERIALS = ["leafsGreen", "leafsDark", "grass"];
 
 export type FoliageItem = {
   key: FoliageKey;

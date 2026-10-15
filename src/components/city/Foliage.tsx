@@ -1,6 +1,5 @@
 "use client";
 
-import { useGLTF } from "@react-three/drei";
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CylinderCollider, RigidBody } from "@react-three/rapier";
 import { useLayoutEffect, useMemo, useRef } from "react";
@@ -10,14 +9,12 @@ import {
   FOLIAGE,
   type FoliageItem,
   type FoliageKey,
-  LEAF_MATERIALS,
   LEAF_PALETTES,
   type LeafPalette,
 } from "@/world/foliage";
 import { sfx } from "@/world/sfx";
 import { emitBurst } from "./Particles";
-
-const url = (file: string) => `/models/nature/${file}.glb`;
+import { advanceWind, plantParts } from "./plants";
 
 /**
  * Every plant in a scene, grouped by model so each model costs one draw call per material.
@@ -44,6 +41,7 @@ export function Foliage({ items }: { items: FoliageItem[] }) {
 
   return (
     <group>
+      <FoliageWind />
       <RigidBody type="fixed" colliders={false}>
         {colliders.map((i, n) => (
           <CylinderCollider
@@ -60,36 +58,16 @@ export function Foliage({ items }: { items: FoliageItem[] }) {
   );
 }
 
-type Part = { geometry: THREE.BufferGeometry; material: THREE.MeshStandardMaterial; isLeaf: boolean };
-
-/** Bake a GLB's meshes into geometry+material pairs we can instance. */
-function useParts(file: string) {
-  const gltf = useGLTF(url(file));
-  return useMemo<Part[]>(() => {
-    const parts: Part[] = [];
-    gltf.scene.updateMatrixWorld(true);
-    gltf.scene.traverse((o) => {
-      const mesh = o as THREE.Mesh;
-      if (!mesh.isMesh) return;
-      const geometry = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
-      const source = mesh.material as THREE.MeshStandardMaterial;
-      const isLeaf = LEAF_MATERIALS.includes(source.name);
-      const material = source.clone();
-      material.flatShading = true;
-      material.roughness = 0.85;
-      // Leaves are tinted per instance, so the base color must be white.
-      if (isLeaf) material.color.set("#ffffff");
-      parts.push({ geometry, material, isLeaf });
-    });
-    return parts;
-  }, [gltf]);
+/** The plant's generated parts (trunk, leaves...), one instanced mesh each. */
+function useParts(key: FoliageKey) {
+  return useMemo(() => plantParts(key), [key]);
 }
 
 type Motion = { shakeStart: number; shakeAxis: THREE.Vector3; bloomStart: number; bend: THREE.Vector2 };
 
 function FoliageGroup({ modelKey, items }: { modelKey: FoliageKey; items: FoliageItem[] }) {
   const model = FOLIAGE[modelKey];
-  const parts = useParts(model.file);
+  const parts = useParts(modelKey);
   const meshes = useRef<(THREE.InstancedMesh | null)[]>([]);
   const isTree = model.kind === "tree";
   const bends = model.kind === "flower" || model.kind === "grass" || model.kind === "bush";
@@ -154,7 +132,7 @@ function FoliageGroup({ modelKey, items }: { modelKey: FoliageKey; items: Foliag
     // Lean away from where the hit came from.
     m.shakeAxis.set(item.z - fromZ, 0, -(item.x - fromX)).normalize();
     active.current.add(n);
-    const top = new THREE.Vector3(item.x, model.scale * item.size * 1.1, item.z);
+    const top = new THREE.Vector3(item.x, model.scale * item.size * 1.15, item.z);
     const palette = LEAF_PALETTES[(item.palette ?? "lilac") as LeafPalette];
     emitBurst({ position: top, kind: item.palette === "autumn" ? "leaf" : "petal", count: 26, colors: [...palette], spread: 3 });
     sfx.rustle();
@@ -286,7 +264,8 @@ function FoliageGroup({ modelKey, items }: { modelKey: FoliageKey; items: Foliag
   );
 }
 
-/** Start downloading every plant model as soon as the city code loads. */
-export function preloadFoliage() {
-  for (const m of Object.values(FOLIAGE)) useGLTF.preload(url(m.file));
+/** Moves the leaves in the wind; mount once per scene. */
+export function FoliageWind() {
+  useFrame((_, delta) => advanceWind(delta));
+  return null;
 }
