@@ -25,7 +25,10 @@ const FOG: Record<WeatherKind, [number, number]> = {
 };
 
 export function Weather() {
-  const weather = useCityStore((s) => s.weather);
+  const outside = useCityStore((s) => s.weather);
+  // Indoors it stays dry and clear.
+  const indoors = useCityStore((s) => s.scene.startsWith("room:"));
+  const weather = indoors ? "clear" : outside;
   const { scene } = useThree();
   useFrame((_, delta) => {
     const fog = scene.fog as THREE.Fog | null;

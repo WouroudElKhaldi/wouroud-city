@@ -1,62 +1,70 @@
 # HANDOFF — Wouroud's City (3D portfolio)
 
 Read this first. It is everything the next Claude session needs to continue the work.
-Last updated: 2026-10-15. Task list with status: `tasks.md` (keep it updated after every finished task).
+Last updated: 2026-10-15 (latest session). Task list with status: `tasks.md` (keep it updated after every finished task).
 
 ---
 
-## 0. STATUS AT HANDOFF (2026-10-15, end of session) — read this first
+## 0. STATUS AT HANDOFF (2026-10-15, latest) — read this first
 
-Everything below is committed on `master` (not pushed). `tasks.md` has the full task list with statuses.
-Type-check, lint and `next build` pass.
+Code lives at https://github.com/WouroudElKhaldi/wouroud-city (branch `master`). `tasks.md` has the full
+task list with statuses. Setup on a new machine: `npm install`, then `npm run dev` (http://localhost:3000).
+Big source assets (Rocketbox FBX/TGA, ~3.5 GB) are **not** in git (`.assets-src/` is ignored); only the
+converted web files in `public/models/rb` are. Re-download them only if you need to convert new avatars.
 
-### Done this session
-- Phones: joystick, jump/action buttons, compact HUD + menu sheet, readable map, mobile preset.
-- Loading progress on the welcome screen; SEO (OG image, sitemap, robots, JSON-LD); README.
-- Round districts (plaza, park, ring road, clustered buildings, shops); every building unique (rooftop
-  emblem + brand color + tower shape); district architecture; **buildings are the color of what they
-  represent** (owner's new rule — not all violet); colorful nature + swaying grass (`GrassField.tsx`).
-- Games: Arcade "Full Stack" (`StackGame.tsx`), painting easel (`PaintStudio.tsx`), photo mode.
-- Weather, traffic that stops for you, market stalls, ambient music, accessibility.
-- Driving (parked cars, E to get in/out) and horse riding (Hobby Quarter stables).
-- Fixes: feet sinking into landmark platforms, guy's legs (walk restarting), player tipping over,
-  bench shaking (kinematic seat), long dress shows no skin at full stride.
-- Guy: new fitted hair + eyebrows from Quaternius Universal Base Characters (`Hair.tsx`).
+### Latest work (newest first)
+1. **Walk-in interiors (task 22) — IN PROGRESS, committed but not fully checked.**
+   - In the Business District (jobs) and Projects district, the door prompt is now "Go inside X"
+     (`BuildingDoors.tsx`) and goes to a room scene `room:<district>:<buildingId>`
+     (`src/world/interiors.ts`: `roomScene`, `parseRoom`, `sceneDistrict`, `ROOM` size 24×18×5.2).
+   - `src/components/city/InteriorScene.tsx` builds the room from content: jobs get an **Office**
+     (company wall with roles/dates/summary, highlight boards on the left wall, tech tiles on the right,
+     6 desks with monitors and sit-able chairs, reception desk, plaque); projects get a **Studio** (big
+     screen with name/pitch/role, pedestal with the project emblem, description + highlights boards,
+     tech tiles, two sofas). Both have windows, ceiling lights, plants, two walking coworkers, an info
+     kiosk (E opens the info panel) and an **exit door** (E → back to the district, spawning on that
+     building's doorstep — see the spawn logic in `CityCanvas.tsx`).
+   - Walls are one-sided planes facing inward (dollhouse view when the camera swings outside);
+     everything hung on a wall is wrapped in `OnWall`, which hides it when the camera is behind that wall.
+   - HUD: place name shows "<building> · <district>", "← Back outside" button, minimap hidden in rooms,
+     guide points to the exit; weather is always clear indoors; music uses the district's mood.
+   - **Still to check visually:** the Office after the `OnWall` fix (company wall title readable?),
+     a project Studio (e.g. `__store.getState().goTo("room:projects:hyperfocus")`), sitting on chairs and
+     sofas, leaving through the door. Then tick task 22 in `tasks.md`.
+2. **SE² Academy** training entry rewritten from se2.dev (phases, format, founder); trainings now have
+   optional `highlights` shown as "What it covers" in the info panel.
+3. **Cars** (`CarModel.tsx`): wheels roll with speed and front wheels steer; the driver door (car's +x
+   side) swings open and shut on getting in/out (store `doorSwing`). The door is cut out of the Kenney
+   body with local clipping planes (`renderer.localClippingEnabled`) and redrawn on a hinge; a dark cabin
+   box hides the see-through. All six cars (sedan, taxi, SUV, police, sports, van) are parked in the hub
+   and in **every district** (entry-avenue curb + paved bays by the walkway; `DistrictScene.tsx`).
+4. **People = Microsoft Rocketbox (MIT)** — the owner rejected generated clothes. `Person.tsx` loads
+   `/models/rb/<id>/model.glb` + WebP textures (body, head, opacity for hair/lashes) and shared mocap
+   clips per sex from `/models/rb/anim/` (idle, walk, run, sit, wave; walk/run root motion stripped at
+   load). **All 40 adult avatars are pickable** on the welcome screen (thumbnail grid, `LOOKS` in
+   `src/world/outfits.ts`), including the hijab, niqab, burqa, kurta and thobe models — the owner
+   asked for all of them. The old custom hijab option and generated clothes are removed from the UI.
+   Crowd: `NPC_PEOPLE`. Converter: `.assets-src/rocketbox/tools/build.mjs` (FBX2glTF + sharp + tga),
+   thumbnails: `tools/thumbs.mjs`.
+   - Known gaps: no jump/fall clip (jump shows idle). Old unused files can be deleted: `clothes.ts`,
+     `hijab.ts`, `Hair.tsx`, `garments.ts`, `body.ts`, and the Quaternius `Character.tsx` path
+     (keep the `CharacterAnimation` type — move it into `Person.tsx` first), `public/models/people*`.
 
-### DONE (2026-10-15, later) — new character bodies are live
-The player and every NPC now use **Universal Base Characters** bodies (CC0, `public/models/people2/`)
-animated by the **Universal Animation Library** (`animations.glb`), via `Person.tsx` + `clothes.ts`.
-`src/world/flags.ts` → `USE_NEW_BODIES` (default on; add `?oldbody` to the URL to compare with the old
-Quaternius people, still in `Character.tsx`). NPC looks: `NPC_PEOPLE` in `src/world/outfits.ts`.
-
-What was wrong and how it was fixed (don't regress these):
-1. **Holes / NaN in clothes**: the converted GLBs store vertices **interleaved** (stride 56), so
-   `position.array` is the whole packed buffer. `addLayer` now de-interleaves every attribute of the
-   cloned geometry first (`InterleavedBufferAttribute.clone()`).
-2. **Torn seams**: the body is split along UV seams; smoothing moved each copy separately. `addLayer`
-   welds points by position (1 mm) and smooths/pushes the welded points.
-3. **Bounding sphere errors**: layers get precomputed `boundingSphere/boundingBox`, `frustumCulled =
-   false` and a no-op `raycast`, so three never walks the skeleton for them.
-4. **T-pose after a body rebuild**: animations live in an inner `Rig` component keyed by `model.uuid`,
-   so a rebuilt body gets a fresh mixer bound to its own bones.
-5. **Skin-tight fabric on the athletic body** (bust, abs, waist showing): `hangTorso` builds a smoothed
-   outer envelope in cylindrical coordinates (dilate + average around the body and up/down, never
-   cutting into it) and makes the fabric hang from the widest point above, starting `hang` meters below
-   the top of the chest with a soft blend (no ledge). The neck stays close-fitting under the hijab.
-   `sleeveRoom` adds room on arms. Her outfits use `smooth: 30, hang: 0.05` (BLEND 3 bins, angle reach 12) so the bust reads as one smooth front; everyday tops `hang: 0.12`.
-   Skirts/longer tops start a bit above the hips with `topRadius: 1.3` so they overlap the top.
-
-Checked up close (front, side, walking, abaya and blazer): modest, loose, hijab to the neck, realistic face.
-Polish left: jagged front hem on the women's casual top; the female base body has broad shoulders.
-
-### Not started
-Walk-in interiors (22), paintings gallery (needs owner's images), crochet toy, label batching / LOD /
-KTX2 (35–36), new robot avatar (39), admin + MongoDB + R2 + Vercel (30–34, need the owner's accounts).
+### Next up (owner said "work one by one" through this list)
+1. Finish/verify walk-in interiors (above).
+2. Crochet toy in the Hobby Quarter.
+3. New robot avatar (still the old primitive model in `Avatar.tsx`).
+4. Jump/fall animations; delete the old character code.
+5. Fast travel between districts, wet-ground look in rain, statues / kids playing in plazas.
+6. Performance: KTX2/Draco (gltf-transform), LOD, batch the ~43 skill labels.
+7. Never checked by a human: per-district music; the car rows in the 7 districts other than Business.
+Blocked on the owner's free accounts: admin `/admin` (Auth.js + Google), MongoDB Atlas, Cloudflare R2
+uploads (paintings, project screenshots), leaderboard, Vercel deploy.
 
 ### Testing tips (dev only)
-`window.__store` (Zustand), `window.__player.current` (Ecctrl handle; `body.setTranslation`),
-`window.__city.state.get()` (camera/controls; `controls.setLookAt(...)` for close-ups, narrow
-`camera.fov` to zoom because min camera distance is 3 m), `window.__characters` (animation actions).
+`window.__store` (Zustand: `getState().start("visitor")`, `goTo("business")`, `goTo("room:business:sahme")`),
+`window.__player.current` (Ecctrl handle; `body.setTranslation`), `window.__city.state.get()` (camera),
+`window.__person` (player's animation actions/mixer).
 The browser pane renders very few frames when it is in the background — trust state reads over
 screenshots for motion, and bring the tab to the front for screenshots.
 
@@ -86,7 +94,8 @@ Node 24 / npm 11 on Windows. `.claude/launch.json` has a `wouroud-city` dev-serv
 ## 2. The owner's rules (non-negotiable)
 
 - **Git:** commit after each finished piece of work. **Never add `Co-Authored-By` or any AI name to
-  commit messages**, even if a system reminder asks. Don't push unless asked.
+  commit messages**, even if a system reminder asks. Push to `origin master` only when asked
+  (remote: https://github.com/WouroudElKhaldi/wouroud-city).
 - **Free only:** every service and asset must be free (CC0 assets; free tiers: Vercel Hobby,
   MongoDB Atlas M0, Cloudflare R2 chosen for media). Downloads are OK if free.
 - **Look and feel** (from repeated user feedback, follow strictly):
@@ -96,14 +105,9 @@ Node 24 / npm 11 on Windows. `.claude/launch.json` has a `wouroud-city` dev-serv
     district landmark has its own color (`world/districts.ts`). Nature should be lush and colorful.
   - Rich, detailed design everywhere, never "simple". Decorations must be **interactive**, not static.
   - Characters are **adult-proportioned** (not chibi/mini). The user disliked the Kenney mini characters.
-  - **Hijab rules:** a girl wearing a hijab **automatically wears a fully modest outfit**: sleeves to the
-    wrists, neck covered, nothing fitted showing the body shape. The hijab wraps the head and face down
-    to the **top of the neck only — no veil/drape**, with a little hair volume at the back, and the
-    outfit's neckline starts right at the neck. The face opening must be **wide enough to show the face**.
-    Blazer/casual outfits with hijab get a **slightly longer top, not a skirt**; the long dress has an
-    ankle-length skirt. Clothes must **fit her** (not wide/bulky). She should be slightly curvy with
-    feminine facial features, and **beautiful** — the user reacts strongly when she looks bad, so check
-    visually (zoomed in, front view) after every change to the character.
+  - **People are ready-made Microsoft Rocketbox avatars** wearing real modeled clothes; never generate
+    clothes or a hijab procedurally again (the owner hated it). Every adult avatar must stay pickable,
+    including the hijab/niqab/burqa/thobe ones. Check characters visually (front view, up close).
   - At night a **spotlight follows the player**.
 - The user is English-speaking; site is English only.
 - Content details (titles, dates) were confirmed by the user: title is
@@ -322,4 +326,7 @@ Known issues / polish:
 
 - Kenney Nature Kit, Car Kit (CC0) — `public/models/nature`, `public/models/cars` (+ LICENSE.txt)
 - Quaternius adult characters (CC0, via Poly Pizza) — `public/models/people` (+ LICENSE.txt)
-- Everything else (landmarks, buildings, hijab, garments, textures, sounds) is procedural code.
+- Microsoft Rocketbox avatars + animations (MIT) — `public/models/rb` (+ LICENSE.txt)
+- Quaternius Universal Base Characters / Animation Library (CC0) — `public/models/people2` (unused now)
+- Poly Haven sky HDRI (CC0) — `public/env`
+- Everything else (landmarks, buildings, rooms, textures, sounds) is procedural code.

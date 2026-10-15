@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { DistrictId } from "@/world/districts";
+import type { RoomScene } from "@/world/interiors";
 import { DEFAULT_LOOK, LOOKS } from "@/world/outfits";
 import type { Persona } from "@/world/personas";
 import { setMuted } from "@/world/sfx";
@@ -8,7 +9,7 @@ export type AvatarKind = "girl" | "guy" | "robot";
 export type TimeMode = "day" | "night";
 export type Weather = "clear" | "rain" | "snow" | "fog";
 export const WEATHERS: Weather[] = ["clear", "rain", "snow", "fog"];
-export type SceneId = "hub" | DistrictId;
+export type SceneId = "hub" | DistrictId | RoomScene;
 
 /** Something the player is standing next to and can activate with E or the on-screen prompt. */
 export type Interactable = { id: string; label: string; run: () => void };
@@ -59,7 +60,7 @@ type CityState = {
   muted: boolean;
   scene: SceneId;
   /** The district the player last left, so the hub can respawn them at its door. */
-  cameFrom: DistrictId | null;
+  cameFrom: SceneId | null;
   nearby: Interactable | null;
   fading: boolean;
   seat: Seat | null;

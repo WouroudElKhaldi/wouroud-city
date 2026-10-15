@@ -1,0 +1,955 @@
+"use client";
+
+import { Text } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { CuboidCollider, RigidBody } from "@react-three/rapier";
+import { useMemo, useRef } from "react";
+import * as THREE from "three";
+import { seedContent } from "@/content/seed";
+import type { Experience, Project } from "@/content/schema";
+import { useCityStore, type Seat } from "@/state/useCityStore";
+import type { DistrictId } from "@/world/districts";
+import { worldEnv } from "@/world/env";
+import { parseRoom, ROOM, type RoomScene } from "@/world/interiors";
+import { computeDistrictLayout } from "@/world/layout";
+import { accents } from "@/world/palette";
+import { signatureFor } from "@/world/signatures";
+import { Emblem } from "./Emblems";
+import { useGlowMaterial } from "./materials";
+import { makeWalkers, Pedestrians } from "./Pedestrians";
+import { Seats } from "./StreetDetails";
+import { useProximity } from "./useProximity";
+
+const W = ROOM.width;
+const D = ROOM.depth;
+const H = ROOM.height;
+const INK = "#1a103d";
+const PAPER = "#fbf8ff";
+
+/**
+ * Inside a building: a job's office or a project's studio, built from its content.
+ * The room sits at the origin; the way out is in the middle of the front wall (+z).
+ * Walls are one-sided and face inward, so when the camera swings outside the room
+ * the wall in between disappears instead of blocking the view (a dollhouse view).
+ */
+export function InteriorScene({ scene }: { scene: RoomScene }) {
+  const room = parseRoom(scene)!;
+  const spec = useMemo(
+    () =>
+      computeDistrictLayout(seedContent, room.district).buildings.find(
+        (b) => b.id === room.id,
+      ),
+    [room.district, room.id],
+  );
+  const job = seedContent.experience.find((e) => e.id === room.id);
+  const project = seedContent.projects.find((p) => p.id === room.id);
+  const accent = spec?.color ?? "#7c3aed";
+  const label = spec?.label ?? job?.company ?? project?.name ?? "Building";
+
+  // Two people at work, walking a loop around the middle of the room.
+  const walkers = useMemo(
+    () =>
+      makeWalkers(
+        `room-${room.id}`,
+        room.district,
+        [],
+        [
+          [
+            [-9, -6.6],
+            [9, -6.6],
+            [9, 4.6],
+            [-9, 4.6],
+          ],
+          [
+            [8, 4.6],
+            [-8, 4.6],
+            [-8, -6.6],
+            [8, -6.6],
+          ],
+        ],
+      ),
+    [room.id, room.district],
+  );
+
+  return (
+    <group>
+      <Shell accent={accent} />
+      <OnWall side="front">
+        <ExitDoor id={room.id} district={room.district} accent={accent} />
+      </OnWall>
+      <InfoKiosk
+        district={room.district}
+        id={room.id}
+        label={label}
+        accent={accent}
+      />
+      {job ? (
+        <Office job={job} accent={accent} />
+      ) : project ? (
+        <Studio project={project} accent={accent} />
+      ) : null}
+      <Pedestrians walkers={walkers} />
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The room
+// ---------------------------------------------------------------------------
+
+type Side = "front" | "back" | "left" | "right";
+
+/**
+ * Things mounted on a wall. The walls themselves vanish when the camera is behind
+ * them; this hides what hangs on them too, so it never blocks the view from outside.
+ */
+function OnWall({ side, children }: { side: Side; children: React.ReactNode }) {
+  const group = useRef<THREE.Group>(null);
+  useFrame(({ camera }) => {
+    const p = camera.position;
+    const outside =
+      side === "front"
+        ? p.z > D / 2
+        : side === "back"
+          ? p.z < -D / 2
+          : side === "left"
+            ? p.x < -W / 2
+            : p.x > W / 2;
+    if (group.current) group.current.visible = !outside;
+  });
+  return <group ref={group}>{children}</group>;
+}
+
+function Shell({ accent }: { accent: string }) {
+  const panel = useGlowMaterial("#fff4e0", 1.6, 2.2, "#ffffff");
+  const sky = useRef<THREE.MeshStandardMaterial>(null);
+  const day = useMemo(() => new THREE.Color("#cfe8ff"), []);
+  const night = useMemo(() => new THREE.Color("#241a55"), []);
+  useFrame(() => {
+    if (sky.current)
+      sky.current.emissive.lerpColors(day, night, worldEnv.night);
+  });
+
+  return (
+    <group>
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider
+          args={[W / 2 + 1, 0.5, D / 2 + 1]}
+          position={[0, -0.5, 0]}
+        />
+        <CuboidCollider
+          args={[W / 2 + 1, H, 0.5]}
+          position={[0, H, -D / 2 - 0.5]}
+        />
+        <CuboidCollider
+          args={[W / 2 + 1, H, 0.5]}
+          position={[0, H, D / 2 + 0.5]}
+        />
+        <CuboidCollider
+          args={[0.5, H, D / 2 + 1]}
+          position={[-W / 2 - 0.5, H, 0]}
+        />
+        <CuboidCollider
+          args={[0.5, H, D / 2 + 1]}
+          position={[W / 2 + 0.5, H, 0]}
+        />
+      </RigidBody>
+
+      {/* Floor: warm wood planks with a rug in the middle */}
+      <mesh rotation-x={-Math.PI / 2} receiveShadow>
+        <planeGeometry args={[W, D]} />
+        <meshStandardMaterial color="#c79a6b" roughness={0.75} />
+      </mesh>
+      {Array.from({ length: Math.floor(D / 0.9) }, (_, i) => (
+        <mesh
+          key={i}
+          rotation-x={-Math.PI / 2}
+          position={[0, 0.003, -D / 2 + 0.9 * (i + 1)]}
+        >
+          <planeGeometry args={[W, 0.025]} />
+          <meshStandardMaterial color="#a77b52" />
+        </mesh>
+      ))}
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.006, -1]} receiveShadow>
+        <planeGeometry args={[15, 8]} />
+        <meshStandardMaterial color="#4c3a7a" roughness={1} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.008, -1]}>
+        <ringGeometry args={[3.2, 3.35, 48]} />
+        <meshStandardMaterial color={accents.gold} />
+      </mesh>
+
+      {/* Walls (one-sided, facing in) with a baseboard and an accent stripe */}
+      {(
+        [
+          [[0, H / 2, -D / 2], 0, W],
+          [[0, H / 2, D / 2], Math.PI, W],
+          [[-W / 2, H / 2, 0], Math.PI / 2, D],
+          [[W / 2, H / 2, 0], -Math.PI / 2, D],
+        ] as [[number, number, number], number, number][]
+      ).map(([pos, rot, len], i) => (
+        <group key={i} position={pos} rotation-y={rot}>
+          <mesh receiveShadow castShadow>
+            <planeGeometry args={[len, H]} />
+            <meshStandardMaterial color="#f3edf9" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, -H / 2 + 0.12, 0.01]}>
+            <planeGeometry args={[len, 0.24]} />
+            <meshStandardMaterial color="#5b4a8a" />
+          </mesh>
+          <mesh position={[0, H / 2 - 0.35, 0.01]}>
+            <planeGeometry args={[len, 0.12]} />
+            <meshStandardMaterial color={accent} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Ceiling with glowing light panels */}
+      <mesh rotation-x={Math.PI / 2} position={[0, H, 0]} castShadow>
+        <planeGeometry args={[W, D]} />
+        <meshStandardMaterial color="#ebe4f5" />
+      </mesh>
+      {[-6, 0, 6].flatMap((x) =>
+        [-4, 2].map((z) => (
+          <mesh
+            key={`${x}${z}`}
+            rotation-x={Math.PI / 2}
+            position={[x, H - 0.02, z]}
+            material={panel}
+          >
+            <planeGeometry args={[2.6, 1]} />
+          </mesh>
+        )),
+      )}
+      {[-6, 0, 6].map((x) => (
+        <pointLight
+          key={x}
+          position={[x, H - 0.6, -1]}
+          intensity={26}
+          distance={16}
+          decay={2}
+          color="#fff1dc"
+        />
+      ))}
+
+      {/* Tall windows on the right wall, looking out at the sky */}
+      <OnWall side="right">
+        {[-5, 0, 5].map((z) => (
+          <group
+            key={z}
+            position={[W / 2 - 0.02, 3.2, z]}
+            rotation-y={-Math.PI / 2}
+          >
+            <mesh>
+              <planeGeometry args={[3.4, 2.6]} />
+              <meshStandardMaterial
+                ref={z === 0 ? sky : undefined}
+                color="#9fc7ef"
+                emissive="#cfe8ff"
+                emissiveIntensity={0.8}
+              />
+            </mesh>
+            {[-1.7, 0, 1.7].map((x) => (
+              <mesh key={x} position={[x, 0, 0.02]}>
+                <boxGeometry args={[0.1, 2.7, 0.06]} />
+                <meshStandardMaterial color="#3b2d63" />
+              </mesh>
+            ))}
+            {[-1.3, 1.3].map((y) => (
+              <mesh key={y} position={[0, y, 0.02]}>
+                <boxGeometry args={[3.5, 0.1, 0.06]} />
+                <meshStandardMaterial color="#3b2d63" />
+              </mesh>
+            ))}
+          </group>
+        ))}
+      </OnWall>
+
+      {/* Plants in the corners */}
+      {[
+        [-W / 2 + 0.9, -D / 2 + 0.9],
+        [W / 2 - 0.9, -D / 2 + 0.9],
+        [-W / 2 + 0.9, D / 2 - 0.9],
+        [W / 2 - 0.9, D / 2 - 0.9],
+      ].map(([x, z], i) => (
+        <Plant key={i} x={x} z={z} tall={i < 2} />
+      ))}
+    </group>
+  );
+}
+
+function Plant({ x, z, tall }: { x: number; z: number; tall: boolean }) {
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, 0.35, 0]} castShadow>
+        <cylinderGeometry args={[0.38, 0.3, 0.7, 16]} />
+        <meshStandardMaterial color="#f6c453" roughness={0.6} />
+      </mesh>
+      {(tall ? [0.9, 1.5, 2.1] : [0.9, 1.3]).map((y, i) => (
+        <mesh key={y} position={[0, y, 0]} rotation-y={i} castShadow>
+          <icosahedronGeometry args={[0.55 - i * 0.1, 0]} />
+          <meshStandardMaterial
+            color={i % 2 ? "#2f855a" : "#38a169"}
+            flatShading
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** The way out: a glass door in the middle of the front wall with a glowing sign above it. */
+function ExitDoor({
+  id,
+  district,
+  accent,
+}: {
+  id: string;
+  district: DistrictId;
+  accent: string;
+}) {
+  const where = useMemo(() => new THREE.Vector3(0, 0, D / 2 - 1.2), []);
+  useProximity({
+    id: `leave-${id}`,
+    label: "Go back outside",
+    radius: 2,
+    where,
+    run: () => useCityStore.getState().goTo(district),
+  });
+  const sign = useGlowMaterial(accents.mint, 1.2, 2, "#0f2a2a");
+  return (
+    <group position={[0, 0, D / 2 - 0.03]} rotation-y={Math.PI}>
+      {/* Frame, then two glass leaves */}
+      <mesh position={[0, 1.55, -0.01]}>
+        <planeGeometry args={[2.7, 3.1]} />
+        <meshStandardMaterial color="#2d1f52" />
+      </mesh>
+      {[-0.63, 0.63].map((x) => (
+        <mesh key={x} position={[x, 1.5, 0]}>
+          <planeGeometry args={[1.15, 2.85]} />
+          <meshStandardMaterial
+            color="#9fc7ef"
+            emissive="#cfe8ff"
+            emissiveIntensity={0.55}
+            roughness={0.15}
+          />
+        </mesh>
+      ))}
+      {[-0.18, 0.18].map((x) => (
+        <mesh key={x} position={[x, 1.3, 0.03]}>
+          <boxGeometry args={[0.05, 0.6, 0.05]} />
+          <meshStandardMaterial
+            color={accents.gold}
+            metalness={0.6}
+            roughness={0.3}
+          />
+        </mesh>
+      ))}
+      <mesh position={[0, 3.45, 0.02]} material={sign}>
+        <boxGeometry args={[1.6, 0.42, 0.05]} />
+      </mesh>
+      <Text
+        position={[0, 3.45, 0.06]}
+        fontSize={0.22}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+      >
+        WAY OUT
+      </Text>
+      <mesh position={[0, 0.01, 0.9]} rotation-x={-Math.PI / 2}>
+        <planeGeometry args={[2.4, 1.4]} />
+        <meshStandardMaterial color={accent} roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+/** A standing screen near the entrance that opens the building's full info panel. */
+function InfoKiosk({
+  district,
+  id,
+  label,
+  accent,
+}: {
+  district: DistrictId;
+  id: string;
+  label: string;
+  accent: string;
+}) {
+  const where = useMemo(() => new THREE.Vector3(7, 0, D / 2 - 2.6), []);
+  useProximity({
+    id: `kiosk-${id}`,
+    label: `Read about ${label}`,
+    radius: 2.2,
+    where,
+    run: () => useCityStore.getState().openPanel({ district, id }),
+  });
+  const screen = useGlowMaterial(accent, 0.6, 1.2, "#20163f");
+  return (
+    <group position={[7, 0, D / 2 - 3.4]}>
+      <mesh position={[0, 0.6, 0]} castShadow>
+        <boxGeometry args={[0.5, 1.2, 0.4]} />
+        <meshStandardMaterial color="#2d1f52" />
+      </mesh>
+      <mesh position={[0, 1.55, 0.05]} rotation-x={-0.25} material={screen}>
+        <boxGeometry args={[1.3, 0.85, 0.08]} />
+      </mesh>
+      <Text
+        position={[0, 1.6, 0.11]}
+        rotation-x={-0.25}
+        fontSize={0.13}
+        color="#ffffff"
+        maxWidth={1.1}
+        textAlign="center"
+        anchorX="center"
+      >
+        {`About ${label}\nPress E`}
+      </Text>
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Wall pieces
+// ---------------------------------------------------------------------------
+
+/** A framed board with a heading and a paragraph. */
+function Board({
+  position,
+  rotationY = 0,
+  width,
+  height,
+  title,
+  body,
+  accent,
+}: {
+  position: [number, number, number];
+  rotationY?: number;
+  width: number;
+  height: number;
+  title?: string;
+  body: string;
+  accent: string;
+}) {
+  return (
+    <group position={position} rotation-y={rotationY}>
+      <mesh position={[0, 0, -0.03]} castShadow>
+        <boxGeometry args={[width + 0.14, height + 0.14, 0.05]} />
+        <meshStandardMaterial color={accent} />
+      </mesh>
+      <mesh>
+        <planeGeometry args={[width, height]} />
+        <meshStandardMaterial color={PAPER} roughness={0.85} />
+      </mesh>
+      {title && (
+        <Text
+          position={[-width / 2 + 0.2, height / 2 - 0.2, 0.01]}
+          fontSize={0.2}
+          color={accent}
+          anchorX="left"
+          anchorY="top"
+          maxWidth={width - 0.4}
+        >
+          {title}
+        </Text>
+      )}
+      <Text
+        position={[
+          -width / 2 + 0.2,
+          title ? height / 2 - 0.55 : height / 2 - 0.2,
+          0.01,
+        ]}
+        fontSize={0.17}
+        lineHeight={1.3}
+        color={INK}
+        anchorX="left"
+        anchorY="top"
+        maxWidth={width - 0.4}
+      >
+        {body}
+      </Text>
+    </group>
+  );
+}
+
+/** The tech stack as colored tiles, two rows along a wall. */
+function TechTiles({
+  tech,
+  position,
+  rotationY,
+  length,
+}: {
+  tech: string[];
+  position: [number, number, number];
+  rotationY: number;
+  length: number;
+}) {
+  const colors = [
+    "#7c3aed",
+    accents.teal,
+    "#d53f8c",
+    accents.goldDeep,
+    "#4c51bf",
+    accents.tealDeep,
+  ];
+  const perRow = Math.ceil(tech.length / 2);
+  const step = length / Math.max(perRow, 1);
+  return (
+    <group position={position} rotation-y={rotationY}>
+      <Text
+        position={[0, 1.45, 0.02]}
+        fontSize={0.24}
+        color={INK}
+        anchorX="center"
+      >
+        Tech stack
+      </Text>
+      {tech.map((t, i) => {
+        const row = Math.floor(i / perRow);
+        const col = i % perRow;
+        const x = -length / 2 + step * (col + 0.5);
+        return (
+          <group key={t} position={[x, 0.85 - row * 0.62, 0]}>
+            <mesh position={[0, 0, -0.02]}>
+              <boxGeometry args={[step - 0.15, 0.48, 0.05]} />
+              <meshStandardMaterial color={colors[i % colors.length]} />
+            </mesh>
+            <Text
+              position={[0, 0, 0.02]}
+              fontSize={0.16}
+              color="#ffffff"
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={step - 0.25}
+              textAlign="center"
+            >
+              {t}
+            </Text>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/** Highlights as boards on the left wall, in two rows. */
+function HighlightWall({
+  items,
+  accent,
+  title,
+}: {
+  items: string[];
+  accent: string;
+  title: string;
+}) {
+  const shown = items.slice(0, 6);
+  const perRow = Math.max(1, Math.ceil(shown.length / 2));
+  const span = D - 4;
+  const step = span / perRow;
+  return (
+    <group>
+      <Text
+        position={[-W / 2 + 0.02, 4.55, 0]}
+        rotation-y={Math.PI / 2}
+        fontSize={0.32}
+        color={INK}
+        anchorX="center"
+      >
+        {title}
+      </Text>
+      {shown.map((h, i) => {
+        const row = Math.floor(i / perRow);
+        const col = i % perRow;
+        const z = -span / 2 + step * (col + 0.5);
+        return (
+          <Board
+            key={i}
+            position={[-W / 2 + 0.06, row === 0 ? 3.35 : 1.55, z]}
+            rotationY={Math.PI / 2}
+            width={step - 0.5}
+            height={1.5}
+            body={h}
+            accent={accent}
+          />
+        );
+      })}
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Office (a job) and studio (a project)
+// ---------------------------------------------------------------------------
+
+const monthYear = (m: string | null) => {
+  if (!m) return "now";
+  const [y, mo] = m.split("-").map(Number);
+  return new Date(y, mo - 1).toLocaleString("en", {
+    month: "short",
+    year: "numeric",
+  });
+};
+
+function Office({ job, accent }: { job: Experience; accent: string }) {
+  const seats = useMemo<Seat[]>(
+    () =>
+      [-5, 0, 5].flatMap((x) =>
+        [-3, 1].map((z) => ({
+          id: `desk-${x}-${z}`,
+          x,
+          y: 0,
+          z: z + 0.95,
+          facing: Math.PI,
+        })),
+      ),
+    [],
+  );
+  return (
+    <group>
+      {/* The company wall */}
+      <OnWall side="back">
+        <group position={[0, 0, -D / 2 + 0.02]}>
+          <mesh position={[0, 3.1, 0]}>
+            <planeGeometry args={[14, 3.4]} />
+            <meshStandardMaterial color="#2d1f52" />
+          </mesh>
+          <mesh position={[0, 4.75, 0.01]}>
+            <planeGeometry args={[14, 0.1]} />
+            <meshStandardMaterial
+              color={accent}
+              emissive={accent}
+              emissiveIntensity={0.8}
+            />
+          </mesh>
+          <Text
+            position={[0, 4.25, 0.02]}
+            fontSize={0.62}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {job.company}
+          </Text>
+          {job.formerName && (
+            <Text
+              position={[0, 3.78, 0.02]}
+              fontSize={0.2}
+              color="#d6bcfa"
+              anchorX="center"
+            >
+              {`formerly ${job.formerName}`}
+            </Text>
+          )}
+          {job.roles.map((r, i) => (
+            <Text
+              key={r.title}
+              position={[0, 3.35 - i * 0.36, 0.02]}
+              fontSize={0.24}
+              color={i === 0 ? accents.gold : "#e9d8fd"}
+              anchorX="center"
+            >
+              {`${r.title} · ${monthYear(r.start)} – ${monthYear(r.end)}`}
+            </Text>
+          ))}
+          <Text
+            position={[0, 2.35 - job.roles.length * 0.18, 0.02]}
+            fontSize={0.2}
+            color="#f5f0ff"
+            anchorX="center"
+            maxWidth={12.5}
+            textAlign="center"
+            lineHeight={1.35}
+          >
+            {`${job.summary}\n${job.location}${job.remote ? " · remote" : ""} · ${job.type}`}
+          </Text>
+          {/* Sideboard under the wall */}
+          <mesh position={[0, 0.45, 0.45]} castShadow receiveShadow>
+            <boxGeometry args={[10, 0.9, 0.8]} />
+            <meshStandardMaterial color="#5b4a8a" />
+          </mesh>
+        </group>
+      </OnWall>
+
+      <OnWall side="left">
+        <HighlightWall
+          items={job.highlights}
+          accent={accent}
+          title="What I do here"
+        />
+      </OnWall>
+      <OnWall side="right">
+        <TechTiles
+          tech={job.tech}
+          position={[W / 2 - 0.05, 0.5, 0]}
+          rotationY={-Math.PI / 2}
+          length={D - 4}
+        />
+      </OnWall>
+
+      {/* Desks with monitors and chairs */}
+      {[-5, 0, 5].flatMap((x) =>
+        [-3, 1].map((z) => (
+          <Desk key={`${x}${z}`} x={x} z={z} accent={accent} />
+        )),
+      )}
+      <Seats seats={seats} />
+
+      {/* Reception desk by the entrance */}
+      <group position={[-7.5, 0, D / 2 - 2.4]}>
+        <RigidBody type="fixed" colliders={false}>
+          <CuboidCollider args={[1.8, 0.55, 0.45]} position={[0, 0.55, 0]} />
+        </RigidBody>
+        <mesh position={[0, 0.55, 0]} castShadow receiveShadow>
+          <boxGeometry args={[3.6, 1.1, 0.9]} />
+          <meshStandardMaterial color="#f5f0ff" />
+        </mesh>
+        <mesh position={[0, 0.55, 0.46]}>
+          <planeGeometry args={[3.6, 0.3]} />
+          <meshStandardMaterial
+            color={accent}
+            emissive={accent}
+            emissiveIntensity={0.6}
+          />
+        </mesh>
+        <Text
+          position={[0, 0.55, 0.47]}
+          fontSize={0.18}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {job.company}
+        </Text>
+      </group>
+
+      {job.plaque && (
+        <OnWall side="front">
+          <Plaque text={job.plaque} />
+        </OnWall>
+      )}
+    </group>
+  );
+}
+
+function Desk({ x, z, accent }: { x: number; z: number; accent: string }) {
+  const screen = useGlowMaterial(accent, 0.7, 1.4, "#140d2e");
+  return (
+    <group position={[x, 0, z]}>
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider args={[0.9, 0.38, 0.42]} position={[0, 0.38, 0]} />
+      </RigidBody>
+      <mesh position={[0, 0.74, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.8, 0.06, 0.85]} />
+        <meshStandardMaterial color="#e9dcc6" roughness={0.6} />
+      </mesh>
+      {[-0.8, 0.8].map((lx) => (
+        <mesh key={lx} position={[lx, 0.36, 0]} castShadow>
+          <boxGeometry args={[0.06, 0.72, 0.75]} />
+          <meshStandardMaterial color="#3b2d63" />
+        </mesh>
+      ))}
+      {/* Monitor, keyboard and a mug */}
+      <mesh position={[0, 1.12, -0.28]} material={screen} castShadow>
+        <boxGeometry args={[0.95, 0.56, 0.04]} />
+      </mesh>
+      {[0.2, 0.32, 0.44].map((y, i) => (
+        <mesh key={y} position={[-0.25 + i * 0.08, 0.98 + y * 0.6, -0.255]}>
+          <planeGeometry args={[0.5 - i * 0.12, 0.035]} />
+          <meshBasicMaterial
+            color={i === 1 ? accents.gold : "#e9d8fd"}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.82, -0.28]}>
+        <boxGeometry args={[0.06, 0.16, 0.06]} />
+        <meshStandardMaterial color="#2d1f52" />
+      </mesh>
+      <mesh position={[0, 0.78, 0.08]}>
+        <boxGeometry args={[0.6, 0.02, 0.2]} />
+        <meshStandardMaterial color="#2d1f52" />
+      </mesh>
+      <mesh position={[0.6, 0.83, 0.05]}>
+        <cylinderGeometry args={[0.05, 0.05, 0.12, 12]} />
+        <meshStandardMaterial color={accents.mint} />
+      </mesh>
+      {/* Chair */}
+      <group position={[0, 0, 0.95]}>
+        <mesh position={[0, 0.46, 0]} castShadow>
+          <boxGeometry args={[0.55, 0.08, 0.55]} />
+          <meshStandardMaterial color="#4c3a7a" />
+        </mesh>
+        <mesh position={[0, 0.82, 0.26]} castShadow>
+          <boxGeometry args={[0.55, 0.65, 0.07]} />
+          <meshStandardMaterial color="#4c3a7a" />
+        </mesh>
+        <mesh position={[0, 0.22, 0]}>
+          <cylinderGeometry args={[0.04, 0.04, 0.44, 8]} />
+          <meshStandardMaterial color="#2d1f52" />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+function Plaque({ text }: { text: string }) {
+  return (
+    <group position={[-3.2, 2.2, D / 2 - 0.04]} rotation-y={Math.PI}>
+      <mesh position={[0, 0, -0.02]}>
+        <boxGeometry args={[2.6, 0.7, 0.04]} />
+        <meshStandardMaterial
+          color={accents.goldDeep}
+          metalness={0.6}
+          roughness={0.3}
+        />
+      </mesh>
+      <Text
+        position={[0, 0, 0.01]}
+        fontSize={0.16}
+        color={INK}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={2.3}
+        textAlign="center"
+      >
+        {text}
+      </Text>
+    </group>
+  );
+}
+
+function Studio({ project, accent }: { project: Project; accent: string }) {
+  const screen = useGlowMaterial(accent, 0.25, 0.5, "#140d2e");
+  const signature = useMemo(
+    () => signatureFor(project.id, project.name),
+    [project.id, project.name],
+  );
+  const seats = useMemo<Seat[]>(
+    () =>
+      [-3.4, 3.4].flatMap((x) =>
+        [-0.6, 0.6].map((dx) => ({
+          id: `sofa-${x}-${dx}`,
+          x: x + dx,
+          y: 0,
+          z: 2.6,
+          facing: Math.PI,
+        })),
+      ),
+    [],
+  );
+  return (
+    <group>
+      {/* The big screen */}
+      <OnWall side="back">
+        <group position={[0, 0, -D / 2 + 0.05]}>
+          <mesh position={[0, 3, 0]} material={screen}>
+            <boxGeometry args={[15, 3.6, 0.08]} />
+          </mesh>
+          <Text
+            position={[0, 4.15, 0.06]}
+            fontSize={0.7}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {project.name}
+          </Text>
+          <Text
+            position={[0, 3.45, 0.06]}
+            fontSize={0.28}
+            color={accents.honey}
+            anchorX="center"
+            maxWidth={13.5}
+            textAlign="center"
+          >
+            {project.pitch}
+          </Text>
+          <Text
+            position={[0, 2.55, 0.06]}
+            fontSize={0.2}
+            color="#e9d8fd"
+            anchorX="center"
+            maxWidth={13.5}
+            textAlign="center"
+            lineHeight={1.4}
+          >
+            {`${project.role}\n${project.kind} · ${project.category} · ${project.year} · ${project.status}`}
+          </Text>
+        </group>
+      </OnWall>
+
+      {/* Pedestal with the project's emblem floating above it */}
+      <group position={[0, 0, -3.6]}>
+        <RigidBody type="fixed" colliders={false}>
+          <CuboidCollider args={[1.1, 0.4, 1.1]} position={[0, 0.4, 0]} />
+        </RigidBody>
+        <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[1.1, 1.25, 0.8, 32]} />
+          <meshStandardMaterial color="#2d1f52" />
+        </mesh>
+        <mesh position={[0, 0.81, 0]} rotation-x={-Math.PI / 2}>
+          <ringGeometry args={[0.7, 0.95, 40]} />
+          <meshStandardMaterial
+            color={accent}
+            emissive={accent}
+            emissiveIntensity={1.2}
+            toneMapped={false}
+          />
+        </mesh>
+        {signature && <Emblem signature={signature} y={2.2} scale={0.9} />}
+      </group>
+
+      {/* Story on the left wall, tech on the right */}
+      <OnWall side="left">
+        <HighlightWall
+          items={[...project.description, ...project.highlights]}
+          accent={accent}
+          title="About the project"
+        />
+      </OnWall>
+      <OnWall side="right">
+        <TechTiles
+          tech={project.tech}
+          position={[W / 2 - 0.05, 0.5, 0]}
+          rotationY={-Math.PI / 2}
+          length={D - 4}
+        />
+      </OnWall>
+
+      {/* Two sofas facing the screen, with a coffee table */}
+      {[-3.4, 3.4].map((x) => (
+        <group key={x} position={[x, 0, 2.6]}>
+          <RigidBody type="fixed" colliders={false}>
+            <CuboidCollider args={[1.3, 0.3, 0.2]} position={[0, 0.6, 0.45]} />
+          </RigidBody>
+          <mesh position={[0, 0.25, 0]} castShadow receiveShadow>
+            <boxGeometry args={[2.6, 0.5, 0.9]} />
+            <meshStandardMaterial color="#6b46c1" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, 0.7, 0.42]} castShadow>
+            <boxGeometry args={[2.6, 0.8, 0.22]} />
+            <meshStandardMaterial color="#6b46c1" roughness={0.9} />
+          </mesh>
+          {[-1.25, 1.25].map((ax) => (
+            <mesh key={ax} position={[ax, 0.45, 0]} castShadow>
+              <boxGeometry args={[0.2, 0.5, 0.9]} />
+              <meshStandardMaterial color="#553c9a" roughness={0.9} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+      <mesh position={[0, 0.3, 1.2]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.8, 0.8, 0.08, 28]} />
+        <meshStandardMaterial color="#e9dcc6" />
+      </mesh>
+      <Seats seats={seats} />
+
+      {project.plaque && (
+        <OnWall side="front">
+          <Plaque text={project.plaque} />
+        </OnWall>
+      )}
+    </group>
+  );
+}

@@ -8,13 +8,15 @@ import type { BloomEffect } from "postprocessing";
 import { Suspense, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useCityStore } from "@/state/useCityStore";
-import { landmarkDoorstep } from "@/world/districts";
+import { type DistrictId, landmarkDoorstep } from "@/world/districts";
+import { parseRoom, ROOM, type RoomScene, sceneDistrict } from "@/world/interiors";
 import { worldEnv } from "@/world/env";
 import { isTouchDevice } from "@/world/touch";
 import { DayNight } from "./DayNight";
 import { DistrictScene } from "./DistrictScene";
+import { InteriorScene } from "./InteriorScene";
 import { seedContent } from "@/content/seed";
-import { computeDistrictLayout } from "@/world/layout";
+import { computeDistrictLayout, doorPoint } from "@/world/layout";
 import { HubScene } from "./HubScene";
 import { keyboardMap, Player } from "./Player";
 import { LOOKS, NPC_PEOPLE } from "@/world/outfits";
@@ -47,9 +49,24 @@ export default function CityCanvas() {
 
   // Where the player appears: the plaza, a landmark's doorstep when coming back, or a district's gate.
   const spawn = useMemo(() => {
-    if (scene !== "hub") return { position: computeDistrictLayout(seedContent, scene).spawn, facing: Math.PI };
-    if (!cameFrom) return { position: HUB_SPAWN, facing: Math.PI };
-    const door = landmarkDoorstep(cameFrom);
+    if (parseRoom(scene)) return { position: [0, 2, ROOM.depth / 2 - 4] as [number, number, number], facing: Math.PI };
+    if (scene !== "hub") {
+      const layout = computeDistrictLayout(seedContent, scene as DistrictId);
+      // Walking out of a building puts you on its doorstep, facing away from it.
+      const room = cameFrom && parseRoom(cameFrom);
+      const building = room && room.district === scene && layout.buildings.find((b) => b.id === room.id);
+      if (building) {
+        const door = doorPoint(building, 2.4);
+        return {
+          position: [door.x, 2, door.z] as [number, number, number],
+          facing: Math.atan2(Math.cos(building.rotY), -Math.sin(building.rotY)),
+        };
+      }
+      return { position: layout.spawn, facing: Math.PI };
+    }
+    const from = cameFrom && sceneDistrict(cameFrom);
+    if (!from) return { position: HUB_SPAWN, facing: Math.PI };
+    const door = landmarkDoorstep(from);
     return { position: [door.x, 2, door.z] as [number, number, number], facing: Math.atan2(-door.x, -door.z) };
   }, [scene, cameFrom]);
 
@@ -65,7 +82,7 @@ export default function CityCanvas() {
           state.gl.toneMapping = THREE.NeutralToneMapping;
           state.gl.toneMappingExposure = 1;
           // Handy when debugging in the browser console.
-          if (process.env.NODE_ENV === "development") Object.assign(window, { __city: { state, playerPosition } });
+          if (process.env.NODE_ENV === "development") Object.assign(window, { __city: { state, playerPosition, store: useCityStore } });
         }}
       >
         <PerformanceMonitor
@@ -82,7 +99,7 @@ export default function CityCanvas() {
         <CityEnvironment />
         <Suspense fallback={null}>
           <Physics key={scene}>
-            {scene === "hub" ? <HubScene /> : <DistrictScene id={scene} />}
+            {scene === "hub" ? <HubScene /> : parseRoom(scene) ? <InteriorScene scene={scene as RoomScene} /> : <DistrictScene id={scene as DistrictId} />}
             <Player position={playerPosition} spawn={spawn.position} facing={spawn.facing} />
           </Physics>
         </Suspense>

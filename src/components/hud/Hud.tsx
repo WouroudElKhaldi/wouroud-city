@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useCityStore } from "@/state/useCityStore";
 import { districtById, landmarkDoorstep } from "@/world/districts";
 import { seedContent } from "@/content/seed";
+import { parseRoom, ROOM, sceneDistrict } from "@/world/interiors";
 import { computeDistrictLayout } from "@/world/layout";
 import { PERSONAS } from "@/world/personas";
 import { useIsTouch } from "@/world/touch";
@@ -55,7 +56,10 @@ export function Hud() {
     return () => window.clearTimeout(t);
   }, [touch]);
 
-  const place = scene === "hub" ? "Central Plaza" : districtById(scene).name;
+  const room = parseRoom(scene);
+  const district = sceneDistrict(scene);
+  const roomLabel = room && computeDistrictLayout(seedContent, room.district).buildings.find((b) => b.id === room.id)?.label;
+  const place = !district ? "Central Plaza" : room ? `${roomLabel ?? "Inside"} · ${districtById(district).name}` : districtById(district).name;
   const driving = useCityStore((st) => st.driving);
   const riding = driving?.model === "horse";
   const prompt = seat ? "Stand up" : riding ? "Get off the horse" : driving ? "Get out of the car" : nearby?.label;
@@ -64,12 +68,17 @@ export function Hud() {
   /** Guided tour: in the hub, point to the next recommended district; in a district, back to the plaza. */
   const nextStop = () => {
     if (!p) return;
-    if (scene !== "hub") {
-      const { exit } = computeDistrictLayout(seedContent, scene);
+    if (room) {
+      setWaypoint({ x: 0, z: ROOM.depth / 2 - 1, label: "the way out" });
+      return;
+    }
+    if (district) {
+      const { exit } = computeDistrictLayout(seedContent, district);
       setWaypoint({ x: exit.x, z: exit.z - 3, label: "the exit to Central Plaza" });
       return;
     }
-    const visited = useCityStore.getState().cameFrom;
+    const cameFrom = useCityStore.getState().cameFrom;
+    const visited = cameFrom && sceneDistrict(cameFrom);
     const order = p.tour;
     const next = order[visited ? (order.indexOf(visited) + 1) % order.length : 0];
     const door = landmarkDoorstep(next, 13);
@@ -112,10 +121,16 @@ export function Hud() {
               <p className="text-xs text-violet-200 sm:text-sm">{place}</p>
             </div>
             <Minimap />
-            {scene !== "hub" && (
-              <button type="button" onClick={() => goTo("hub")} className="hud-panel hud-button pointer-events-auto">
-                ← {touch ? "Plaza" : "Back to the city"}
+            {room ? (
+              <button type="button" onClick={() => goTo(room.district)} className="hud-panel hud-button pointer-events-auto">
+                ← {touch ? "Outside" : "Back outside"}
               </button>
+            ) : (
+              scene !== "hub" && (
+                <button type="button" onClick={() => goTo("hub")} className="hud-panel hud-button pointer-events-auto">
+                  ← {touch ? "Plaza" : "Back to the city"}
+                </button>
+              )
             )}
           </div>
 

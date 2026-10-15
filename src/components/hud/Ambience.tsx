@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useCityStore } from "@/state/useCityStore";
+import { sceneDistrict } from "@/world/interiors";
 import { music } from "@/world/music";
 
 /** Plays the soft background music for the current place, time and weather. Follows the mute button. */
@@ -18,7 +19,7 @@ export function Ambience() {
       music.stop();
       return;
     }
-    music.setMood(activity === "stack" ? "arcade" : activity === "paint" ? "hobbies" : scene, night);
+    music.setMood(activity === "stack" ? "arcade" : activity === "paint" ? "hobbies" : (sceneDistrict(scene) ?? "hub"), night);
     music.start();
     music.setRain(rain);
   }, [started, muted, scene, night, rain, activity]);

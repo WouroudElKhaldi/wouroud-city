@@ -5,13 +5,14 @@ import { useEffect, useRef } from "react";
 import { useCityStore } from "@/state/useCityStore";
 import type { DistrictId } from "@/world/districts";
 import { playerState } from "@/world/env";
+import { ROOM_DISTRICTS, roomScene } from "@/world/interiors";
 import { type BuildingSpec, doorPoint } from "@/world/layout";
 
 const RADIUS = 3.6;
 
 /**
  * Offers "View <building>" when the player stands at a building's entrance;
- * E opens that building's info panel. Picks the nearest door each frame.
+ * E opens that building's info panel, or walks you inside offices and project studios. Picks the nearest door each frame.
  */
 export function BuildingDoors({ district, buildings }: { district: DistrictId; buildings: BuildingSpec[] }) {
   const current = useRef<string | null>(null);
@@ -38,10 +39,16 @@ export function BuildingDoors({ district, buildings }: { district: DistrictId; b
     if (best) {
       const target = best;
       const arcade = district === "arcade";
+      const room = ROOM_DISTRICTS.includes(district);
       store.setNearby({
         id: id!,
-        label: arcade ? `Play ${target.label}` : `View ${target.label}`,
-        run: () => (arcade ? store.setActivity("stack") : store.openPanel({ district, id: target.id })),
+        label: arcade ? `Play ${target.label}` : room ? `Go inside ${target.label}` : `View ${target.label}`,
+        run: () =>
+          arcade
+            ? store.setActivity("stack")
+            : room
+              ? store.goTo(roomScene(district, target.id))
+              : store.openPanel({ district, id: target.id }),
       });
     }
   });

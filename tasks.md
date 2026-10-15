@@ -49,7 +49,7 @@ _(nothing; next up: 43 Better people)_
 ### C. Content inside buildings
 20. 🔄 Richer info panels: ✅ "used in" links between skills ↔ projects ↔ jobs, ✅ next/previous building; ⬜ project media gallery (needs screenshots from the owner / admin)
 21. ✅ Private Vault building explains the private work GitHub
-22. ⬜ Real interiors you can walk into (start with the HQ / Sahme Trading and one project building)
+22. 🔄 Real interiors you can walk into: offices for every job and studios for every project are built (InteriorScene.tsx); still to verify visually (see HANDOFF §0)
 
 ### D. Play
 23. ✅ Arcade Pier game "Full Stack": one-tap block stacking with tech labels (HTML → CSS → JS → React → Node → MongoDB…), local best score

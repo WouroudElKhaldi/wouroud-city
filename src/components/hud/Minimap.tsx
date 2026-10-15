@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { parseRoom, sceneDistrict } from "@/world/interiors";
 import { seedContent } from "@/content/seed";
 import { type SceneId, useCityStore } from "@/state/useCityStore";
 import { DISTRICTS, type DistrictId, HUB, landmarkDoorstep, landmarkPlacement } from "@/world/districts";
@@ -64,7 +65,8 @@ function useMapData(scene: SceneId, highlights: DistrictId[]): MapData {
       return { bounds: { minX: -85, maxX: 85, minZ: -85, maxZ: 85 }, shapes, places };
     }
 
-    const layout = computeDistrictLayout(seedContent, scene);
+    // Rooms have no map of their own; build the district one so hooks stay in order (hidden below).
+    const layout = computeDistrictLayout(seedContent, sceneDistrict(scene) ?? "business");
     const places: MapPlace[] = layout.buildings
       .filter((b) => !b.filler)
       .map((b) => ({
@@ -137,6 +139,8 @@ export function Minimap() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [setMapOpen]);
+
+  if (parseRoom(scene)) return null;
 
   return (
     <>
