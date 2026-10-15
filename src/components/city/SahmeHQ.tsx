@@ -11,7 +11,6 @@ import { HQ_ROOM } from "@/world/interiors";
 import { accents } from "@/world/palette";
 import { sfx } from "@/world/sfx";
 import {
-  ahead,
   Batch,
   BeanBag,
   Block,
@@ -27,6 +26,7 @@ import {
   Painting,
   Pendant,
   Rug,
+  SeatedPerson,
   SideChair,
   Sofa,
   sofaSeats,
@@ -40,7 +40,6 @@ import { Board, OnWall, Plaque, TechTiles } from "./InteriorScene";
 import { finishes } from "./luxury";
 import { emitBurst } from "./Particles";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
-import { Person } from "./Person";
 import { SlotMachine } from "./SlotMachine";
 import { Seats } from "./StreetDetails";
 import {
@@ -467,16 +466,6 @@ const SOFAS: [string, number, number, number, number, Leather][] = [
   ["hr-arm-2", -18.8, 12.3, Wd, 0.95, "blush"],
   ["fc-sofa", 17, 15.45, S, 2.4, "oxblood"],
 ];
-
-/** A coworker sitting the way the player sits (see Player.tsx: root 5 cm up, 10 cm back). */
-function SeatedPerson({ id, seat }: { id: string; seat: Seat }) {
-  const [x, z] = ahead(seat.x, seat.z, seat.facing, -0.1);
-  return (
-    <group position={[x, seat.y + 0.05, z]} rotation-y={seat.facing}>
-      <Person look={{ id, body: id.startsWith("Female") ? "female" : "male" }} animation="sit" detail={false} />
-    </group>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Interactive pieces

@@ -7,6 +7,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Seat } from "@/state/useCityStore";
 import { batchStatic, finishes } from "./luxury";
+import { Person } from "./Person";
 
 /**
  * Luxury office furniture at real-world sizes (meters): desks 0.75 high, seats cut to the
@@ -197,6 +198,61 @@ export function SideChair({ position, facing = 0, leather = "cognac" }: { positi
         ))}
         <RoundedBox smoothness={2} bevelSegments={2} args={[0.46, 0.34, 0.06]} radius={0.025} position={[0, 0.29, 0]} material={hide} castShadow />
       </group>
+    </group>
+  );
+}
+
+const plainCache = new Map<string, THREE.MeshStandardMaterial>();
+/** One shared plain material per color (so merged furniture stays one mesh per color). */
+export function plain(color: string, roughness = 0.6) {
+  const key = `${color}:${roughness}`;
+  let m = plainCache.get(key);
+  if (!m) plainCache.set(key, (m = new THREE.MeshStandardMaterial({ color, roughness })));
+  return m;
+}
+
+/**
+ * A modern conference / café chair: a padded seat and a molded back on a black steel sled
+ * frame. The runners sit at the sides, so the calves and feet fit between them.
+ */
+export function ConferenceChair({ position, facing = 0, color = "#0fc48d" }: { position: V3; facing?: number; color?: string }) {
+  const f = finishes();
+  const shell = plain(color, 0.55);
+  return (
+    <group position={position} rotation-y={facing}>
+      {[-1, 1].map((s) => (
+        <group key={s} position={[s * 0.23, 0, 0]}>
+          <mesh position={[0, 0.012, (SEAT.rearZ + SEAT.frontZ) / 2]} material={f.blackMetal}>
+            <boxGeometry args={[0.022, 0.024, SEAT_DEPTH - 0.02]} />
+          </mesh>
+          <mesh position={[0, (SEAT.front - 0.06) / 2, SEAT.frontZ - 0.04]} material={f.blackMetal}>
+            <boxGeometry args={[0.022, SEAT.front - 0.06, 0.022]} />
+          </mesh>
+          <mesh position={[0, (SEAT.back - 0.06) / 2, SEAT.rearZ + 0.03]} material={f.blackMetal}>
+            <boxGeometry args={[0.022, SEAT.back - 0.06, 0.022]} />
+          </mesh>
+          <mesh position={[0, SEAT.back + 0.22, SEAT.backrestZ - 0.06]} rotation-x={-0.12} material={f.blackMetal}>
+            <boxGeometry args={[0.022, 0.48, 0.022]} />
+          </mesh>
+        </group>
+      ))}
+      <group position={[0, -0.06, 0]}>
+        <Cushion width={0.5} thickness={0.025} material={f.blackMetal} />
+      </group>
+      <Cushion width={0.48} thickness={0.06} material={shell} />
+      <group position={[0, SEAT.back, SEAT.backrestZ - 0.03]} rotation-x={-0.12}>
+        <RoundedBox smoothness={2} bevelSegments={2} args={[0.48, 0.32, 0.05]} radius={0.02} position={[0, 0.34, 0]} material={shell} castShadow />
+      </group>
+    </group>
+  );
+}
+
+/** A coworker sitting the way the player sits (Player.tsx: root 5 cm up, 10 cm back). */
+export function SeatedPerson({ id, seat }: { id: string; seat: Seat }) {
+  const [x, z] = ahead(seat.x, seat.z, seat.facing, -0.1);
+  return (
+    <group position={[x, seat.y + 0.05, z]} rotation-y={seat.facing}>
+      <Person look={{ id, body: id.startsWith("Female") ? "female" : "male" }} animation="sit" detail={false} floor={seat.y} />
     </group>
   );
 }

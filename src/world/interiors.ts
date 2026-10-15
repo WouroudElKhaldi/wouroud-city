@@ -31,5 +31,8 @@ export const ROOM: RoomSize = { width: 24, depth: 18, height: 5.2 };
 /** Sahme Trading is a whole headquarters floor: departments around a trading floor. */
 export const HQ_ROOM: RoomSize = { width: 44, depth: 32, height: 5.6 };
 
+/** Develeb is a community hub: a stage with audience rows, and the website's sections on its walls. */
+export const DEVELEB_ROOM: RoomSize = { width: 36, depth: 26, height: 5.4 };
+
 /** The size of a building's room. */
-export const roomSize = (id: string): RoomSize => (id === "sahme" ? HQ_ROOM : ROOM);
+export const roomSize = (id: string): RoomSize => (id === "sahme" ? HQ_ROOM : id === "develeb" ? DEVELEB_ROOM : ROOM);

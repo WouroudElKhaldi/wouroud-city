@@ -241,7 +241,7 @@ export function Player({
             <Avatar kind="robot" controller={controller} />
           ) : (
             <Suspense fallback={<Avatar kind={avatar} controller={controller} />}>
-              <Person look={playerLook(avatar, outfitKey)} animation={animation} matchPlayerSpeed />
+              <Person look={playerLook(avatar, outfitKey)} animation={animation} matchPlayerSpeed floor={seat?.y} />
             </Suspense>
           )}
         </group>

@@ -137,12 +137,15 @@ export function Person({
   animation,
   matchPlayerSpeed = false,
   detail = true,
+  floor,
 }: {
   look: PersonLook;
   animation: CharacterAnimation;
   matchPlayerSpeed?: boolean;
   /** Normal maps; off for distant crowd members */
   detail?: boolean;
+  /** Seated on a chair: the world height of the floor under it, where the feet rest. */
+  floor?: number;
 }) {
   const { scene } = useGLTF(MODEL_URL(look.id));
   const anims = useGLTF(animUrls(look.body));
@@ -163,6 +166,7 @@ export function Person({
       stride={stride}
       animation={animation}
       matchPlayerSpeed={matchPlayerSpeed}
+      floor={floor}
     />
   );
 }
@@ -174,12 +178,14 @@ function Rig({
   stride,
   animation,
   matchPlayerSpeed,
+  floor,
 }: {
   model: THREE.Object3D;
   clips: THREE.AnimationClip[];
   stride: Partial<Record<Source, number>>;
   animation: CharacterAnimation;
   matchPlayerSpeed: boolean;
+  floor?: number;
 }) {
   const { actions, mixer } = useAnimations(clips, model);
   useEffect(() => {
@@ -227,7 +233,7 @@ function Rig({
 
   // Seated, the women's chair clip points the feet down through the floor (toes ~7 cm under it).
   // After the clip poses the body, tip each foot up at the ankle until the ball of the foot
-  // rests on the floor. Feet that are already above the floor (a horse's stirrups) are left alone.
+  // rests on the floor under the seat (`floor`; none on a horse, whose stirrups hold the feet).
   const feet = useMemo(
     () =>
       (["L", "R"] as const)
@@ -236,14 +242,14 @@ function Rig({
     [model],
   );
   useFrame(() => {
-    if (animation !== "sit") return;
+    if (animation !== "sit" || floor === undefined) return;
     for (const [foot, toe] of feet) {
       foot.getWorldPosition(ankle);
       toe.getWorldPosition(ball);
-      if (ball.y >= BALL_HEIGHT) continue;
+      if (ball.y >= floor + BALL_HEIGHT) continue;
       const length = ball.distanceTo(ankle);
       flat.subVectors(ball, ankle).normalize();
-      const drop = THREE.MathUtils.clamp((BALL_HEIGHT - ankle.y) / length, -1, 0);
+      const drop = THREE.MathUtils.clamp((floor + BALL_HEIGHT - ankle.y) / length, -1, 0);
       const across = Math.hypot(flat.x, flat.z) || 1;
       const reach = Math.sqrt(1 - drop * drop);
       const target = probe.set((flat.x / across) * reach, drop, (flat.z / across) * reach);

@@ -16,6 +16,7 @@ import { accents } from "@/world/palette";
 import { signatureFor } from "@/world/signatures";
 import { Emblem } from "./Emblems";
 import { marbleTexture } from "./luxury";
+import { DevelebHub } from "./DevelebHub";
 import { SahmeHQ } from "./SahmeHQ";
 import { useGlowMaterial } from "./materials";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
@@ -47,7 +48,9 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
   const project = seedContent.projects.find((p) => p.id === room.id);
   const size = roomSize(room.id);
   const hq = room.id === "sahme";
-  const accent = spec?.color ?? "#7c3aed";
+  // Develeb brings its own room, in its website's look
+  const develeb = room.id === "develeb";
+  const accent = room.id === "develeb" ? "#10c38e" : (spec?.color ?? "#7c3aed");
   const label = spec?.label ?? job?.company ?? project?.name ?? "Building";
 
   // Two people at work, walking a loop around the middle of the room.
@@ -77,7 +80,7 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
 
   return (
     <RoomContext value={size}>
-      <Shell accent={accent} hq={hq} />
+      {!develeb && <Shell accent={accent} hq={hq} />}
       <OnWall side="front">
         <ExitDoor id={room.id} district={room.district} accent={accent} />
       </OnWall>
@@ -89,12 +92,14 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
       />
       {hq && job ? (
         <SahmeHQ job={job} accent={accent} />
+      ) : develeb && job ? (
+        <DevelebHub job={job} />
       ) : job ? (
         <Office job={job} accent={accent} />
       ) : project ? (
         <Studio project={project} accent={accent} />
       ) : null}
-      {!hq && <Pedestrians walkers={walkers} />}
+      {!hq && !develeb && <Pedestrians walkers={walkers} />}
     </RoomContext>
   );
 }

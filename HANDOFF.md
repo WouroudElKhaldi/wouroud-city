@@ -13,7 +13,26 @@ Big source assets (Rocketbox FBX/TGA, ~3.5 GB) are **not** in git (`.assets-src/
 converted web files in `public/models/rb` are. Re-download them only if you need to convert new avatars.
 
 ### Latest work (newest first)
-0. **Sahme Trading HQ + body-fitted furniture (latest).** The owner disliked the first Sahme office and
+0. **Develeb community hub (latest).** Develeb's room (`DevelebHub.tsx`, 36 × 26 × 5.4 m, `DEVELEB_ROOM`)
+   is designed in the develeb.org look (the owner designed that site's UI/UX): navy #061b2e, green
+   #10c38e, off-white, the pixel cedar, green event cards with contour lines and dot grids. It replaces the
+   luxury shell for this room (polished concrete, navy wainscoting with a green line, dark ceiling with
+   joists and linear LEDs, clerestory windows). Stage with the site's **typing hero** as backdrop (its two
+   buttons are clickable), lectern, three panel armchairs on the 0.35 m stage; 40 audience chairs
+   (`ConferenceChair`, new in `Furniture.tsx`, same body-fitted seat) with attendees; walls = site
+   sections: Our Latest Events (6 cards, click), Our Latest Jobs table + "Find Your Next Job" kiosk (E/click
+   cycles jobs), "I designed the Develeb website" (Home/Jobs/Events mockups) + Wouroud's design desk (site
+   + design tool screens, tablet, nameplate), Why Join Us? (6 testimonials), Stay in the Loop (click, no
+   data collected), Meet Our Founders, a scrolling partners strip; an about wall with count-up stats
+   (4000+/500+/30+) and her role on the front, "What I did at Develeb" + tech on the back; a voxel cedar
+   sculpture (click); a coworking table with coworkers. Content came from the owner's notes on the site.
+   - The owner's reference files in the repo root (`Screenshot *.png`, `develebcontent.md`) must
+     **never** be committed or pushed. They are listed in `.git/info/exclude` (local only).
+   - `Person` now takes `floor` (the world height under a seat) for the seated foot fix, so feet rest on
+     a stage too; `SeatedPerson` moved to `Furniture.tsx`.
+   - Testing tip: if the player stands up right after `sit()`, a movement key is stuck in the preview pane;
+     dispatch `keyup` for WASD/arrows/Space on `window`.
+1. **Sahme Trading HQ + body-fitted furniture.** The owner disliked the first Sahme office and
    asked for a much bigger office with departments, luxurious and close to real, and for every pose to be
    checked in screenshots (no knees inside chairs).
    - `SahmeHQ.tsx`: Sahme's room is now a 44 × 32 × 5.6 m headquarters floor (`HQ_ROOM`; rooms have per-id
@@ -102,7 +121,7 @@ converted web files in `public/models/rb` are. Re-download them only if you need
      (keep the `CharacterAnimation` type — move it into `Person.tsx` first), `public/models/people*`.
 
 ### Next up (owner said "work one by one" through this list)
-1. Finish/verify walk-in interiors: Sahme HQ is done and checked; move the other offices and studios
+1. Finish/verify walk-in interiors: Sahme HQ and Develeb are done and checked; move the other offices and studios
    onto `Furniture.tsx` pieces (real-size, body-fitted seats) and check them the same way.
 2. Crochet toy in the Hobby Quarter.
 3. New robot avatar (still the old primitive model in `Avatar.tsx`).
