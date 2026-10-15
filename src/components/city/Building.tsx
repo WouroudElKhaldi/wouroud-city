@@ -55,13 +55,32 @@ export function Building({ spec: raw }: { spec: BuildingSpec }) {
       {spec.variant === "lowrise" && <LowriseBuilding spec={spec} />}
       {spec.variant === "workshop" && <WorkshopBuilding spec={spec} />}
       {spec.variant === "tower" && <SkillTower spec={spec} shape={signature?.shape ?? "box"} accent={signature?.accent} />}
-      <Entrance spec={spec} />
+      <NearOnly x={spec.x} z={spec.z} range={70}>
+        <Entrance spec={spec} />
+        <DistrictProps kind={style.props} spec={spec} accent={signature?.accent ?? accents.gold} />
+      </NearOnly>
       <Roof kind={style.roof} width={width} depth={depth} y={height + 0.3} color={style.roofColor} />
-      <DistrictProps kind={style.props} spec={spec} accent={signature?.accent ?? accents.gold} />
       {signature && spec.variant !== "tower" && <AccentBand width={width} depth={depth} y={height - 0.25} color={tinted(signature.accent, "#ffffff", 0.55)} />}
       {signature && <Emblem signature={signature} y={emblemY} scale={emblemScale} />}
     </group>
   );
+}
+
+/**
+ * Level of detail: the street-level details of a building (lobby front, name signs, props) are
+ * drawn only when the camera is within `range` meters. A big district has dozens of buildings,
+ * and from across the ring those details are a few pixels anyway.
+ */
+function NearOnly({ x, z, range, children }: { x: number; z: number; range: number; children: React.ReactNode }) {
+  const group = useRef<THREE.Group>(null);
+  useFrame(({ camera }) => {
+    const g = group.current;
+    if (!g) return;
+    const dx = camera.position.x - x;
+    const dz = camera.position.z - z;
+    g.visible = dx * dx + dz * dz < range * range;
+  });
+  return <group ref={group}>{children}</group>;
 }
 
 function seedOf(spec: BuildingSpec) {
