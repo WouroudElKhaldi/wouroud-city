@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { useCityStore } from "@/state/useCityStore";
 import { playerState } from "@/world/env";
 import { sfx } from "@/world/sfx";
+import { CAR_SCALE, CarModel } from "./CarModel";
 import { emitBurst } from "./Particles";
 import { useProximity } from "./useProximity";
 
@@ -370,17 +371,6 @@ function Car({ id, model, x, z, rot }: ParkedCar) {
     where,
     run: () => startDriving({ id, model, from: { x, z, rot } }),
   });
-  const { scene } = useGLTF(`/models/cars/${model}.glb`);
-  const object = useMemo(() => {
-    const m = scene.clone(true);
-    m.traverse((o) => {
-      if ((o as THREE.Mesh).isMesh) {
-        o.castShadow = true;
-        o.receiveShadow = true;
-      }
-    });
-    return m;
-  }, [scene]);
   const bounce = useRef<THREE.Group>(null);
   const lights = useMemo(
     () =>
@@ -389,7 +379,7 @@ function Car({ id, model, x, z, rot }: ParkedCar) {
   );
   const honkedAt = useRef(-10);
   const pendingHonk = useRef(false);
-  const scale = 2.2;
+  const scale = CAR_SCALE;
 
   useFrame(({ clock }) => {
     if (pendingHonk.current) {
@@ -409,8 +399,7 @@ function Car({ id, model, x, z, rot }: ParkedCar) {
         <CuboidCollider args={[0.75 * scale, 0.6 * scale, 1.27 * scale]} position={[0, 0.6 * scale, 0]} />
       </RigidBody>
       <group ref={bounce}>
-        <primitive
-          object={object}
+        <group
           scale={scale}
           position={[0, 0.3 * scale, 0]}
           onClick={(e: ThreeEvent<MouseEvent>) => {
@@ -421,7 +410,9 @@ function Car({ id, model, x, z, rot }: ParkedCar) {
             emitBurst({ position: new THREE.Vector3(x, 2.6, z), kind: "sparkle", count: 8, colors: ["#fde68a"], spread: 0.5 });
           }}
           {...pointer}
-        />
+        >
+          <CarModel id={id} model={model} />
+        </group>
         {/* Headlights */}
         {[-0.45, 0.45].map((hx) => (
           <mesh key={hx} position={[hx * scale, 0.55 * scale, 1.28 * scale]} material={lights}>

@@ -49,6 +49,8 @@ type CityState = {
   exitCar: boolean;
   /** Where cars were left after a drive, by car id (they don't jump back to their old spot). */
   parked: Record<string, CarSpot>;
+  /** Bumped when someone gets into or out of a car, so that car swings its door. */
+  doorSwing: { id: string; at: number } | null;
   avatar: AvatarKind;
   /** The avatar's look: a Rocketbox avatar id from LOOKS */
   outfit: string;
@@ -100,6 +102,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   photoAt: 0,
   exitCar: false,
   parked: {},
+  doorSwing: null,
   avatar: "girl",
   outfit: DEFAULT_LOOK,
   timeMode: "day",
@@ -163,9 +166,15 @@ export const useCityStore = create<CityState>((set, get) => ({
   setMapOpen: (mapOpen) => set({ mapOpen }),
   setActivity: (activity) => set({ activity, panel: null, nearby: null }),
   takePhoto: () => set({ photoAt: Date.now(), panel: null }),
-  startDriving: (driving) => set({ driving, nearby: null, seat: null, exitCar: false }),
+  startDriving: (driving) =>
+    set({ driving, nearby: null, seat: null, exitCar: false, doorSwing: { id: driving.id, at: performance.now() } }),
   stopDriving: (spot) =>
-    set((s) => ({ driving: null, exitCar: false, parked: s.driving ? { ...s.parked, [s.driving.id]: spot } : s.parked })),
+    set((s) => ({
+      driving: null,
+      exitCar: false,
+      parked: s.driving ? { ...s.parked, [s.driving.id]: spot } : s.parked,
+      doorSwing: s.driving ? { id: s.driving.id, at: performance.now() } : s.doorSwing,
+    })),
 }));
 
 // Handy when debugging in the browser console.

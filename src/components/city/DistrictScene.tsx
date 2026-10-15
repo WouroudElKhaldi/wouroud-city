@@ -35,6 +35,12 @@ const DISTRICT_CAR: Record<DistrictId, string> = {
   arcade: "police",
 };
 
+/** Every car you can pick, in every district (the same set as the hub). */
+/** Parking bays beside the walkway from the ring road to the plaza (its paving is 3.2 wide). */
+const BAY_X = -3.7;
+
+const CAR_CHOICES = ["sedan", "taxi", "suv", "police", "hatchback-sports", "van"];
+
 /**
  * One district on its own: a round neighborhood. A plaza with a fountain in the
  * middle, a park around it, a ring road, and the content buildings in clusters
@@ -94,6 +100,18 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       cones: [-3, -1, 1, 3].map((x) => ({ x, z: ringRadius + RING.roadHalfWidth + 3, kind: "cone" as const })),
     };
   }, [parkEdge, ringRadius]);
+
+  // Every car to pick from, the district's own first: along the left curb of the entry
+  // avenue, and the rest beside the walkway from the ring road in to the plaza.
+  const cars = useMemo(() => {
+    const slots: { x: number; z: number }[] = [];
+    for (let z = gateZ - 13; z >= ringRadius + RING.roadHalfWidth + 12; z -= 6.4) slots.push({ x: -RING.roadHalfWidth + 1.6, z });
+    for (let z = ringRadius - RING.roadHalfWidth - 5; z >= RING.plazaRadius + 6; z -= 6.4) slots.push({ x: BAY_X, z });
+    const models = [DISTRICT_CAR[id], ...CAR_CHOICES.filter((m) => m !== DISTRICT_CAR[id])];
+    return models
+      .slice(0, slots.length)
+      .map((model, i) => ({ id: `${id}-car-${model}`, model, ...slots[i], rot: Math.PI }));
+  }, [id, ringRadius, gateZ]);
 
   return (
     <group>
@@ -190,7 +208,24 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       <Knockables spots={toys.cones} />
       <MarketStalls spots={toys.stalls} />
       {horseSpot && <ParkedHorse id={`${id}-horse`} {...horseSpot} />}
-      <ParkedCars cars={[{ id: `${id}-car`, model: DISTRICT_CAR[id], x: -RING.roadHalfWidth + 1.6, z: gateZ - 14, rot: Math.PI }]} />
+      <ParkedCars cars={cars} />
+      {/* Paved bays with white lines under the cars by the walkway */}
+      {cars
+        .filter((c) => c.x === BAY_X)
+        .map((c) => (
+          <group key={c.id} position={[BAY_X, 0, c.z]}>
+            <mesh rotation-x={-Math.PI / 2} position={[0, 0.022, 0]} receiveShadow>
+              <planeGeometry args={[4, 6.4]} />
+              <meshStandardMaterial color={palette.road} roughness={0.9} />
+            </mesh>
+            {[-3.1, 3.1].map((dz) => (
+              <mesh key={dz} rotation-x={-Math.PI / 2} position={[0, 0.026, dz]}>
+                <planeGeometry args={[3.6, 0.12]} />
+                <meshStandardMaterial color={palette.roadLine} />
+              </mesh>
+            ))}
+          </group>
+        ))}
       <Traffic radius={ringRadius} count={Math.max(4, Math.round(ringRadius / 7))} />
     </group>
   );

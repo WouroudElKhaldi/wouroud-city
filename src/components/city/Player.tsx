@@ -1,6 +1,6 @@
 "use client";
 
-import { useGLTF, useKeyboardControls } from "@react-three/drei";
+import { useKeyboardControls } from "@react-three/drei";
 import { CuboidCollider } from "@react-three/rapier";
 import { useFrame } from "@react-three/fiber";
 import { Ecctrl, type EcctrlHandle } from "ecctrl";
@@ -14,6 +14,7 @@ import { Avatar } from "./Avatar";
 import type { CharacterAnimation } from "./Character";
 import { Person } from "./Person";
 import { playerLook } from "@/world/outfits";
+import { CAR_SCALE, CarModel, type CarMotion } from "./CarModel";
 import { HorseModel, SADDLE_HEIGHT } from "./Horse";
 
 export const keyboardMap = [
@@ -62,7 +63,7 @@ export function Player({
   const driving = useCityStore((s) => s.driving);
   const riding = driving?.model === "horse";
   /** The car's own speed and heading while driving (m/s, radians). */
-  const car = useRef({ speed: 0, heading: 0 });
+  const car = useRef({ speed: 0, heading: 0, steer: 0 });
   const [animation, setAnimation] = useState<CharacterAnimation>("idle");
   const seatQuat = useMemo(() => new THREE.Quaternion(), []);
   /** Seconds the controller has been off the ground; tiny bumps don't count as falling. */
@@ -88,7 +89,7 @@ export function Player({
     if (driving) {
       // Sit in the car where it's parked, facing the way it's parked.
       const { x, z, rot } = driving.from;
-      car.current = { speed: 0, heading: rot };
+      car.current = { speed: 0, heading: rot, steer: 0 };
       controller.current?.body?.setTranslation({ x, y: 1, z }, true);
       void camera.current?.dollyTo(driving.model === "horse" ? 8 : 11, true);
     } else {
@@ -128,6 +129,7 @@ export function Player({
       const throttle = (k.forward ? 1 : 0) - (k.backward ? 1 : 0) + touchInput.y;
       const steer = (k.leftward ? 1 : 0) - (k.rightward ? 1 : 0) - touchInput.x;
       const st = car.current;
+      st.steer = THREE.MathUtils.clamp(steer, -1, 1);
       const horse = store.driving.model === "horse";
       const top = horse ? (keys.run ? 13 : 6.5) : keys.run ? 26 : 17;
       if (keys.jump) st.speed = THREE.MathUtils.damp(st.speed, 0, 4, delta);
@@ -221,7 +223,7 @@ export function Player({
         ) : (
           driving && (
             <Suspense fallback={null}>
-              <DrivenCar model={driving.model} />
+              <DrivenCar id={driving.id} model={driving.model} motion={car} />
             </Suspense>
           )
         )}
@@ -255,24 +257,16 @@ export function Player({
   );
 }
 
-const CAR_SCALE = 2.2;
-
 /** The car around the player while driving: the model, a car-sized collider and headlights. */
-function DrivenCar({ model }: { model: string }) {
-  const { scene } = useGLTF(`/models/cars/${model}.glb`);
-  const object = useMemo(() => {
-    const m = scene.clone(true);
-    m.traverse((o) => {
-      if ((o as THREE.Mesh).isMesh) o.castShadow = true;
-    });
-    return m;
-  }, [scene]);
+function DrivenCar({ id, model, motion }: { id: string; model: string; motion: React.RefObject<CarMotion> }) {
   // The capsule rests on the ground while driving, its center 0.7 m up.
   const ground = -(CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS);
   return (
     <group position={[0, ground, 0]}>
       <CuboidCollider args={[0.75 * CAR_SCALE, 0.45 * CAR_SCALE, 1.2 * CAR_SCALE]} position={[0, 0.75 * CAR_SCALE, 0]} />
-      <primitive object={object} scale={CAR_SCALE} position={[0, 0.3 * CAR_SCALE, 0]} />
+      <group scale={CAR_SCALE} position={[0, 0.3 * CAR_SCALE, 0]}>
+        <CarModel id={id} model={model} motion={motion} />
+      </group>
       {[-0.45, 0.45].map((hx) => (
         <mesh key={hx} position={[hx * CAR_SCALE, 0.55 * CAR_SCALE, 1.28 * CAR_SCALE]}>
           <sphereGeometry args={[0.16, 10, 10]} />
