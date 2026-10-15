@@ -7,6 +7,9 @@ import { InfoPanel } from "@/components/hud/InfoPanel";
 import { PaintStudio } from "@/components/hud/PaintStudio";
 import { StackGame } from "@/components/hud/StackGame";
 import { WelcomeScreen } from "@/components/hud/WelcomeScreen";
+import { FlappyGame } from "@/components/hud/FlappyGame";
+import { RaceHud } from "@/components/hud/RaceHud";
+import { XoGame } from "@/components/hud/XoGame";
 import { useCityStore } from "@/state/useCityStore";
 
 // WebGL and physics only run in the browser.
@@ -38,6 +41,9 @@ export function CityClient() {
           <InfoPanel />
           {activity === "stack" && <StackGame />}
           {activity === "paint" && <PaintStudio />}
+          {activity === "xo" && <XoGame />}
+          {activity === "flappy" && <FlappyGame />}
+          <RaceHud />
         </>
       ) : (
         <WelcomeScreen />

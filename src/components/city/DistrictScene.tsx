@@ -20,6 +20,7 @@ import { paint, surface } from "./surfaces";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Balls, Knockables, ParkedCars, Pigeons } from "./Playthings";
 import { Portal } from "./Portal";
+import { RaceTrack } from "./RaceTrack";
 import { CodeBillboards, Fountain, ParkBenches, Planters, planterPlants } from "./StreetDetails";
 import { StreetLamps } from "./StreetProps";
 import { MarketStalls, Traffic } from "./Traffic";
@@ -54,6 +55,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
   const district = districtById(id);
   const goTo = useCityStore((s) => s.goTo);
   const openPanel = useCityStore((s) => s.openPanel);
+  const racing = useCityStore((s) => s.race !== null);
   const { ringRadius, innerRadius, gateZ } = layout;
   const parkEdge = ringRadius - RING.roadHalfWidth;
   const lawn = useMemo(() => districtLawn(layout), [layout]);
@@ -243,7 +245,8 @@ export function DistrictScene({ id }: { id: DistrictId }) {
             ))}
           </group>
         ))}
-      <Traffic radius={ringRadius} count={Math.max(4, Math.round(ringRadius / 7))} />
+      {!(id === "arcade" && racing) && <Traffic radius={ringRadius} count={Math.max(4, Math.round(ringRadius / 7))} />}
+      {id === "arcade" && <RaceTrack radius={ringRadius} />}
     </group>
   );
 }

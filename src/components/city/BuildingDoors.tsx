@@ -12,7 +12,7 @@ const RADIUS = 3.6;
 
 /**
  * Offers "View <building>" when the player stands at a building's entrance;
- * E opens that building's info panel, or walks you inside offices and project studios. Picks the nearest door each frame.
+ * E walks you inside (every district's buildings have a room). Picks the nearest door each frame.
  */
 export function BuildingDoors({ district, buildings }: { district: DistrictId; buildings: BuildingSpec[] }) {
   const current = useRef<string | null>(null);
@@ -38,17 +38,11 @@ export function BuildingDoors({ district, buildings }: { district: DistrictId; b
     current.current = id;
     if (best) {
       const target = best;
-      const arcade = district === "arcade";
       const room = ROOM_DISTRICTS.includes(district);
       store.setNearby({
         id: id!,
-        label: arcade ? `Play ${target.label}` : room ? `Go inside ${target.label}` : `View ${target.label}`,
-        run: () =>
-          arcade
-            ? store.setActivity("stack")
-            : room
-              ? store.goTo(roomScene(district, target.id))
-              : store.openPanel({ district, id: target.id }),
+        label: room ? `Go inside ${target.label}` : `View ${target.label}`,
+        run: () => (room ? store.goTo(roomScene(district, target.id)) : store.openPanel({ district, id: target.id })),
       });
     }
   });

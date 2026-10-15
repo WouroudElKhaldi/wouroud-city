@@ -19,6 +19,7 @@ import { CodiCampus } from "./CodiCampus";
 import { DevelebHub } from "./DevelebHub";
 import { LifeSculptorHub } from "./LifeSculptorHub";
 import { SahmeHQ } from "./SahmeHQ";
+import { ThemedRoom } from "./ThemedRooms";
 import { useGlowMaterial } from "./materials";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Seats } from "./StreetDetails";
@@ -108,7 +109,9 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
         <Office job={job} accent={accent} />
       ) : project ? (
         <Studio project={project} accent={accent} />
-      ) : null}
+      ) : (
+        <ThemedRoom district={room.district} id={room.id} accent={accent} />
+      )}
       {!hq && !branded && <Pedestrians walkers={walkers} />}
     </RoomContext>
   );

@@ -128,7 +128,9 @@ export function Player({
       c.setMovement(STILL);
     } else if (store.driving && c.body) {
       // Arcade car: throttle and steering from the keyboard or the joystick, brake with Space.
-      const throttle = (k.forward ? 1 : 0) - (k.backward ? 1 : 0) + touchInput.y;
+      // On the start line the engine waits for the green light.
+      const held = store.race?.phase === "countdown" || store.race?.phase === "grid";
+      const throttle = held ? 0 : (k.forward ? 1 : 0) - (k.backward ? 1 : 0) + touchInput.y;
       const steer = (k.leftward ? 1 : 0) - (k.rightward ? 1 : 0) - touchInput.x;
       const st = car.current;
       st.steer = THREE.MathUtils.clamp(steer, -1, 1);

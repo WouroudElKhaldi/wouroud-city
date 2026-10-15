@@ -272,18 +272,22 @@ function hobbyItems(content: Content): Item[] {
 }
 
 function arcadeItems(): Item[] {
+  const hall = (id: string, label: string, sublabel: string, color: string, width = 14): Item => ({
+    id,
+    variant: "workshop",
+    label,
+    sublabel,
+    width,
+    depth: width,
+    floors: 3,
+    color,
+    crown: false,
+  });
   return [
-    {
-      id: "full-stack-arcade",
-      variant: "workshop",
-      label: "Full Stack Arcade",
-      sublabel: "Stack the stack · press E to play",
-      width: 18,
-      depth: 18,
-      floors: 4,
-      color: "#d53f8c",
-      crown: true,
-    },
+    { ...hall("full-stack-arcade", "Full Stack Arcade", "Stack the stack · go inside to play", "#d53f8c", 18), floors: 4, crown: true },
+    hall("xo-lounge", "XO Lounge", "Tic-tac-toe vs a bot · easy, medium, hard", "#0ea5e9"),
+    hall("sky-hop", "Sky Hop", "Firewall Flyer · flap through the walls", "#f59e0b"),
+    hall("ring-rally", "Ring Road Rally", "Race three bots around the ring", "#ef4444", 16),
   ];
 }
 

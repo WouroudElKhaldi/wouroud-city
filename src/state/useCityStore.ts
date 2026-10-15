@@ -29,8 +29,24 @@ export type Panel = { district: DistrictId; id: string };
 export type DrivingCar = { id: string; model: string; from: { x: number; z: number; rot: number } };
 export type CarSpot = { x: number; z: number; rot: number };
 
-/** A full-screen mini activity: the arcade game or the painting easel. */
-export type Activity = "stack" | "paint";
+/** A full-screen mini activity: an arcade game or the painting easel. */
+export type Activity = "stack" | "paint" | "xo" | "flappy";
+
+/**
+ * A race against bots on the Arcade Pier's ring road. "grid": waiting for the arcade scene to
+ * put the player in a car on the start line; then a countdown, the race, and the result.
+ */
+export type Race = {
+  phase: "grid" | "countdown" | "racing" | "finished";
+  laps: number;
+  lap: number;
+  position: number;
+  racers: number;
+  /** performance.now() when the lights go green */
+  goAt: number;
+  /** Seconds, once finished */
+  time?: number;
+};
 
 const FADE_MS = 450;
 let toastId = 0;
@@ -43,6 +59,7 @@ type CityState = {
   panel: Panel | null;
   mapOpen: boolean;
   activity: Activity | null;
+  race: Race | null;
   driving: DrivingCar | null;
   /** Bumped to ask the canvas for a photo of the current view. */
   photoAt: number;
@@ -87,6 +104,9 @@ type CityState = {
   openPanel: (panel: Panel | null) => void;
   setMapOpen: (open: boolean) => void;
   setActivity: (activity: Activity | null) => void;
+  /** Line up for a race on the Arcade Pier's ring road (goes there if needed). */
+  startRace: () => void;
+  updateRace: (race: Partial<Race> | null) => void;
   startDriving: (car: DrivingCar) => void;
   takePhoto: () => void;
   stopDriving: (spot: CarSpot) => void;
@@ -99,6 +119,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   panel: null,
   mapOpen: false,
   activity: null,
+  race: null,
   driving: null,
   photoAt: 0,
   exitCar: false,
@@ -132,7 +153,8 @@ export const useCityStore = create<CityState>((set, get) => ({
   goTo: (scene) => {
     if (get().fading || get().scene === scene) return;
     const from = get().scene;
-    set({ fading: true, nearby: null, seat: null, panel: null, mapOpen: false, driving: null, exitCar: false });
+    const race = get().race?.phase === "grid" && scene === "arcade" ? get().race : null;
+    set({ fading: true, nearby: null, seat: null, panel: null, mapOpen: false, driving: null, exitCar: false, race });
     // Fade to black, swap the scene while the screen is covered, then fade back in.
     window.setTimeout(() => {
       set({ scene, cameFrom: from === "hub" ? null : from, waypoint: null });
@@ -146,7 +168,8 @@ export const useCityStore = create<CityState>((set, get) => ({
       return;
     }
     if (get().driving) {
-      set({ exitCar: true });
+      // Stepping out of the car abandons a race.
+      set({ exitCar: true, race: null });
       return;
     }
     get().nearby?.run();
@@ -166,6 +189,11 @@ export const useCityStore = create<CityState>((set, get) => ({
   openPanel: (panel) => set({ panel, nearby: null }),
   setMapOpen: (mapOpen) => set({ mapOpen }),
   setActivity: (activity) => set({ activity, panel: null, nearby: null }),
+  startRace: () => {
+    set({ race: { phase: "grid", laps: 3, lap: 0, position: 1, racers: 4, goAt: 0 }, panel: null, nearby: null, seat: null });
+    if (get().scene !== "arcade") get().goTo("arcade");
+  },
+  updateRace: (race) => set((s) => ({ race: race && s.race ? { ...s.race, ...race } : null })),
   takePhoto: () => set({ photoAt: Date.now(), panel: null }),
   startDriving: (driving) =>
     set({ driving, nearby: null, seat: null, exitCar: false, doorSwing: { id: driving.id, at: performance.now() } }),

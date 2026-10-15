@@ -294,18 +294,53 @@ function PanelBody({ district, id }: { district: string; id: string }) {
         </>
       ) : null;
     }
-    default:
+    default: {
+      const game = ARCADE[id] ?? ARCADE["full-stack-arcade"];
       return (
         <>
           <p className="panel-kicker">Arcade Pier</p>
-          <h2 className="panel-title">Full Stack Arcade</h2>
-          <p className="mt-3">
-            Stack the stack: drop blocks labelled HTML, CSS, JS, React, Node, MongoDB… as high as you can. Perfect drops build a combo.
-          </p>
-          <PlayButton activity="stack" label="🕹️ Play Full Stack" />
+          <h2 className="panel-title">{game.title}</h2>
+          <p className="mt-3">{game.text}</p>
+          {game.activity ? <PlayButton activity={game.activity} label={game.button} /> : <RaceButton />}
         </>
       );
+    }
   }
+}
+
+const ARCADE: Record<string, { title: string; text: string; button: string; activity?: "stack" | "xo" | "flappy" }> = {
+  "full-stack-arcade": {
+    title: "Full Stack Arcade",
+    text: "Stack the stack: drop blocks labelled HTML, CSS, JS, React, Node, MongoDB… as high as you can. Perfect drops build a combo.",
+    button: "🕹️ Play Full Stack",
+    activity: "stack",
+  },
+  "xo-lounge": {
+    title: "XO Lounge",
+    text: "Tic-tac-toe against a bot. Pick Easy, Medium or Hard. Hard plays perfectly: the best you can do is a draw.",
+    button: "❌⭕ Play XO",
+    activity: "xo",
+  },
+  "sky-hop": {
+    title: "Sky Hop",
+    text: "Firewall Flyer: a city pigeon flaps through the gaps in the firewalls. The walls get faster the further you fly.",
+    button: "🐦 Play Firewall Flyer",
+    activity: "flappy",
+  },
+  "ring-rally": {
+    title: "Ring Road Rally",
+    text: "Three laps of the Arcade Pier's ring road against three bot drivers. Shift for a boost, and watch the start lights.",
+    button: "🏁 Start a race",
+  },
+};
+
+function RaceButton() {
+  const startRace = useCityStore((s) => s.startRace);
+  return (
+    <button type="button" className="welcome-enter mt-5 w-full" onClick={startRace}>
+      🏁 Start a race
+    </button>
+  );
 }
 
 /** Details for the building you are standing at. Esc or the close button returns to the city. */

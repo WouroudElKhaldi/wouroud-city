@@ -6,8 +6,8 @@ import type { DistrictId } from "./districts";
  */
 export type RoomScene = `room:${DistrictId}:${string}`;
 
-/** Districts whose content buildings have interiors. */
-export const ROOM_DISTRICTS: DistrictId[] = ["business", "projects"];
+/** Districts whose content buildings have interiors: all of them. */
+export const ROOM_DISTRICTS: DistrictId[] = ["business", "projects", "skills", "campus", "training", "languages", "hobbies", "arcade"];
 
 export const roomScene = (district: DistrictId, id: string): RoomScene => `room:${district}:${id}`;
 

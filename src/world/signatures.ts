@@ -162,6 +162,9 @@ const S: Record<string, Signature> = {
 
   // Arcade
   "full-stack-arcade": { emblem: "joystick", accent: "#fef08a" },
+  "xo-lounge": { emblem: "target", accent: "#67e8f9" },
+  "sky-hop": { emblem: "rocket", accent: "#fde68a" },
+  "ring-rally": { emblem: "flame", accent: "#fca5a5" },
 };
 
 const SHAPES: TowerShape[] = ["box", "cylinder", "hex", "tapered", "stepped", "twisted"];
