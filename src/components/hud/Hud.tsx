@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useCityStore } from "@/state/useCityStore";
 import { districtById, landmarkDoorstep } from "@/world/districts";
 import { seedContent } from "@/content/seed";
-import { parseRoom, ROOM, sceneDistrict } from "@/world/interiors";
+import { parseRoom, roomSize, sceneDistrict } from "@/world/interiors";
 import { computeDistrictLayout } from "@/world/layout";
 import { PERSONAS } from "@/world/personas";
 import { useIsTouch } from "@/world/touch";
@@ -69,7 +69,7 @@ export function Hud() {
   const nextStop = () => {
     if (!p) return;
     if (room) {
-      setWaypoint({ x: 0, z: ROOM.depth / 2 - 1, label: "the way out" });
+      setWaypoint({ x: 0, z: roomSize(room.id).depth / 2 - 1, label: "the way out" });
       return;
     }
     if (district) {

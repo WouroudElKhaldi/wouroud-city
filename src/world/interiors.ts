@@ -24,4 +24,23 @@ export function sceneDistrict(scene: string): DistrictId | null {
 }
 
 /** Room size: x across, z from the back wall to the entrance. */
-export const ROOM = { width: 24, depth: 18, height: 5.2 };
+export type RoomSize = { width: number; depth: number; height: number };
+
+export const ROOM: RoomSize = { width: 24, depth: 18, height: 5.2 };
+
+/** Sahme Trading is a whole headquarters floor: departments around a trading floor. */
+export const HQ_ROOM: RoomSize = { width: 44, depth: 32, height: 5.6 };
+
+/** Develeb is a community hub: a stage with audience rows, and the website's sections on its walls. */
+export const DEVELEB_ROOM: RoomSize = { width: 36, depth: 26, height: 5.4 };
+
+/** Codi Tech is a bootcamp campus: a classroom, the graduates and the Talent Expo. */
+export const CODI_ROOM: RoomSize = { width: 30, depth: 22, height: 4.8 };
+
+/** Life Sculptor: a student hub with a studio for its free virtual sessions. */
+export const LIFE_ROOM: RoomSize = { width: 26, depth: 20, height: 4.6 };
+
+const SIZES: Record<string, RoomSize> = { sahme: HQ_ROOM, develeb: DEVELEB_ROOM, codi: CODI_ROOM, "life-sculptor": LIFE_ROOM };
+
+/** The size of a building's room. */
+export const roomSize = (id: string): RoomSize => SIZES[id] ?? ROOM;

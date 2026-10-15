@@ -9,7 +9,7 @@ import { Suspense, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useCityStore } from "@/state/useCityStore";
 import { type DistrictId, landmarkDoorstep } from "@/world/districts";
-import { parseRoom, ROOM, type RoomScene, sceneDistrict } from "@/world/interiors";
+import { parseRoom, roomSize, type RoomScene, sceneDistrict } from "@/world/interiors";
 import { worldEnv } from "@/world/env";
 import { isTouchDevice } from "@/world/touch";
 import { DayNight } from "./DayNight";
@@ -48,7 +48,8 @@ export default function CityCanvas() {
 
   // Where the player appears: the plaza, a landmark's doorstep when coming back, or a district's gate.
   const spawn = useMemo(() => {
-    if (parseRoom(scene)) return { position: [0, 2, ROOM.depth / 2 - 4] as [number, number, number], facing: Math.PI };
+    const room = parseRoom(scene);
+    if (room) return { position: [0, 2, roomSize(room.id).depth / 2 - 4] as [number, number, number], facing: Math.PI };
     if (scene !== "hub") {
       const layout = computeDistrictLayout(seedContent, scene as DistrictId);
       // Walking out of a building puts you on its doorstep, facing away from it.
@@ -107,7 +108,7 @@ export default function CityCanvas() {
         <WaypointGuide />
         <Weather />
         <PhotoCapture />
-        {effects && <Effects />}
+        {effects && <Effects indoor={!!parseRoom(scene)} />}
       </Canvas>
     </KeyboardControls>
   );
@@ -146,30 +147,34 @@ function CityEnvironment() {
 /**
  * Post-processing: ambient occlusion grounds everything (contact shading where
  * objects meet the ground and in corners), bloom makes lit windows, neon and
- * lamps glow at night, and a light grade adds contrast and color.
+ * lamps glow at night, and a light grade adds contrast and color. Indoors the occlusion
+ * is left out: at room scale its half-resolution noise speckles fine furniture and glass.
  */
-function Effects() {
+function Effects({ indoor }: { indoor: boolean }) {
   const bloom = useRef<BloomEffect>(null);
   useFrame(() => {
     if (bloom.current) bloom.current.intensity = 0.35 + worldEnv.night * 1.1;
   });
   return (
-    <EffectComposer multisampling={0} enableNormalPass>
-      <SSAO
-        samples={16}
-        rings={4}
-        radius={0.08}
-        intensity={22}
-        luminanceInfluence={0.55}
-        bias={0.03}
-        worldDistanceThreshold={40}
-        worldDistanceFalloff={10}
-        worldProximityThreshold={0.6}
-        worldProximityFalloff={0.2}
-        resolutionScale={0.5}
-        depthAwareUpsampling
-        color="#1a103d"
-      />
+    // Rebuilt when going in or out, so the normal pass exists before the occlusion needs it.
+    <EffectComposer key={indoor ? "indoor" : "outdoor"} multisampling={0} enableNormalPass={!indoor}>
+      {!indoor && (
+        <SSAO
+          samples={16}
+          rings={4}
+          radius={0.08}
+          intensity={22}
+          luminanceInfluence={0.55}
+          bias={0.03}
+          worldDistanceThreshold={40}
+          worldDistanceFalloff={10}
+          worldProximityThreshold={0.6}
+          worldProximityFalloff={0.2}
+          resolutionScale={0.5}
+          depthAwareUpsampling
+          color="#1a103d"
+        />
+      )}
       <Bloom ref={bloom} mipmapBlur luminanceThreshold={0.85} luminanceSmoothing={0.2} intensity={0.4} radius={0.7} />
       <HueSaturation saturation={0.1} />
       <BrightnessContrast contrast={0.07} />

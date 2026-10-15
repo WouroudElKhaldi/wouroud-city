@@ -20,7 +20,83 @@ converted web files in `public/models/rb` are. Re-download them only if you need
    now `public/env/sky_512.hdr`. **Every 3D `<Text>` must pass `font={TEXT_FONT}`** (`world/fonts.ts`,
    files in `public/fonts`): without it troika fetches fonts from cdn.jsdelivr.net and the whole scene
    suspends until that answers (in a sandbox without that host the city never appears at all).
-0. **Luxury pass + Sahme trading floor + sizing (latest).**
+0. **Reltrix in the Sahme HQ, Codi Tech campus, Life Sculptor hub (latest).**
+   - **Reltrix** (`Reltrix.tsx`): the trading-technology infrastructure Wouroud's team builds (SAHMEE
+     Technology = Reltrix's UK brand in the region). Eight product totems on the Sahme trading floor (Web
+     Trader, Invest Trader, AI Trader with animated sentiment bubbles, Prop Trading, CRM & Back Office, OMS,
+     Bridge & Connectivity, Plug-ins), drawn in Reltrix's near-black/cyan look; E or click tells what each
+     does. Engineering dept: Reltrix neon, "Build. Plug. Launch." ecosystem wall, product screens on the
+     team's desks. Lobby: SAHMEE Group panel with its five entities. Sources: reltrix.com (+ /products,
+     /ecosystem), the Reltrix expo brochure, sahmee.com, ai.sahmee.com.
+   - **Codi Tech** (`CodiCampus.tsx`, `CODI_ROOM` 30 × 22): bright campus in the logo's colors; the
+     radiating "C" as a sculpture of colored bars (click: ripple), MERN lesson screen, sprint board,
+     classroom of double desks with laptops (24 seats, 6 students), instructor desk, graduates wall
+     (cohorts Z01/B08/T02/B06 from Codi's Instagram highlights), Talent Expo poster (March 4th 2024),
+     "My bootcamp" wall (5 MERN apps, highlights, tech), graduation cap you can toss.
+   - **Life Sculptor** (`LifeSculptorHub.tsx`, `LIFE_ROOM` 26 × 20): the live site's mint/navy/lavender;
+     hero with count-up stats (3000+ students, 700+ volunteers, 5800+ certificates), virtual-session studio
+     (video-call screen, ring light, host desk), departments (Life Coders, Psychosocial Club, Academics),
+     "Why choose us", volunteer stars (click), study table, lounge, clover sculpture, and her role with a
+     note that **her redesign isn't online: the team went back to the old design** (the wall shows the live
+     old site). Instagram posts need a login (not done); bios were readable without one.
+   - `roomKit.tsx`: shared `ModernShell` (brand colors, concrete/oak/terrazzo floor), canvas helpers
+     (`wrap`, `box`, `dots`, `useCanvas`, `Panel`); Develeb now uses it. Branded rooms are listed in
+     `BRANDED` in `InteriorScene.tsx` (they draw their own shell). Laptops now face their users.
+1. **Develeb community hub.** Develeb's room (`DevelebHub.tsx`, 36 × 26 × 5.4 m, `DEVELEB_ROOM`)
+   is designed in the develeb.org look (the owner designed that site's UI/UX): navy #061b2e, green
+   #10c38e, off-white, the pixel cedar, green event cards with contour lines and dot grids. It replaces the
+   luxury shell for this room (polished concrete, navy wainscoting with a green line, dark ceiling with
+   joists and linear LEDs, clerestory windows). Stage with the site's **typing hero** as backdrop (its two
+   buttons are clickable), lectern, three panel armchairs on the 0.35 m stage; 40 audience chairs
+   (`ConferenceChair`, new in `Furniture.tsx`, same body-fitted seat) with attendees; walls = site
+   sections: Our Latest Events (6 cards, click), Our Latest Jobs table + "Find Your Next Job" kiosk (E/click
+   cycles jobs), "I designed the Develeb website" (Home/Jobs/Events mockups) + Wouroud's design desk (site
+   + design tool screens, tablet, nameplate), Why Join Us? (6 testimonials), Stay in the Loop (click, no
+   data collected), Meet Our Founders, a scrolling partners strip; an about wall with count-up stats
+   (4000+/500+/30+) and her role on the front, "What I did at Develeb" + tech on the back; a voxel cedar
+   sculpture (click); a coworking table with coworkers. Content came from the owner's notes on the site.
+   - The owner's reference files in the repo root (`Screenshot *.png`, `develebcontent.md`) must
+     **never** be committed or pushed. They are listed in `.git/info/exclude` (local only).
+   - `Person` now takes `floor` (the world height under a seat) for the seated foot fix, so feet rest on
+     a stage too; `SeatedPerson` moved to `Furniture.tsx`.
+   - Testing tip: if the player stands up right after `sit()`, a movement key is stuck in the preview pane;
+     dispatch `keyup` for WASD/arrows/Space on `window`.
+1. **Sahme Trading HQ + body-fitted furniture.** The owner disliked the first Sahme office and
+   asked for a much bigger office with departments, luxurious and close to real, and for every pose to be
+   checked in screenshots (no knees inside chairs).
+   - `SahmeHQ.tsx`: Sahme's room is now a 44 × 32 × 5.6 m headquarters floor (`HQ_ROOM`; rooms have per-id
+     sizes via `roomSize(id)` and a `useRoom()` context in `InteriorScene.tsx`). Lobby (company wall with
+     roles/summary and "What I do here" on its back, black-marble reception with a seated receptionist,
+     Chesterfield lounge, bull, coins, slots, coffee bar, clocks), a trading floor (12 triple-screen desks
+     under a hanging four-sided live market screen), and 8 glass-walled departments with gold signs:
+     Marketing, Sales, Operations, Risk Management (back row, doors on the corridor), Accounting and HR
+     (left), Software Engineering (Wouroud's desk + nameplate, whiteboard, neon, tech wall, racks, beanbags)
+     and Financial Counseling (right). Each has its own screens (canvas-drawn: campaign, analytics, CRM,
+     ops dashboard, ledger, risk heatmap, world map, sales leaderboard), rug, pendants and a light.
+     Interactive: sales **gong** and accounting **vault** (click), globe (click to spin), plus the old
+     bull/coins/ducks/slots. 12 seated coworkers + 2 walkers; every free chair/sofa seat is sit-able.
+   - `Furniture.tsx`: luxury pieces at real size (walnut desks with brass sled legs and leather pads,
+     executive chairs, guest chairs, Chesterfield sofas/armchairs, bookcases, credenzas, filing cabinets,
+     marble tables, pendants, floor/banker's lamps, plants, rugs, paintings, glass walls with doors).
+     `luxury.ts`: shared walnut/leather/velvet/brass/marble/glass finishes (canvas textures) and
+     `batchStatic` (`<Batch>`): merges static furniture into one mesh per material and takes the
+     originals out of matrix updates/rendering (HQ renders cheaper than the hub).
+   - **Seats are cut to the measured sitting pose** (`SEAT` in `Furniture.tsx`): hips 0.64–0.66 m, knees
+     26–28 cm ahead of the seat point; cushion slopes 0.52 → 0.46 m, backrest face 22 cm behind the seat
+     point, open under the front edge for the calves, chair base turned so no spoke is under the feet.
+     Use these pieces (or that geometry) for any new seat. Checked in side close-ups: office chair
+     (woman, man, coworkers), sofa, guest chair.
+   - `Person.tsx`: the women's Rocketbox chair-sit clip pushed the toes ~7 cm into the floor; while seated,
+     each foot is now tipped up at the ankle until the ball of the foot rests on the floor (skips feet that
+     are already above it, e.g. on the horse).
+   - Indoors the SSAO pass is off (it speckled furniture and glass at room scale); the effect stack remounts
+     when going in/out.
+   - Dev testing tip: bone heights via `skeleton.bones` world positions; side close-ups by sitting the
+     player (`__store.getState().sit({...})`), `controls.rotateTo`, a narrow `camera.fov` and
+     `controls.setFocalOffset(0, 1, 0)`. Merged furniture doesn't hot-reload: reload the page after edits.
+   - Next: give the other offices/studios the new furniture (they still use the old simple desks/sofas),
+     then the luxury look outdoors.
+1. **Luxury pass + Sahme trading floor + sizing.**
    - Every room (`InteriorScene.tsx` → `Shell`): marble floor with gold inlay, walnut wainscoting,
      ivory walls, crown molding, walnut pilasters, coffered ceiling, gold chandeliers, sconces, olive
      trees in brass planters, black-and-gold window frames. Owner wants the **whole city to feel
@@ -74,7 +150,8 @@ converted web files in `public/models/rb` are. Re-download them only if you need
      (keep the `CharacterAnimation` type — move it into `Person.tsx` first), `public/models/people*`.
 
 ### Next up (owner said "work one by one" through this list)
-1. Finish/verify walk-in interiors (above).
+1. Finish/verify walk-in interiors: Sahme HQ and Develeb are done and checked; move the other offices and studios
+   onto `Furniture.tsx` pieces (real-size, body-fitted seats) and check them the same way.
 2. Crochet toy in the Hobby Quarter.
 3. New robot avatar (still the old primitive model in `Avatar.tsx`).
 4. Jump/fall animations; delete the old character code.
