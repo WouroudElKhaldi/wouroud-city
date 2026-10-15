@@ -392,6 +392,8 @@ export function Seats({ seats }: { seats: Seat[] }) {
   return null;
 }
 
+const BENCH_SHIFT = 0.16;
+
 /** One bench's geometry, split into wooden slats and the cast-iron frame (local: you sit facing +z). */
 function benchGeometry() {
   const wood: THREE.BufferGeometry[] = [];
@@ -422,7 +424,12 @@ function benchGeometry() {
     for (const k of Object.keys(n.attributes)) if (!["position", "normal", "uv"].includes(k)) n.deleteAttribute(k);
     return n;
   };
-  return { wood: mergeGeometries(wood.map(strip))!, iron: mergeGeometries(iron.map(strip))! };
+  // Fit the measured sitting pose (Furniture.tsx SEAT): the seat point is ~12 cm behind the front
+  // edge, so the whole bench moves forward by BENCH_SHIFT relative to the seat point.
+  return {
+    wood: mergeGeometries(wood.map(strip))!.translate(0, 0, BENCH_SHIFT),
+    iron: mergeGeometries(iron.map(strip))!.translate(0, 0, BENCH_SHIFT),
+  };
 }
 
 const IRON = new THREE.MeshStandardMaterial({ color: "#1c1b20", metalness: 0.75, roughness: 0.38 });
@@ -436,7 +443,7 @@ export function ParkBenches({ seats }: { seats: Seat[] }) {
   const geo = useMemo(() => benchGeometry(), []);
   const caps = useMemo(() => {
     const g = new THREE.SphereGeometry(0.035, 10, 8);
-    return mergeGeometries([g.clone().translate(-0.84, 0.69, 0.03), g.clone().translate(0.84, 0.69, 0.03)])!;
+    return mergeGeometries([g.clone().translate(-0.84, 0.69, 0.03 + BENCH_SHIFT), g.clone().translate(0.84, 0.69, 0.03 + BENCH_SHIFT)])!;
   }, []);
   const wood = useRef<THREE.InstancedMesh>(null);
   const iron = useRef<THREE.InstancedMesh>(null);
@@ -453,7 +460,7 @@ export function ParkBenches({ seats }: { seats: Seat[] }) {
           <CuboidCollider
             key={s.id}
             args={[1.0, 0.5, 0.33]}
-            position={[s.x - Math.sin(s.facing) * 0.3, 0.5, s.z - Math.cos(s.facing) * 0.3]}
+            position={[s.x - Math.sin(s.facing) * (0.3 - BENCH_SHIFT), 0.5, s.z - Math.cos(s.facing) * (0.3 - BENCH_SHIFT)]}
             rotation={[0, s.facing, 0]}
           />
         ))}

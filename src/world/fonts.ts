@@ -6,3 +6,5 @@
  */
 export const TEXT_FONT = "/fonts/inter-400.woff";
 export const TEXT_FONT_BOLD = "/fonts/inter-700.woff";
+/** Text with Arabic letters: Inter merged with Noto Sans Arabic (both SIL OFL 1.1, merged with fontTools), picked automatically by Text3D. */
+export const TEXT_FONT_ARABIC = "/fonts/inter-arabic-400.woff";

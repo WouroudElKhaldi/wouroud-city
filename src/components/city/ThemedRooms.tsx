@@ -11,7 +11,7 @@ import type { DistrictId } from "@/world/districts";
 import { signatureFor } from "@/world/signatures";
 import { sfx } from "@/world/sfx";
 import { Emblem } from "./Emblems";
-import { Bookcase, FloorLamp, Painting, Rug, Sofa, sofaSeats, Table, TallPlant } from "./Furniture";
+import { Bookcase, FloorLamp, Painting, Rug, SideChair, Sofa, sofaSeats, Table, TallPlant } from "./Furniture";
 import { OnWall, useRoom } from "./InteriorScene";
 import { emitBurst } from "./Particles";
 import { box, font, Panel, useCanvas, wrap } from "./roomKit";
@@ -419,6 +419,9 @@ function LectureHall({ edu, accent }: { edu: Education; accent: string }) {
           <Table position={[0, 0, -0.15]} width={1.2} depth={0.55} top="walnut" />
         </group>
       ))}
+      {seats.map((st) => (
+        <SideChair key={st.id} position={[st.x, 0, st.z]} facing={st.facing} leather="cognac" />
+      ))}
       <Seats seats={seats} />
       <OnWall side="right">
         <Bookcase position={[W / 2 - 0.35, 0, -3]} rotationY={-Math.PI / 2} width={2.4} seed={5} />
@@ -662,6 +665,9 @@ function LanguageCafe({ lang, accent }: { lang: Language; accent: string }) {
           </RigidBody>
           <Table position={[t.x, 0, t.z]} width={0.9} depth={0.9} top={i % 2 ? "marbleGreen" : "marbleWhite"} />
         </group>
+      ))}
+      {seats.map((st) => (
+        <SideChair key={st.id} position={[st.x, 0, st.z]} facing={st.facing} leather={st.facing > 0 ? "emerald" : "cognac"} />
       ))}
       <Seats seats={seats} />
       <OnWall side="left">
