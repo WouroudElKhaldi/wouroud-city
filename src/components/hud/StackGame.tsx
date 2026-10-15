@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCityStore } from "@/state/useCityStore";
 import { sfx } from "@/world/sfx";
+import { Leaderboard } from "./Leaderboard";
 
 /**
  * "Full Stack": the Arcade Pier game. A block slides across; tap (or press Space)
@@ -335,6 +336,7 @@ export function StackGame() {
                 {score >= best && score > 0 ? "New best! 🎉" : `Best: ${best}`}
                 {score >= 12 ? " · Senior-level stacking." : score >= 6 ? " · Solid full stack." : " · Every senior started with HTML."}
               </p>
+              <Leaderboard game="stack" score={score} />
               <div className="mt-5 flex justify-center gap-2">
                 <button type="button" className="welcome-enter" onClick={restart}>
                   Play again

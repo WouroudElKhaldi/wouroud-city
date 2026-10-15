@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCityStore } from "@/state/useCityStore";
 import { sfx } from "@/world/sfx";
+import { Leaderboard } from "./Leaderboard";
 
 /**
  * "Firewall Flyer": a city pigeon flaps through the gaps in scrolling firewalls.
@@ -300,6 +301,7 @@ export function FlappyGame() {
               <p className="text-sm tracking-[0.25em] text-amber-200 uppercase">Blocked by the firewall!</p>
               <p className="mt-2 text-4xl font-extrabold text-white">{score}</p>
               <p className="text-violet-200">{score >= best && score > 0 ? "New best! 🎉" : `Best: ${best}`}</p>
+              <Leaderboard game="flappy" score={score} />
               <div className="mt-5 flex justify-center gap-2">
                 <button type="button" className="welcome-enter" onClick={restart}>
                   Fly again

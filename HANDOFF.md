@@ -13,6 +13,14 @@ Big source assets (Rocketbox FBX/TGA, ~3.5 GB) are **not** in git (`.assets-src/
 converted web files in `public/models/rb` are. Re-download them only if you need to convert new avatars.
 
 ### Latest work (newest first)
+-3. **Order of tasks.md, continued (cloud).** Lobby fronts on every building (`lobbyFront` in `Building.tsx`),
+   LOD (`NearOnly`), chairs in cafés and lecture halls, Arabic 3D text in `/fonts/inter-arabic-400.woff`
+   (Inter + Noto Sans Arabic merged with fontTools; `Text3D` picks it for Arabic strings), benches fitted to
+   the sitting pose (`BENCH_SHIFT`), a procedural jump/fall pose (`AIR_POSE` in `Person.tsx`), bronze statues
+   (`Statue` in `Person.tsx`, `PlazaStatues` in `HubScene.tsx`), and the **arcade leaderboard**: `mongodb`
+   driver in `src/server/db.ts` (MONGO_DB_URL, fallback MONGO_DB_LEGACY_URL, db name MONGO_DB_NAME or
+   `wouroud-city`), `src/app/api/scores/route.ts` (GET top 10 / POST, Zod + range checks + rate limit),
+   `hud/Leaderboard.tsx`. Set MONGO_DB_URL in Vercel's environment variables for it to go live.
 -2. **Big cloud session (2026-10-15): realistic outdoors, rooms everywhere, games, restaurants.** All in
    `tasks.md` (owner's priority list P1–P15 with statuses). The essentials:
    - **Outdoors** (`surfaces.ts`, `plants.ts`, `GrassField.tsx`, `Playthings.tsx`, `StreetProps.tsx`,

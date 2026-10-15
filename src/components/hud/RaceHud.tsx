@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useCityStore } from "@/state/useCityStore";
+import { Leaderboard } from "./Leaderboard";
 
 const ordinal = (n: number) => `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"}`;
 
@@ -28,6 +29,7 @@ export function RaceHud() {
           <p className="text-violet-200">
             {won ? "You beat every bot! 🏆" : race.position === 2 ? "So close. One more go?" : "The bots were quick today."} · {race.time?.toFixed(1)} s
           </p>
+          {won && race.time && <Leaderboard game="rally" score={Math.round(race.time * 10) / 10} unit=" s" />}
           <div className="mt-5 flex justify-center gap-2">
             <button type="button" className="welcome-enter" onClick={startRace}>
               Race again

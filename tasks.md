@@ -33,16 +33,16 @@ P5b. ✅ **Arcade Pier games** (owner, 2026-10-15): today only "Full Stack" can 
 P5c. 🔄 **Hyperfocus studio built from the app itself** (owner, 2026-10-15): everything inside its building comes from Hyperfocus (what it is, its features, the companion pet, the music player…) plus **real screenshots**. The Hyperfocus source is on the owner's laptop, not in the cloud: the local session should take screenshots of the running app and save them as `public/images/projects/hyperfocus/*.png` (the studio shows any images listed in the project's `media`) — BUILT (`HyperfocusStudio.tsx`); **screenshots still to add** from the owner's laptop (put paths in the project's `media`)
 P5d. ✅ **A unique interior for every skill** (owner, 2026-10-15): each skill tower's room in that skill's own colors, design and theme, with its own interactive things (React component tree that re-renders, Docker containers to stack, Git branches to commit, SQL tables to query, CSS box model to restyle…) — DONE: `SkillRooms.tsx` (`SKILL_THEMES`: colors, tagline, code, words and one of 14 centerpieces per skill)
 P5e. ✅ **Restaurants and cafés you can really use** (owner, 2026-10-15): enter, sit and rest, read the menu, order, the food is served and you eat it — DONE: Mezze House, Shawarma Corner, Pizza & Code added; every shop enterable (`Shops.tsx`, menus in `world/shops.ts`, `hud/MenuCard.tsx`)
-P6. 🔄 **Luxury everywhere** (from the interiors pass): walnut/leather/velvet office desks and studio sofas, then the same luxury look outdoors (plazas, benches, lamps, building lobbies) — offices/studios now use the walnut/leather `Furniture.tsx` pieces; outdoor benches (walnut + cast iron + brass) and lamps (black iron + brass) done; **building lobbies still open**
-P7. 🔄 Verify the walk-in interiors (Office company wall, a project Studio, sitting on chairs/sofas, leaving by the door), then tick task 22 — checked by screenshots: an office (CodSoft), the skill labs, a café with ordering + eating, Freelance and Hyperfocus studios; still to check: leaving by the door on every room type
-P8. ⬜ Check the car rows/spacing in the hub after the car shrink, and the bench sitting pose outdoors
+P6. ✅ **Luxury everywhere** (from the interiors pass): walnut/leather/velvet office desks and studio sofas, then the same luxury look outdoors (plazas, benches, lamps, building lobbies) — offices/studios now use the walnut/leather `Furniture.tsx` pieces; outdoor benches (walnut + cast iron + brass) and lamps (black iron + brass) done; **building lobbies still open** — lobbies DONE: luxury lobby fronts on every building (granite threshold, carpet, brass frames and lanterns, topiaries)
+P7. ✅ Verify the walk-in interiors (Office company wall, a project Studio, sitting on chairs/sofas, leaving by the door), then tick task 22 — checked by screenshots: an office (CodSoft), the skill labs, a café with ordering + eating, Freelance and Hyperfocus studios; still to check: leaving by the door on every room type — all room types checked on screen (lecture hall, certificate gallery, language café, hobby studio, arcade hall, Codi); fixes: chairs at café tables and lecture desks, Arabic font
+P8. ✅ Check the car rows/spacing in the hub after the car shrink, and the bench sitting pose outdoors — hub cars park side by side 4.2 m apart (~1.8 m gaps after the shrink); district rows 6.4 m nose to tail (~2.3 m gaps); park benches moved forward 16 cm to fit the measured sitting pose
 P9. ✅ Crochet toy in the Hobby Quarter (task 25) — the crochet corner in the yarn-shop hobby studio (`CrochetCorner` in `ThemedRooms.tsx`)
 P10. ✅ New robot avatar (task 39) — `Avatar.tsx` → `Robot`
-P11. 🔄 Jump/fall animations; delete the old character code (clothes.ts, hijab.ts, Hair.tsx, garments.ts, body.ts, Character.tsx, public/models/people*, public/models/hair) — old Quaternius code and models deleted; **jump/fall clips still missing** (Rocketbox has none; consider a Mixamo-free CC0 clip or a procedural pose)
-P12. 🔄 Fast travel between districts, wet-ground look in rain, statues / kids playing in plazas — fast travel in the big map (M) and wet ground in rain done; **statues / kids playing still open** (Rocketbox has no children)
-P13. ⬜ Batch the skill labels, LOD for far buildings (tasks 35, 36)
-P14. ⬜ Listen to the per-district music; check the car rows in the 7 districts other than Business
-P15. 🔄 Data and admin: Vercel deploy ✅; MongoDB Atlas account ✅ (owner has MONGO_DB_* env vars locally); still to build: /admin (Auth.js + Google), content in MongoDB, leaderboard; ⛔ Cloudflare R2 account for uploads
+P11. ✅ Jump/fall animations; delete the old character code (clothes.ts, hijab.ts, Hair.tsx, garments.ts, body.ts, Character.tsx, public/models/people*, public/models/hair) — old Quaternius code and models deleted; **jump/fall clips still missing** (Rocketbox has none; consider a Mixamo-free CC0 clip or a procedural pose) — air pose added procedurally in `Person.tsx` (`AIR_POSE`); check it on a real screen (the cloud renderer is too slow to catch a jump)
+P12. 🔄 Fast travel between districts, wet-ground look in rain, statues / kids playing in plazas — fast travel in the big map (M) and wet ground in rain done; **statues / kids playing still open** (Rocketbox has no children) — bronze statues by the hub fountain DONE (`Statue` in `Person.tsx`); kids still open (no child models)
+P13. ✅ Batch the skill labels, LOD for far buildings (tasks 35, 36) — LOD: lobby fronts, name signs and street props only within 70 m (`NearOnly` in `Building.tsx`); car models not compressed (CarModel cuts doors from the geometry; quantizing is risky)
+P14. 🔄 Listen to the per-district music; check the car rows in the 7 districts other than Business — car rows checked (see P8); the music still needs a human ear
+P15. 🔄 Data and admin: Vercel deploy ✅; MongoDB Atlas account ✅ (owner has MONGO_DB_* env vars locally); still to build: /admin (Auth.js + Google), content in MongoDB, leaderboard; ⛔ Cloudflare R2 account for uploads — **arcade leaderboard DONE**: `/api/scores` (MongoDB driver, `src/server/db.ts`, Zod-checked, rate-limited) and `hud/Leaderboard.tsx` on the Full Stack, Firewall Flyer and rally result screens; needs `MONGO_DB_URL` on Vercel. **Admin next**: needs Google OAuth keys (AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET) and AUTH_SECRET from the owner
 P16. ⬜ **Next level** (owner, 2026-10-15: "not just a room in every building, take the city to the next level"). Directions to pick from, in the order the owner chooses:
    a. A living city: real day/night cycle, buses and scooters, people sitting in cafés / walking dogs / chatting, people who react to you, birds, plaza events, ambient sound per place
    b. A story to play: quests and Easter eggs, XP, badges, a journal, a guided "Meet Wouroud" tour for recruiters
@@ -53,7 +53,7 @@ P16. ⬜ **Next level** (owner, 2026-10-15: "not just a room in every building, 
 
 ## 🔄 In progress
 
-Going in order (owner, 2026-10-15): P6 lobbies → P7 → P8 → P11 → P12 → P13 → P14 → P15. P5c waits for screenshots from the laptop.
+Going in order (owner, 2026-10-15). Next: P15 admin (needs Google OAuth keys), then P16 next level. P5c waits for screenshots from the laptop; P14 music needs a human ear.
 
 ## Roadmap (in build order)
 
@@ -93,7 +93,7 @@ Going in order (owner, 2026-10-15): P6 lobbies → P7 → P8 → P11 → P12 →
 30. ⛔ Admin dashboard `/admin` (Auth.js, only the owner's Google account)
 31. ⛔ Content in MongoDB Atlas M0, validated by the Zod schema, static generation + on-demand revalidation (seed.ts stays as fallback)
 32. ⛔ Media uploads to Cloudflare R2 (paintings, screenshots, videos), compressed on upload
-33. ⛔ Arcade leaderboard in MongoDB
+33. ✅ Arcade leaderboard in MongoDB (`/api/scores`, needs MONGO_DB_URL on Vercel)
 34. 🔄 Deploy on Vercel Hobby ✅ (https://wouroud-city.vercel.app, Vercel Analytics on); ⬜ custom domain
 
 ### F. Polish and performance
