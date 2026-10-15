@@ -9,6 +9,8 @@ import { nightGlowMaterials, worldEnv } from "@/world/env";
 import { palette } from "@/world/palette";
 
 const SHADOW_SIZE = 40;
+/** Length of a whole day in live mode, in seconds. */
+const DAY_SECONDS = 20 * 60;
 
 /**
  * Sun, moon, sky, fog and the night factor everything else reads.
@@ -53,16 +55,40 @@ export function DayNight({
     };
   }, [scene]);
 
+  const sky = useRef<React.ComponentRef<typeof Sky>>(null);
+  const sunDir = useMemo(() => new THREE.Vector3(-34, 38, -22).normalize(), []);
+  const warm = useMemo(() => new THREE.Color("#ffb070"), []);
+  const dusk = useMemo(() => new THREE.Color("#f2a5b8"), []);
+
   useFrame((_, delta) => {
-    const target = timeMode === "night" ? 1 : 0;
-    worldEnv.night = THREE.MathUtils.damp(worldEnv.night, target, 2.2, delta);
+    // Live mode: the sun goes round once every DAY_SECONDS; how high it is decides day and night.
+    let target = timeMode === "night" ? 1 : 0;
+    let golden = 0;
+    if (timeMode === "live") {
+      const t = (Date.now() / 1000 / DAY_SECONDS) % 1;
+      const angle = t * Math.PI * 2;
+      const elevation = Math.sin(angle);
+      sunDir.set(Math.cos(angle) * -0.8, elevation, -0.45 + Math.cos(angle) * 0.2).normalize();
+      target = THREE.MathUtils.clamp((0.08 - elevation) / 0.28, 0, 1);
+      golden = Math.max(0, 1 - Math.abs(elevation - 0.05) / 0.22);
+    } else {
+      sunDir.set(-34, 38, -22).normalize();
+    }
+    worldEnv.night = THREE.MathUtils.damp(worldEnv.night, target, timeMode === "live" ? 6 : 2.2, delta);
     const n = worldEnv.night;
+    const dark = n > 0.5;
+    if (useCityStore.getState().dark !== dark) useCityStore.getState().setDark(dark);
 
     // Other components (the environment map loader) may reset these; re-own them if so.
     if (!(scene.background instanceof THREE.Color)) scene.background = new THREE.Color();
     if (!(scene.fog instanceof THREE.Fog)) scene.fog = new THREE.Fog(palette.day.fog, 70, 260);
     scene.background.lerpColors(colors.daySky, colors.nightSky, n);
     scene.fog.color.lerpColors(colors.dayFog, colors.nightFog, n);
+    // Sunrise and sunset: a warm, rosy light low in the sky.
+    if (golden > 0) {
+      scene.background.lerp(dusk, golden * 0.45);
+      scene.fog.color.lerp(dusk, golden * 0.4);
+    }
     scene.environmentIntensity = THREE.MathUtils.lerp(0.42, 0.22, n);
 
     if (hemi.current) {
@@ -73,17 +99,21 @@ export function DayNight({
 
     if (sun.current) {
       sun.current.color.lerpColors(colors.daySun, colors.nightSun, n);
-      sun.current.intensity = THREE.MathUtils.lerp(4.2, 0.35, n);
+      if (golden > 0) sun.current.color.lerp(warm, golden * 0.7);
+      sun.current.intensity = THREE.MathUtils.lerp(4.2, 0.35, n) * (1 - golden * 0.35);
       // Keep the shadow camera centered on the player so shadows stay sharp everywhere.
       const p = followTarget.current;
       if (p) {
-        sun.current.position.set(p.x - 34, p.y + 38, p.z - 22);
+        // At night the moon lights from above the same way; keep it at least a little up.
+        const up = Math.max(0.25, Math.abs(sunDir.y));
+        sun.current.position.set(p.x + sunDir.x * 55, p.y + up * 55, p.z + sunDir.z * 55);
         sun.current.target.position.set(p.x, p.y, p.z);
         sun.current.target.updateMatrixWorld();
       }
     }
 
     if (skyGroup.current) skyGroup.current.visible = n < 0.5;
+    sky.current?.material.uniforms.sunPosition?.value.copy(sunDir).multiplyScalar(400);
     if (starsGroup.current) starsGroup.current.visible = n > 0.25;
 
     for (const [material, glow] of nightGlowMaterials) {
@@ -110,7 +140,7 @@ export function DayNight({
         shadow-camera-far={160}
       />
       <group ref={skyGroup}>
-        <Sky distance={4000} sunPosition={[-34, 38, -22]} turbidity={6} rayleigh={1.2} mieCoefficient={0.004} />
+        <Sky ref={sky} distance={4000} sunPosition={[-34, 38, -22]} turbidity={6} rayleigh={1.2} mieCoefficient={0.004} />
       </group>
       <group ref={starsGroup} visible={false}>
         <Stars radius={300} depth={80} count={4000} factor={6} saturation={0.6} fade speed={0.6} />

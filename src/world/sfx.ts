@@ -69,8 +69,21 @@ function track(seed: number) {
   }
 }
 
+/** A cricket: a few quick high chirps. */
+function cricket() {
+  for (let i = 0; i < 3; i++) tone(4200 + Math.random() * 300, 0.04, "sine", 0.02, undefined, i * 0.09);
+}
+
+/** A songbird: a short rising and falling trill. */
+function songbird() {
+  const base = 2200 + Math.random() * 900;
+  for (let i = 0; i < 4; i++) tone(base + (i % 2) * 500, 0.07, "sine", 0.025, base * 1.2, i * 0.11);
+}
+
 export const sfx = {
   track,
+  cricket,
+  songbird,
   rustle: () => noise(0.35, 0.1, 2400),
   pop: () => tone(520, 0.12, "triangle", 0.18, 900),
   kick: () => {

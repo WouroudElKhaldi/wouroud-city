@@ -13,7 +13,7 @@ import { Fountain } from "./StreetDetails";
 import { Foliage } from "./Foliage";
 import { GrassField } from "./GrassField";
 import { Beacons } from "./Guidance";
-import { makeWalkers, Pedestrians } from "./Pedestrians";
+import { ChatGroups, type ChatGroup, makeWalkers, Pedestrians } from "./Pedestrians";
 import { Statue } from "./Person";
 import { NPC_PEOPLE } from "@/world/outfits";
 import { Balls, Knockables, type ParkedCar, ParkedCars, Pigeons } from "./Playthings";
@@ -103,6 +103,7 @@ export function HubScene() {
       <Knockables spots={HUB_CONES} />
       <ParkedCars cars={HUB_CARS} />
       <Pedestrians walkers={HUB_WALKERS} />
+      <ChatGroups groups={HUB_CHATS} />
     </group>
   );
 }
@@ -124,6 +125,17 @@ export function WorldGround() {
     </group>
   );
 }
+
+/** Little groups chatting on the plaza, between the benches. */
+const HUB_CHATS: ChatGroup[] = [1, 5].map((k, i) => {
+  const a = landmarkPlacement(DISTRICTS[k].id).angle + Math.PI / DISTRICTS.length;
+  return {
+    x: Math.cos(a) * 12.2,
+    z: Math.sin(a) * 12.2,
+    people: i === 0 ? [NPC_PEOPLE[2], NPC_PEOPLE[3], NPC_PEOPLE[8]] : [NPC_PEOPLE[4], NPC_PEOPLE[9]],
+    district: "any",
+  };
+});
 
 const HUB_WALKERS = makeWalkers("hub", "any", [
   { center: [0, 0], radius: 10.5, count: 3 },

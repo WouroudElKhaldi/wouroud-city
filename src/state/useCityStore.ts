@@ -7,7 +7,8 @@ import type { MenuItem } from "@/world/shops";
 import { setMuted } from "@/world/sfx";
 
 export type AvatarKind = "girl" | "guy" | "robot";
-export type TimeMode = "day" | "night";
+/** "live": the sun moves through a whole day every DAY_SECONDS (see DayNight). */
+export type TimeMode = "day" | "night" | "live";
 export type Weather = "clear" | "rain" | "snow" | "fog";
 export const WEATHERS: Weather[] = ["clear", "rain", "snow", "fog"];
 export type SceneId = "hub" | DistrictId | RoomScene;
@@ -94,6 +95,9 @@ type CityState = {
   setAvatar: (avatar: AvatarKind) => void;
   setOutfit: (outfit: string) => void;
   toggleTime: () => void;
+  /** Whether it is dark right now (night, or night time in the live cycle); set by DayNight. */
+  dark: boolean;
+  setDark: (dark: boolean) => void;
   cycleWeather: () => void;
   toggleMuted: () => void;
   setNearby: (nearby: Interactable) => void;
@@ -140,6 +144,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   avatar: "girl",
   outfit: DEFAULT_LOOK,
   timeMode: "day",
+  dark: false,
   weather: "clear",
   muted: false,
   scene: "hub",
@@ -151,7 +156,8 @@ export const useCityStore = create<CityState>((set, get) => ({
   toasts: [],
   setAvatar: (avatar) => set({ avatar, outfit: avatar === "robot" ? get().outfit : LOOKS[avatar][0].id }),
   setOutfit: (outfit) => set({ outfit }),
-  toggleTime: () => set((s) => ({ timeMode: s.timeMode === "day" ? "night" : "day" })),
+  toggleTime: () => set((s) => ({ timeMode: s.timeMode === "day" ? "night" : s.timeMode === "night" ? "live" : "day" })),
+  setDark: (dark) => set({ dark }),
   cycleWeather: () => set((s) => ({ weather: WEATHERS[(WEATHERS.indexOf(s.weather) + 1) % WEATHERS.length] })),
   toggleMuted: () => {
     const muted = !get().muted;

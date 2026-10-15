@@ -3,7 +3,7 @@
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { CapsuleCollider, type RapierRigidBody, RigidBody } from "@react-three/rapier";
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { liveContent } from "@/content/live";
 import { useCityStore } from "@/state/useCityStore";
@@ -50,6 +50,8 @@ function Pedestrian({ walker }: { walker: Walker }) {
   const [animation, setAnimation] = useState<CharacterAnimation>("walk");
   const [line, setLine] = useState<string | null>(null);
   const talkingUntil = useRef(0);
+  // A friendly wave the first time you walk up to someone (then not again for a while).
+  const greet = useRef({ close: false, at: -1e9, until: 0 });
   const toward = useMemo(() => new THREE.Vector3(), []);
   const lines = useMemo(
     () => liveContent.npcLines.filter((l) => l.district === "any" || l.district === walker.district),
@@ -78,14 +80,22 @@ function Pedestrian({ walker }: { walker: Walker }) {
     const dx = playerState.position.x - s.pos.x;
     const dz = playerState.position.z - s.pos.z;
     const playerClose = dx * dx + dz * dz < 3.2 * 3.2;
-    const talking = performance.now() < talkingUntil.current;
+    const now = performance.now();
+    const talking = now < talkingUntil.current;
     if (!talking && line) setLine(null);
+    const g = greet.current;
+    if (playerClose && !g.close && now - g.at > 30000) {
+      g.at = now;
+      g.until = now + 1700;
+    }
+    g.close = playerClose;
+    const waving = now < g.until;
 
     let next: CharacterAnimation = "walk";
     if (playerClose || talking) {
       // Stop and turn to face the visitor.
       s.heading = lerpAngle(s.heading, Math.atan2(dx, dz), delta * 6);
-      next = talking && animation === "emote-yes" ? "emote-yes" : "idle";
+      next = (talking && animation === "emote-yes") || waving ? "emote-yes" : "idle";
     } else if (s.pause > 0) {
       s.pause -= delta;
       next = "idle";
@@ -172,4 +182,95 @@ export function makeWalkers(
       district,
     };
   }
+}
+
+export type ChatGroup = { x: number; z: number; people: PersonLook[]; district: string };
+
+/**
+ * People standing in a little circle, chatting: they take turns talking (speech dots over the
+ * speaker, a nod), turn to look at you when you come close, and press E to hear what they say.
+ */
+export function ChatGroups({ groups }: { groups: ChatGroup[] }) {
+  return (
+    <group>
+      {groups.map((g, i) => (
+        <Suspense key={i} fallback={null}>
+          <Chat group={g} index={i} />
+        </Suspense>
+      ))}
+    </group>
+  );
+}
+
+function Chat({ group, index }: { group: ChatGroup; index: number }) {
+  const [speaker, setSpeaker] = useState(0);
+  const [line, setLine] = useState<string | null>(null);
+  const lines = useMemo(
+    () => liveContent.npcLines.filter((l) => l.district === "any" || l.district === group.district),
+    [group.district],
+  );
+  const heads = useRef<(THREE.Group | null)[]>([]);
+  const where = useMemo(() => new THREE.Vector3(group.x, 0, group.z), [group.x, group.z]);
+  useProximity({
+    id: `chat-${index}`,
+    label: "Join the conversation",
+    radius: 2.8,
+    where,
+    run: () => {
+      setLine(lines[Math.floor(Math.random() * lines.length)]?.text ?? "Welcome to Wouroud's City!");
+      sfx.talk();
+      window.setTimeout(() => setLine(null), 6000);
+    },
+  });
+  useEffect(() => {
+    const t = window.setInterval(() => setSpeaker((s) => (s + 1) % group.people.length), 3200 + index * 400);
+    return () => window.clearInterval(t);
+  }, [group.people.length, index]);
+  const n = group.people.length;
+  useFrame((_, delta) => {
+    const dx = playerState.position.x - group.x;
+    const dz = playerState.position.z - group.z;
+    const close = dx * dx + dz * dz < 4 * 4;
+    heads.current.forEach((h, i) => {
+      if (!h) return;
+      const a = (i / n) * Math.PI * 2;
+      const px = group.x + Math.sin(a) * 0.75;
+      const pz = group.z + Math.cos(a) * 0.75;
+      // Face the middle of the circle, or the visitor when they come close.
+      const target = close ? Math.atan2(playerState.position.x - px, playerState.position.z - pz) : a + Math.PI;
+      h.rotation.y = lerpAngle(h.rotation.y, target, delta * 3);
+    });
+  });
+  return (
+    <group>
+      <RigidBody type="fixed" colliders={false}>
+        <CapsuleCollider args={[0.45, 1]} position={[group.x, 0.9, group.z]} />
+      </RigidBody>
+      {group.people.map((look, i) => {
+        const a = (i / n) * Math.PI * 2;
+        return (
+          <group
+            key={i}
+            ref={(el) => void (heads.current[i] = el)}
+            position={[group.x + Math.sin(a) * 0.75, 0, group.z + Math.cos(a) * 0.75]}
+            rotation-y={a + Math.PI}
+          >
+            <Person look={look} animation={i === speaker ? "emote-yes" : "idle"} detail={false} />
+            {i === speaker && !line && (
+              <Html position={[0, 2.05, 0]} center distanceFactor={9} zIndexRange={[20, 0]}>
+                <div className="npc-bubble">…</div>
+              </Html>
+            )}
+            {i === speaker && line && (
+              <Html position={[0, 2.25, 0]} center distanceFactor={9} zIndexRange={[20, 0]}>
+                <div className="npc-bubble">
+                  <p>{line}</p>
+                </div>
+              </Html>
+            )}
+          </group>
+        );
+      })}
+    </group>
+  );
 }

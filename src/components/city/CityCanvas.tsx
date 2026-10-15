@@ -20,6 +20,7 @@ import { computeDistrictLayout, doorPoint } from "@/world/layout";
 import { HubScene } from "./HubScene";
 import { keyboardMap, Player } from "./Player";
 import { Particles } from "./Particles";
+import { Birds } from "./Birds";
 import { PlayerSpotlight } from "./PlayerSpotlight";
 import { WaypointGuide } from "./Guidance";
 import { Weather } from "./Weather";
@@ -103,6 +104,7 @@ export default function CityCanvas() {
             <Player position={playerPosition} spawn={spawn.position} facing={spawn.facing} />
           </Physics>
         </Suspense>
+        {!parseRoom(scene) && <Birds />}
         <Particles />
         <PlayerSpotlight />
         <WaypointGuide />

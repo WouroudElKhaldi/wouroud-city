@@ -15,7 +15,7 @@ import { CAR_SCALE } from "./CarModel";
  * if you stand there too long. No physics bodies, so they never shove you.
  */
 
-const MODELS = ["sedan", "taxi", "suv", "hatchback-sports", "van", "police"];
+const MODELS = ["sedan", "taxi", "suv", "delivery", "hatchback-sports", "van", "police", "ambulance", "garbage-truck", "firetruck"];
 const CRUISE = 6;
 
 type Driver = { model: string; angle: number; lane: number; dir: 1 | -1; speed: number; blockedFor: number };

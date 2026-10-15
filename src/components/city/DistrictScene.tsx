@@ -17,7 +17,8 @@ import { ParkedHorse } from "./Horse";
 import { WorldGround } from "./HubScene";
 import { useGlowMaterial } from "./materials";
 import { paint, surface } from "./surfaces";
-import { makeWalkers, Pedestrians } from "./Pedestrians";
+import { ChatGroups, type ChatGroup, makeWalkers, Pedestrians } from "./Pedestrians";
+import { NPC_PEOPLE } from "@/world/outfits";
 import { Balls, Knockables, ParkedCars, Pigeons } from "./Playthings";
 import { Portal } from "./Portal";
 import { RaceTrack } from "./RaceTrack";
@@ -77,6 +78,12 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       ]),
     [id, parkEdge, innerRadius],
   );
+
+  const chats = useMemo<ChatGroup[]>(() => {
+    const a = (Math.PI * 5) / 4;
+    const k = id.length;
+    return [{ x: Math.sin(a) * 8, z: Math.cos(a) * 8, people: [NPC_PEOPLE[k % 12], NPC_PEOPLE[(k + 5) % 12], NPC_PEOPLE[(k + 7) % 12]], district: id }];
+  }, [id]);
 
   const benches = useMemo<Seat[]>(
     () =>
@@ -224,6 +231,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       <GrassField isLawn={lawn} radius={layout.outerRadius + 40} count={16000} seed={id.length * 13} />
       <CodeBillboards spots={layout.billboards} />
       <Pedestrians walkers={walkers} />
+      <ChatGroups groups={chats} />
       <Pigeons center={[0, RING.plazaRadius - 4]} radius={3} count={7} />
       <Balls spots={toys.balls} />
       <Knockables spots={toys.cones} />

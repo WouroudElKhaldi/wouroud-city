@@ -148,10 +148,10 @@ export function Hud() {
                 type="button"
                 onClick={toggleTime}
                 className="hud-panel hud-button pointer-events-auto"
-                aria-label={timeMode === "day" ? "Switch to night" : "Switch to day"}
+                aria-label={timeMode === "day" ? "Switch to night" : timeMode === "night" ? "Switch to a live day cycle" : "Switch to day"}
               >
-                {timeMode === "day" ? "☀️" : "🌙"}
-                <span className="hidden sm:inline"> {timeMode === "day" ? "Day" : "Night"}</span>
+                {timeMode === "day" ? "☀️" : timeMode === "night" ? "🌙" : "🌇"}
+                <span className="hidden sm:inline"> {timeMode === "day" ? "Day" : timeMode === "night" ? "Night" : "Live"}</span>
               </button>
               <button
                 type="button"
