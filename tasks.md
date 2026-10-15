@@ -42,11 +42,18 @@ P11. 🔄 Jump/fall animations; delete the old character code (clothes.ts, hijab
 P12. 🔄 Fast travel between districts, wet-ground look in rain, statues / kids playing in plazas — fast travel in the big map (M) and wet ground in rain done; **statues / kids playing still open** (Rocketbox has no children)
 P13. ⬜ Batch the skill labels, LOD for far buildings (tasks 35, 36)
 P14. ⬜ Listen to the per-district music; check the car rows in the 7 districts other than Business
-P15. ⛔ Needs the owner's free accounts: admin, MongoDB, R2 uploads, leaderboard, Vercel deploy (tasks 30–34)
+P15. 🔄 Data and admin: Vercel deploy ✅; MongoDB Atlas account ✅ (owner has MONGO_DB_* env vars locally); still to build: /admin (Auth.js + Google), content in MongoDB, leaderboard; ⛔ Cloudflare R2 account for uploads
+P16. ⬜ **Next level** (owner, 2026-10-15: "not just a room in every building, take the city to the next level"). Directions to pick from, in the order the owner chooses:
+   a. A living city: real day/night cycle, buses and scooters, people sitting in cafés / walking dogs / chatting, people who react to you, birds, plaza events, ambient sound per place
+   b. A story to play: quests and Easter eggs, XP, badges, a journal, a guided "Meet Wouroud" tour for recruiters
+   c. Wouroud herself in the city: a Rocketbox character who greets visitors, answers questions about her work (AI chat from the portfolio) and walks you to buildings
+   d. Grander architecture: a real landmark per district, building facades with balconies/signage/lobbies, a Tripoli seafront promenade, mountains on the horizon
+   e. Polish: cinematic intro flyover, photo filters, soundtrack, mobile performance
+   f. Live data (with P15): edit from /admin, visitors' high scores and a guestbook shown in the city
 
 ## 🔄 In progress
 
-Next: P5c screenshots (local session), P6 lobbies, P8 car rows / bench pose, P11 jump clip, P12 statues, P13 labels/LOD
+Going in order (owner, 2026-10-15): P6 lobbies → P7 → P8 → P11 → P12 → P13 → P14 → P15. P5c waits for screenshots from the laptop.
 
 ## Roadmap (in build order)
 
@@ -76,7 +83,7 @@ Next: P5c screenshots (local session), P6 lobbies, P8 car rows / bench pose, P11
 ### D. Play
 23. ✅ Arcade Pier game "Full Stack": one-tap block stacking with tech labels (HTML → CSS → JS → React → Node → MongoDB…), local best score
 24. ✅ Hobby Quarter: painting easel (2D canvas painting app in the gallery)
-25. 🔄 Hobby Quarter: ✅ photo camera (📸 Photo in the HUD and the Photo Studio, saves a captioned PNG), ✅ library shows what she is learning now; ⬜ gallery of her paintings (needs uploads), ⬜ crochet toy
+25. 🔄 Hobby Quarter: ✅ photo camera (📸 Photo in the HUD and the Photo Studio, saves a captioned PNG), ✅ library shows what she is learning now; ⬜ gallery of her paintings (needs uploads), ✅ crochet toy (crochet corner in the yarn shop studio)
 26. ✅ Horse riding: a horse waits by the stables in the Hobby Quarter; ride, gallop with Shift, the camera follows behind
 27. ✅ Weather: rain / snow / fog toggle in the HUD (particles follow the player, fog eases in); wet ground look still open
 28. ✅ Driving: all six cars parked in the hub lot and in every district (avenue curb + walkway bays); wheels roll and steer, the driver door swings open and shut getting in and out (CarModel.tsx); W/S/A/D or joystick, Shift boost, Space brake, E to get out; cars stay where you park them (fast travel still open)
@@ -87,11 +94,11 @@ Next: P5c screenshots (local session), P6 lobbies, P8 car rows / bench pose, P11
 31. ⛔ Content in MongoDB Atlas M0, validated by the Zod schema, static generation + on-demand revalidation (seed.ts stays as fallback)
 32. ⛔ Media uploads to Cloudflare R2 (paintings, screenshots, videos), compressed on upload
 33. ⛔ Arcade leaderboard in MongoDB
-34. ⛔ Deploy on Vercel Hobby + custom domain
+34. 🔄 Deploy on Vercel Hobby ✅ (https://wouroud-city.vercel.app, Vercel Analytics on); ⬜ custom domain
 
 ### F. Polish and performance
 35. ⬜ Batch / bake troika text labels (skills district has ~43)
 36. ⬜ LOD for far buildings, KTX2 / Draco compression of models (gltf-transform)
 37. ✅ Accessibility: reduced motion (CSS + still emblems), info panels are focused dialogs, screen-reader summary with a résumé link
 38. ✅ Character polish: superseded by the Rocketbox avatars
-39. ⬜ New robot avatar (current one is the old procedural model)
+39. ✅ New robot avatar (humanoid robot in `Avatar.tsx`)
