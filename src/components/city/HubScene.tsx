@@ -13,7 +13,7 @@ import { useGlowMaterial } from "./materials";
 import { paint, surface } from "./surfaces";
 import { Fountain } from "./StreetDetails";
 import { Foliage } from "./Foliage";
-import { GrassField } from "./GrassField";
+import { GRASS_SCALE, GrassField } from "./GrassField";
 import { Beacons } from "./Guidance";
 import { ChatGroups, type ChatGroup, makeWalkers, Pedestrians } from "./Pedestrians";
 import { Statue } from "./Person";
@@ -92,7 +92,7 @@ export function HubScene() {
       <Planters spots={PLAZA_PLANTERS} />
       <Corniche />
       <Foliage items={foliage} />
-      <GrassField isLawn={isHubLawn} radius={150} count={26000} seed={3} />
+      <GrassField isLawn={isHubLawn} radius={150} count={GRASS_SCALE * 26000} seed={3} />
       <PlazaBenches />
       <PlazaStatues />
       <Beacons />

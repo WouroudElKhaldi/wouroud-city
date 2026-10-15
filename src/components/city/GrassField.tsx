@@ -5,6 +5,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { seeded } from "@/world/foliage";
+import { isTouchDevice } from "@/world/touch";
 
 /**
  * A lawn full of grass clumps and wildflowers, swaying in the wind. Two
@@ -18,6 +19,9 @@ const GRASS_COLORS = ["#5f8f3a", "#6b9a40", "#557f33", "#79a44a", "#62913c", "#8
 const FLOWER_COLORS = ["#f4f1ea", "#f4f1ea", "#f2c230", "#e36a8a", "#a88ad8", "#f08a4b", "#ffffff", "#d8344a"];
 
 const wind = { value: 0 };
+
+/** Phones get about a third of the grass blades (decided once, at load). */
+export const GRASS_SCALE = isTouchDevice() ? 0.35 : 1;
 
 /** Adds a gentle wind sway that grows with height above the ground. */
 function windy(material: THREE.MeshStandardMaterial) {

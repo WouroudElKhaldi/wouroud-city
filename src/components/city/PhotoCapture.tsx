@@ -2,7 +2,7 @@
 
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
-import { useCityStore } from "@/state/useCityStore";
+import { PHOTO_FILTERS, useCityStore } from "@/state/useCityStore";
 import { sfx } from "@/world/sfx";
 
 /**
@@ -27,7 +27,9 @@ export function PhotoCapture() {
         out.height = shot.height + strip;
         const g = out.getContext("2d");
         if (!g) return;
+        g.filter = PHOTO_FILTERS[useCityStore.getState().photoFilter]?.css ?? "none";
         g.drawImage(shot, 0, 0);
+        g.filter = "none";
         const grad = g.createLinearGradient(0, 0, out.width, 0);
         grad.addColorStop(0, "#1a103d");
         grad.addColorStop(1, "#4c1d95");

@@ -53,6 +53,15 @@ export type Race = {
 /** A food order in a café or restaurant: served at the shop's table, eaten sitting down. */
 export type Order = { shop: string; item: MenuItem; at: number };
 
+/** Photo filters for 📸 Photo, as canvas `filter` strings. */
+export const PHOTO_FILTERS = [
+  { label: "Natural", css: "none" },
+  { label: "Vivid", css: "saturate(1.45) contrast(1.08)" },
+  { label: "Golden hour", css: "sepia(0.35) saturate(1.35) hue-rotate(-12deg) brightness(1.05)" },
+  { label: "Vintage", css: "sepia(0.6) contrast(1.1) brightness(0.95)" },
+  { label: "Black & white", css: "grayscale(1) contrast(1.2)" },
+];
+
 const FADE_MS = 450;
 let toastId = 0;
 
@@ -68,6 +77,9 @@ type CityState = {
   /** The menu card that's open (a shop label) */
   menu: string | null;
   order: Order | null;
+  /** Filter applied to photos (index into PHOTO_FILTERS). */
+  photoFilter: number;
+  cyclePhotoFilter: () => void;
   /** The "Ask Wouroud" chat is open. */
   asking: boolean;
   setAsking: (asking: boolean) => void;
@@ -139,6 +151,8 @@ export const useCityStore = create<CityState>((set, get) => ({
   race: null,
   menu: null,
   order: null,
+  photoFilter: 0,
+  cyclePhotoFilter: () => set((s) => ({ photoFilter: (s.photoFilter + 1) % PHOTO_FILTERS.length })),
   asking: false,
   setAsking: (asking) => set({ asking, nearby: null }),
   driving: null,

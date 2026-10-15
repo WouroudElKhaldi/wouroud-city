@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { levelOf, useProgress } from "@/state/progress";
-import { useCityStore } from "@/state/useCityStore";
+import { PHOTO_FILTERS, useCityStore } from "@/state/useCityStore";
 import { districtById, landmarkDoorstep } from "@/world/districts";
 import { liveContent } from "@/content/live";
 import { parseRoom, roomSize, sceneDistrict } from "@/world/interiors";
@@ -18,6 +18,8 @@ const WEATHER_ICON = { clear: "🌤️", rain: "🌧️", snow: "❄️", fog: "
 
 /** On-screen controls over the 3D city. Phones get a compact bar, a menu sheet and touch controls. */
 export function Hud() {
+  const photoFilter = useCityStore((s) => s.photoFilter);
+  const cyclePhotoFilter = useCityStore((s) => s.cyclePhotoFilter);
   const xp = useProgress((s) => s.xp);
   const {
     timeMode,
@@ -107,6 +109,15 @@ export function Hud() {
       )}
       <button type="button" className="hud-panel hud-button pointer-events-auto" onClick={() => useCityStore.getState().takePhoto()}>
         📸 Photo
+      </button>
+      <button
+        type="button"
+        className="hud-panel hud-button pointer-events-auto"
+        onClick={cyclePhotoFilter}
+        title="Change the photo filter"
+        aria-label={`Photo filter: ${PHOTO_FILTERS[photoFilter].label}. Change it`}
+      >
+        🎞️ {PHOTO_FILTERS[photoFilter].label}
       </button>
       <button type="button" className="hud-panel hud-button pointer-events-auto" onClick={() => useProgress.getState().setJournalOpen(true)}>
         📖 Journal <span className="text-amber-200">Lv {level}</span>

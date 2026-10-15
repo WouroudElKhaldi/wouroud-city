@@ -21,6 +21,7 @@ import { HubScene } from "./HubScene";
 import { keyboardMap, Player } from "./Player";
 import { Particles } from "./Particles";
 import { Birds } from "./Birds";
+import { IntroFlyover } from "./IntroFlyover";
 import { Ducks } from "./Ducks";
 import { PlayerSpotlight } from "./PlayerSpotlight";
 import { WaypointGuide } from "./Guidance";
@@ -107,6 +108,7 @@ export default function CityCanvas() {
           </Physics>
         </Suspense>
         {!parseRoom(scene) && <Birds />}
+        <IntroFlyover />
         <Particles />
         <PlayerSpotlight />
         <WaypointGuide />

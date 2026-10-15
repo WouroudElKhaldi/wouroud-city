@@ -12,7 +12,7 @@ import { accents, palette } from "@/world/palette";
 import { Building, DARK } from "./Building";
 import { BuildingDoors } from "./BuildingDoors";
 import { Foliage } from "./Foliage";
-import { GrassField } from "./GrassField";
+import { GRASS_SCALE, GrassField } from "./GrassField";
 import { ParkedHorse } from "./Horse";
 import { WorldGround } from "./HubScene";
 import { useGlowMaterial } from "./materials";
@@ -228,7 +228,7 @@ export function DistrictScene({ id }: { id: DistrictId }) {
       <StreetLamps points={layout.lamps} />
       <Planters spots={planters} />
       <Foliage items={foliage} />
-      <GrassField isLawn={lawn} radius={layout.outerRadius + 40} count={16000} seed={id.length * 13} />
+      <GrassField isLawn={lawn} radius={layout.outerRadius + 40} count={GRASS_SCALE * 16000} seed={id.length * 13} />
       <CodeBillboards spots={layout.billboards} />
       <Pedestrians walkers={walkers} />
       <ChatGroups groups={chats} />
