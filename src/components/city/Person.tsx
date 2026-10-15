@@ -69,6 +69,24 @@ const ONE_SHOT: CharacterAnimation[] = ["pick-up", "emote-yes", "interact-right"
 /** Frames over which a body measures how far its shoes reach below the floor. */
 const GROUND_FRAMES = 30;
 const probe = new THREE.Vector3();
+
+type AirBone = { bone: THREE.Object3D; angle: number };
+/** Bends for the air pose, radians around the body's side axis (negative swings forward). */
+const AIR_POSE: [string, number][] = [
+  ["Bip01 L Thigh", -1.0],
+  ["Bip01 L Calf", 1.4],
+  ["Bip01 R Thigh", -0.3],
+  ["Bip01 R Calf", 0.6],
+  ["Bip01 L UpperArm", -0.7],
+  ["Bip01 R UpperArm", -0.5],
+  ["Bip01 L Forearm", -0.5],
+  ["Bip01 R Forearm", -0.5],
+];
+const findBone = (root: THREE.Object3D, name: string) => root.getObjectByName(name.replace(/ /g, "_")) ?? root.getObjectByName(name) ?? null;
+const modelQuat = new THREE.Quaternion();
+const parentQuat = new THREE.Quaternion();
+const localAxis = new THREE.Vector3();
+const bend = new THREE.Quaternion();
 const inverse = new THREE.Matrix4();
 const ankle = new THREE.Vector3();
 const ball = new THREE.Vector3();
@@ -272,6 +290,28 @@ function Rig({
       foot.parent!.getWorldQuaternion(parentTurn);
       turn.premultiply(parentTurn.clone().invert()).multiply(parentTurn);
       foot.quaternion.premultiply(turn);
+    }
+  });
+
+  // Jumping and falling: Rocketbox has no clip for them, so bend the idle pose procedurally. One knee
+  // tucks up, the other leg trails, the arms lift. Each bend turns a bone around the body's own
+  // side axis (whatever the bone's local axes are), blended in and out over a few frames.
+  const air = useRef({ weight: 0, bones: null as AirBone[] | null });
+  useFrame((_, delta) => {
+    const a = air.current;
+    const target = animation === "jump" || animation === "fall" ? 1 : 0;
+    a.weight = THREE.MathUtils.damp(a.weight, target, 10, delta);
+    if (a.weight < 0.01) return;
+    a.bones ??= AIR_POSE.map(([name, angle]) => ({ bone: findBone(model, name), angle })).filter((b): b is AirBone => !!b.bone);
+    model.updateMatrixWorld(true);
+    model.getWorldQuaternion(modelQuat);
+    for (const { bone, angle } of a.bones) {
+      if (!bone.parent) continue;
+      bone.parent.getWorldQuaternion(parentQuat);
+      // The body's side axis, seen from the bone's parent.
+      localAxis.set(1, 0, 0).applyQuaternion(modelQuat).applyQuaternion(parentQuat.invert());
+      bend.setFromAxisAngle(localAxis.normalize(), angle * a.weight);
+      bone.quaternion.premultiply(bend);
     }
   });
 
