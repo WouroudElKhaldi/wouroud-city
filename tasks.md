@@ -22,9 +22,27 @@ See `HANDOFF.md` for architecture, rules and gotchas.
 11. ✅ 2D résumé page `/resume` + PDF CV download
 12. ✅ Résumé page redesign (hero, stats, sidebar, experience timeline, project and certificate cards)
 
+## ⭐ Owner's priority list (open requests, in this order)
+
+P1. 🔄 **Loading time**: the city takes far too long to load. Compress models (meshopt), preload only what the hub shows (player + hub walkers), let the world appear while people stream in
+P2. ⬜ **Realistic outdoors** in the Rocketbox style (not photoreal, no more low-poly toy look): grass, trees and plants, balls/cones/pigeons, streets/sidewalks/curbs/crosswalks, benches/lamps/planters, the ground in the hub and every district. CC0 assets only, small downloads, keep every interaction and instancing, frame rate no worse
+P3. ⬜ **Codi Tech building: adventures and activities** with her mentors (they did a lot together), much more fun inside
+P4. ⬜ **Freelance office: fill it** with everything from the freelance work (the projects and things built together)
+P5. ⬜ **Enter buildings in every district**, not only Business (experience): skills, campus, training, languages, hobbies, arcade too
+P6. ⬜ **Luxury everywhere** (from the interiors pass): walnut/leather/velvet office desks and studio sofas, then the same luxury look outdoors (plazas, benches, lamps, building lobbies)
+P7. ⬜ Verify the walk-in interiors (Office company wall, a project Studio, sitting on chairs/sofas, leaving by the door), then tick task 22
+P8. ⬜ Check the car rows/spacing in the hub after the car shrink, and the bench sitting pose outdoors
+P9. ⬜ Crochet toy in the Hobby Quarter (task 25)
+P10. ⬜ New robot avatar (task 39)
+P11. ⬜ Jump/fall animations; delete the old character code (clothes.ts, hijab.ts, Hair.tsx, garments.ts, body.ts, Character.tsx, public/models/people*, public/models/hair)
+P12. ⬜ Fast travel between districts, wet-ground look in rain, statues / kids playing in plazas
+P13. ⬜ Batch the skill labels, LOD for far buildings (tasks 35, 36)
+P14. ⬜ Listen to the per-district music; check the car rows in the 7 districts other than Business
+P15. ⛔ Needs the owner's free accounts: admin, MongoDB, R2 uploads, leaderboard, Vercel deploy (tasks 30–34)
+
 ## 🔄 In progress
 
-_(nothing; next up: 43 Better people)_
+P1 Loading time (see the priority list above)
 
 ## Roadmap (in build order)
 
