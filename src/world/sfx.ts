@@ -52,7 +52,25 @@ function noise(duration: number, volume = 0.12, filterFreq = 1200, delay = 0) {
   src.start(t);
 }
 
+/** A short generated lo-fi phrase: a different melody for every seed (Hyperfocus's music player). */
+function track(seed: number) {
+  const scales = [
+    [261.6, 293.7, 329.6, 392, 440, 523.3],
+    [220, 246.9, 261.6, 329.6, 392, 440],
+    [293.7, 329.6, 349.2, 440, 493.9, 587.3],
+  ];
+  const scale = scales[seed % scales.length];
+  let s = seed * 9301 + 49297;
+  const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+  for (let i = 0; i < 16; i++) {
+    const note = scale[Math.floor(rnd() * scale.length)];
+    tone(note, 0.32, "triangle", 0.07, undefined, i * 0.3);
+    if (i % 4 === 0) tone(scale[0] / 2, 1.1, "sine", 0.06, undefined, i * 0.3);
+  }
+}
+
 export const sfx = {
+  track,
   rustle: () => noise(0.35, 0.1, 2400),
   pop: () => tone(520, 0.12, "triangle", 0.18, 900),
   kick: () => {
