@@ -174,6 +174,12 @@ function TrainingView({ t }: { t: Training }) {
           <Bullets items={t.courses} />
         </>
       )}
+      {t.highlights && t.highlights.length > 0 && (
+        <>
+          <p className="mt-4 text-sm font-semibold text-white">What it covers</p>
+          <Bullets items={t.highlights} />
+        </>
+      )}
       {t.verifyUrl && (
         <a href={t.verifyUrl} target="_blank" rel="noreferrer" className="panel-link mt-4 inline-block">
           Verify certificate ↗

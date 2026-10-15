@@ -90,6 +90,8 @@ export const trainingSchema = z.object({
   status: z.enum(["completed", "in-progress"]),
   kind: z.enum(["certificate", "bootcamp", "scholarship", "program"]),
   courses: z.array(z.string()),
+  /** What the program covers, for programs without a course list */
+  highlights: z.array(z.string()).optional(),
   verifyUrl: z.url().optional(),
   image: z.string().optional(),
   summary: z.string(),

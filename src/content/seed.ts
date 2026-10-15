@@ -333,13 +333,22 @@ export const seedContent: Content = {
     },
     {
       id: "se2",
-      name: "Software Engineering Training",
-      provider: "SE²",
+      name: "Software Engineering Excellence",
+      provider: "SE² Academy",
       date: "2026",
       status: "in-progress",
       kind: "program",
       courses: [],
-      summary: "Engineering training with Sami Shameseldeen: design patterns, fundamentals and real projects.",
+      summary:
+        "An engineering accelerator founded by Sami Shams El Deen (former Senior Software Engineer at Murex): clean, scalable, production-grade code, with an instructor reviewing every pull request.",
+      highlights: [
+        "Phase 1, Foundations: logic, memory and algorithms, how software and the web work, TypeScript and object-oriented programming.",
+        "Phase 2, Build: a team full-stack system of 7,000 to 10,000 lines (backend, frontend, database, DevOps, CI/CD), designed before coding.",
+        "Phase 2 also includes a personal project that solves a real business problem.",
+        "Every pull request reviewed line by line by an instructor; weekly code reviews and one-to-one mentorship.",
+        "Phase 3, Career: CV for ATS screening, LinkedIn posting plan, salary negotiation and a 90-day plan.",
+        "About 250 supervised hours, around 15 hours a week alongside work; taught in Arabic with English resources.",
+      ],
     },
   ],
 
