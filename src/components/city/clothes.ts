@@ -38,15 +38,134 @@ function dominant(skinIndex: THREE.BufferAttribute, skinWeight: THREE.BufferAttr
   return best;
 }
 
+let weave: { normal: THREE.CanvasTexture; rough: THREE.CanvasTexture } | null = null;
+
+/**
+ * A fine woven-thread surface, generated once: a normal map with crossing warp and
+ * weft threads plus a little fiber noise, and a matching roughness map. Tiled
+ * densely over every garment so fabric catches light like textile, not plastic.
+ */
+function weaveTextures() {
+  if (weave) return weave;
+  const size = 256;
+  const threads = 16;
+  const height = new Float32Array(size * size);
+  let seed = 3;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++) {
+      const u = (x / size) * threads * Math.PI * 2;
+      const v = (y / size) * threads * Math.PI * 2;
+      // Over-under weave: warp and weft swap which one is on top every other cell.
+      const cell = (Math.floor((x / size) * threads) + Math.floor((y / size) * threads)) % 2;
+      const warp = Math.pow(Math.abs(Math.sin(u)), 0.6);
+      const weft = Math.pow(Math.abs(Math.sin(v)), 0.6);
+      height[y * size + x] = (cell ? warp * 0.75 + weft * 0.25 : weft * 0.75 + warp * 0.25) + (rand() - 0.5) * 0.18;
+    }
+  const at = (x: number, y: number) => height[((y + size) % size) * size + ((x + size) % size)];
+  const normalCanvas = document.createElement("canvas");
+  const roughCanvas = document.createElement("canvas");
+  normalCanvas.width = normalCanvas.height = roughCanvas.width = roughCanvas.height = size;
+  const nctx = normalCanvas.getContext("2d")!;
+  const rctx = roughCanvas.getContext("2d")!;
+  const nimg = nctx.createImageData(size, size);
+  const rimg = rctx.createImageData(size, size);
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++) {
+      const dx = (at(x + 1, y) - at(x - 1, y)) * 2.2;
+      const dy = (at(x, y + 1) - at(x, y - 1)) * 2.2;
+      const l = Math.hypot(dx, dy, 1);
+      const i = (y * size + x) * 4;
+      nimg.data[i] = ((-dx / l) * 0.5 + 0.5) * 255;
+      nimg.data[i + 1] = ((-dy / l) * 0.5 + 0.5) * 255;
+      nimg.data[i + 2] = (1 / l) * 255;
+      nimg.data[i + 3] = 255;
+      // Thread tops are a touch shinier than the gaps between them.
+      const r = 200 - at(x, y) * 40;
+      rimg.data[i] = rimg.data[i + 1] = rimg.data[i + 2] = r;
+      rimg.data[i + 3] = 255;
+    }
+  nctx.putImageData(nimg, 0, 0);
+  rctx.putImageData(rimg, 0, 0);
+  const finish = (c: HTMLCanvasElement) => {
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(28, 28);
+    t.anisotropy = 8;
+    return t;
+  };
+  weave = { normal: finish(normalCanvas), rough: finish(roughCanvas) };
+  return weave;
+}
+
+/**
+ * Textile material: woven surface, soft velvet-like sheen at grazing angles, and
+ * per-vertex shading (darker toward hems and cuffs, see addLayer).
+ */
 export function fabric(color: string, opts: { sheen?: number; roughness?: number } = {}) {
+  const { normal, rough } = weaveTextures();
+  const base = new THREE.Color(color);
   return new THREE.MeshPhysicalMaterial({
-    color,
-    roughness: opts.roughness ?? 0.82,
-    sheen: opts.sheen ?? 0.8,
-    sheenRoughness: 0.5,
-    sheenColor: new THREE.Color(color).lerp(new THREE.Color("#ffffff"), 0.45),
+    color: base,
+    roughness: opts.roughness ?? 0.9,
+    roughnessMap: rough,
+    normalMap: normal,
+    normalScale: new THREE.Vector2(0.55, 0.55),
+    sheen: opts.sheen ?? 1,
+    sheenRoughness: 0.35,
+    sheenColor: base.clone().lerp(new THREE.Color("#ffffff"), 0.35),
+    vertexColors: true,
     side: THREE.DoubleSide,
   });
+}
+
+/**
+ * Soft shading for a garment: points near the open edges (hems, cuffs, necklines)
+ * get a little darker, like the turned-under edge of real cloth.
+ */
+function edgeShade(geometry: THREE.BufferGeometry, indices: number[], canon: Int32Array, count: number) {
+  const edgeUse = new Map<string, number>();
+  const key = (a: number, b: number) => (a < b ? `${a}_${b}` : `${b}_${a}`);
+  const neighbors: number[][] = Array.from({ length: count }, () => []);
+  for (let t = 0; t < indices.length; t += 3) {
+    const tri = [canon[indices[t]], canon[indices[t + 1]], canon[indices[t + 2]]];
+    for (let k = 0; k < 3; k++) {
+      const a = tri[k];
+      const b = tri[(k + 1) % 3];
+      edgeUse.set(key(a, b), (edgeUse.get(key(a, b)) ?? 0) + 1);
+      neighbors[a].push(b);
+    }
+  }
+  // Breadth-first distance (in edges) from the open boundary.
+  const dist = new Int32Array(count).fill(99);
+  const queue: number[] = [];
+  for (const [k, n] of edgeUse) {
+    if (n !== 1) continue;
+    for (const v of k.split("_").map(Number)) {
+      if (dist[v] !== 0) {
+        dist[v] = 0;
+        queue.push(v);
+      }
+    }
+  }
+  for (let q = 0; q < queue.length; q++) {
+    const v = queue[q];
+    if (dist[v] >= 4) continue;
+    for (const w of neighbors[v])
+      if (dist[w] > dist[v] + 1) {
+        dist[w] = dist[v] + 1;
+        queue.push(w);
+      }
+  }
+  const pos = geometry.attributes.position;
+  const colors = new Float32Array(pos.count * 3).fill(1);
+  for (let i = 0; i < pos.count; i++) {
+    const c = canon[i];
+    if (c < 0) continue;
+    const shade = dist[c] >= 4 ? 1 : 0.8 + dist[c] * 0.05;
+    colors[i * 3] = colors[i * 3 + 1] = colors[i * 3 + 2] = shade;
+  }
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 }
 
 export type LayerOptions = {
@@ -188,6 +307,7 @@ export function addLayer(body: THREE.SkinnedMesh, regions: Region[], material: T
   for (const v of used) p.set([cp[canon[v] * 3], cp[canon[v] * 3 + 1], cp[canon[v] * 3 + 2]], v * 3);
   pos.needsUpdate = true;
   layer.computeVertexNormals();
+  edgeShade(layer, keep, canon, count);
   layer.computeBoundingBox();
   layer.computeBoundingSphere();
 
@@ -370,6 +490,20 @@ export function addFlare(
     new THREE.Vector2(rBottom, bottom),
   ];
   const geometry = new THREE.LatheGeometry(profile, 72);
+  {
+    // Fold shading: the inner side of each fold is a little darker; the hem darkens slightly.
+    const p = geometry.attributes.position;
+    const colors = new Float32Array(p.count * 3);
+    const count = opts.folds ?? 9;
+    for (let i = 0; i < p.count; i++) {
+      const angle = Math.atan2(p.getZ(i), p.getX(i));
+      const depth = THREE.MathUtils.clamp((top - p.getY(i)) / height, 0, 1);
+      const fold = 0.5 + 0.5 * Math.sin(angle * count);
+      const shade = 1 - (1 - fold) * 0.16 * depth - (depth > 0.96 ? 0.12 : 0);
+      colors[i * 3] = colors[i * 3 + 1] = colors[i * 3 + 2] = shade;
+    }
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  }
   folds(geometry, top, height, opts.folds ?? 9, 0.035);
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(pelvis.x, 0, pelvis.z);
@@ -423,9 +557,11 @@ export function dressUp(model: THREE.Object3D, kind: OutfitKind, colors: OutfitC
   switch (kind) {
     case "abaya":
       // One flowing garment: everything but hands, feet and face, kept loose.
+      // One flowing garment: everything but hands, feet and face, kept loose. The skirt
+      // starts inside the bodice and flares out from under it, so they read as one dress.
       add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.05, sleeveRoom: 0.008 }));
       add(addLayer(b, ["thighs", "calves"], top, { inflate: 0.012, smooth: 3, generous: true }));
-      add(addFlare(model, top, -0.06, 1.0, { flare: 1.85, folds: 10, topRadius: 1.3 }));
+      add(addFlare(model, top, -0.22, 1.0, { flare: 1.85, folds: 10, topRadius: 0.95 }));
       break;
     case "blazer-modest":
       add(addLayer(b, ["chest", "pelvis", "neck", "arms", "forearms"], top, { inflate: 0.02, smooth: 30, generous: true, hang: 0.05, sleeveRoom: 0.008 }));

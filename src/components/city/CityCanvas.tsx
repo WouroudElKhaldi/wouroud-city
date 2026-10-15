@@ -1,8 +1,8 @@
 "use client";
 
-import { AdaptiveDpr, Environment, KeyboardControls, Lightformer, PerformanceMonitor } from "@react-three/drei";
+import { Environment, KeyboardControls, PerformanceMonitor, SoftShadows } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Bloom, EffectComposer, SMAA, Vignette } from "@react-three/postprocessing";
+import { Bloom, BrightnessContrast, EffectComposer, HueSaturation, SMAA, SSAO, Vignette } from "@react-three/postprocessing";
 import { Physics } from "@react-three/rapier";
 import type { BloomEffect } from "postprocessing";
 import { Suspense, useMemo, useRef, useState } from "react";
@@ -43,8 +43,9 @@ export default function CityCanvas() {
   // Drop to a lower resolution on slow devices instead of stuttering.
   // Phones start on a lighter preset: lower resolution and no post-processing.
   const [mobile] = useState(isTouchDevice);
-  const maxDpr = mobile ? 1.25 : 1.5;
-  const [dpr, setDpr] = useState(mobile ? 1 : 1.5);
+  // Desktop renders at the screen's real pixel density (up to 2x) for crisp edges and text.
+  const [maxDpr] = useState(() => (mobile ? 1.25 : Math.min(2, typeof window === "undefined" ? 1.5 : window.devicePixelRatio || 1.5)));
+  const [dpr, setDpr] = useState(mobile ? 1 : maxDpr);
   const [effects, setEffects] = useState(!mobile);
 
   // Where the player appears: the plaza, a landmark's doorstep when coming back, or a district's gate.
@@ -63,21 +64,24 @@ export default function CityCanvas() {
         camera={{ fov: 55, near: 0.1, far: 1200, position: [0, 6, 30] }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
         onCreated={(state) => {
-          state.gl.toneMapping = THREE.ACESFilmicToneMapping;
-          state.gl.toneMappingExposure = 1.05;
+          // Neutral tone mapping keeps the palette's colors true (ACES washes violet toward blue).
+          state.gl.toneMapping = THREE.NeutralToneMapping;
+          state.gl.toneMappingExposure = 1;
           // Handy when debugging in the browser console.
           if (process.env.NODE_ENV === "development") Object.assign(window, { __city: { state, playerPosition } });
         }}
       >
         <PerformanceMonitor
           onDecline={() => {
-            setDpr(1);
+            setDpr(Math.max(1, maxDpr * 0.66));
             setEffects(false);
           }}
           onIncline={() => setDpr(maxDpr)}
         />
-        <AdaptiveDpr pixelated />
-        <DayNight followTarget={playerPosition} />
+        {/* Soft, contact-hardening shadows (desktop): sharp near the object, soft further away. */}
+        {!mobile && <SoftShadows size={10} samples={8} focus={0.8} />}
+        <DayNight followTarget={playerPosition} shadowMapSize={mobile ? 1024 : 4096} />
+        <CameraFill />
         <CityEnvironment />
         <Suspense fallback={null}>
           <Physics key={scene}>
@@ -97,30 +101,66 @@ export default function CityCanvas() {
 }
 
 /**
- * Soft studio lighting baked into an environment map from a few glowing panels,
- * so glass and metal reflect something violet. No HDR file to download.
+ * A soft fill light that comes from the camera's direction, like a photographer's
+ * fill: faces and clothes stay readable even when the sun is behind them.
  */
-function CityEnvironment() {
+function CameraFill() {
+  const light = useRef<THREE.DirectionalLight>(null);
+  const target = useMemo(() => new THREE.Object3D(), []);
+  useFrame(({ camera }) => {
+    if (!light.current) return;
+    light.current.position.copy(camera.position).add(new THREE.Vector3(0, 2, 0));
+    camera.getWorldDirection(target.position).multiplyScalar(10).add(camera.position);
+    target.updateMatrixWorld();
+    light.current.intensity = 0.7 - worldEnv.night * 0.35;
+  });
   return (
-    <Environment resolution={256} frames={1}>
-      <Lightformer form="rect" intensity={2} color="#f3e8ff" position={[0, 6, -10]} scale={[20, 6, 1]} />
-      <Lightformer form="rect" intensity={1.4} color="#c4b5fd" position={[-10, 3, 0]} rotation-y={Math.PI / 2} scale={[20, 4, 1]} />
-      <Lightformer form="rect" intensity={1.2} color="#f0abfc" position={[10, 3, 0]} rotation-y={-Math.PI / 2} scale={[20, 4, 1]} />
-      <Lightformer form="ring" intensity={3} color="#ffffff" position={[0, 10, 0]} rotation-x={Math.PI / 2} scale={6} />
-    </Environment>
+    <>
+      <directionalLight ref={light} target={target} color="#fff4ea" intensity={0.7} />
+      <primitive object={target} />
+    </>
   );
 }
 
-/** Bloom makes lit windows, neon and lamps glow; it strengthens as night falls. */
+/**
+ * Image-based lighting from a real sky (Poly Haven, CC0): natural light and
+ * reflections on skin, fabric, glass and metal. DayNight dims it at night.
+ */
+function CityEnvironment() {
+  return <Environment files="/env/sky_1k.hdr" background={false} environmentIntensity={0.9} />;
+}
+
+/**
+ * Post-processing: ambient occlusion grounds everything (contact shading where
+ * objects meet the ground and in corners), bloom makes lit windows, neon and
+ * lamps glow at night, and a light grade adds contrast and color.
+ */
 function Effects() {
   const bloom = useRef<BloomEffect>(null);
   useFrame(() => {
     if (bloom.current) bloom.current.intensity = 0.35 + worldEnv.night * 1.1;
   });
   return (
-    <EffectComposer multisampling={0}>
+    <EffectComposer multisampling={0} enableNormalPass>
+      <SSAO
+        samples={16}
+        rings={4}
+        radius={0.08}
+        intensity={22}
+        luminanceInfluence={0.55}
+        bias={0.03}
+        worldDistanceThreshold={40}
+        worldDistanceFalloff={10}
+        worldProximityThreshold={0.6}
+        worldProximityFalloff={0.2}
+        resolutionScale={0.5}
+        depthAwareUpsampling
+        color="#1a103d"
+      />
       <Bloom ref={bloom} mipmapBlur luminanceThreshold={0.85} luminanceSmoothing={0.2} intensity={0.4} radius={0.7} />
-      <Vignette offset={0.25} darkness={0.55} />
+      <HueSaturation saturation={0.1} />
+      <BrightnessContrast contrast={0.07} />
+      <Vignette offset={0.3} darkness={0.45} />
       <SMAA />
     </EffectComposer>
   );

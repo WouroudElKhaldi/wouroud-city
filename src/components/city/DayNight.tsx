@@ -14,7 +14,13 @@ const SHADOW_SIZE = 40;
  * Sun, moon, sky, fog and the night factor everything else reads.
  * Switching day/night eases over ~2 seconds instead of snapping.
  */
-export function DayNight({ followTarget }: { followTarget: React.RefObject<THREE.Vector3 | null> }) {
+export function DayNight({
+  followTarget,
+  shadowMapSize = 2048,
+}: {
+  followTarget: React.RefObject<THREE.Vector3 | null>;
+  shadowMapSize?: number;
+}) {
   const timeMode = useCityStore((s) => s.timeMode);
   const { scene } = useThree();
   const sun = useRef<THREE.DirectionalLight>(null);
@@ -52,23 +58,26 @@ export function DayNight({ followTarget }: { followTarget: React.RefObject<THREE
     worldEnv.night = THREE.MathUtils.damp(worldEnv.night, target, 2.2, delta);
     const n = worldEnv.night;
 
-    (scene.background as THREE.Color).lerpColors(colors.daySky, colors.nightSky, n);
-    (scene.fog as THREE.Fog).color.lerpColors(colors.dayFog, colors.nightFog, n);
-    scene.environmentIntensity = THREE.MathUtils.lerp(1, 0.3, n);
+    // Other components (the environment map loader) may reset these; re-own them if so.
+    if (!(scene.background instanceof THREE.Color)) scene.background = new THREE.Color();
+    if (!(scene.fog instanceof THREE.Fog)) scene.fog = new THREE.Fog(palette.day.fog, 70, 260);
+    scene.background.lerpColors(colors.daySky, colors.nightSky, n);
+    scene.fog.color.lerpColors(colors.dayFog, colors.nightFog, n);
+    scene.environmentIntensity = THREE.MathUtils.lerp(0.42, 0.22, n);
 
     if (hemi.current) {
       hemi.current.color.lerpColors(colors.dayHemiSky, colors.nightHemiSky, n);
       hemi.current.groundColor.lerpColors(colors.dayHemiGround, colors.nightHemiGround, n);
-      hemi.current.intensity = THREE.MathUtils.lerp(1.6, 0.55, n);
+      hemi.current.intensity = THREE.MathUtils.lerp(0.35, 0.4, n);
     }
 
     if (sun.current) {
       sun.current.color.lerpColors(colors.daySun, colors.nightSun, n);
-      sun.current.intensity = THREE.MathUtils.lerp(2.6, 0.35, n);
+      sun.current.intensity = THREE.MathUtils.lerp(4.2, 0.35, n);
       // Keep the shadow camera centered on the player so shadows stay sharp everywhere.
       const p = followTarget.current;
       if (p) {
-        sun.current.position.set(p.x + 30, p.y + 50, p.z + 20);
+        sun.current.position.set(p.x - 34, p.y + 38, p.z - 22);
         sun.current.target.position.set(p.x, p.y, p.z);
         sun.current.target.updateMatrixWorld();
       }
@@ -88,9 +97,9 @@ export function DayNight({ followTarget }: { followTarget: React.RefObject<THREE
       <directionalLight
         ref={sun}
         castShadow
-        position={[30, 50, 20]}
+        position={[-34, 38, -22]}
         intensity={2.6}
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[shadowMapSize, shadowMapSize]}
         shadow-bias={-0.0004}
         shadow-normalBias={0.04}
         shadow-camera-left={-SHADOW_SIZE}
@@ -101,7 +110,7 @@ export function DayNight({ followTarget }: { followTarget: React.RefObject<THREE
         shadow-camera-far={160}
       />
       <group ref={skyGroup}>
-        <Sky distance={4000} sunPosition={[30, 40, 20]} turbidity={6} rayleigh={1.2} mieCoefficient={0.004} />
+        <Sky distance={4000} sunPosition={[-34, 38, -22]} turbidity={6} rayleigh={1.2} mieCoefficient={0.004} />
       </group>
       <group ref={starsGroup} visible={false}>
         <Stars radius={300} depth={80} count={4000} factor={6} saturation={0.6} fade speed={0.6} />
