@@ -24,4 +24,12 @@ export function sceneDistrict(scene: string): DistrictId | null {
 }
 
 /** Room size: x across, z from the back wall to the entrance. */
-export const ROOM = { width: 24, depth: 18, height: 5.2 };
+export type RoomSize = { width: number; depth: number; height: number };
+
+export const ROOM: RoomSize = { width: 24, depth: 18, height: 5.2 };
+
+/** Sahme Trading is a whole headquarters floor: departments around a trading floor. */
+export const HQ_ROOM: RoomSize = { width: 44, depth: 32, height: 5.6 };
+
+/** The size of a building's room. */
+export const roomSize = (id: string): RoomSize => (id === "sahme" ? HQ_ROOM : ROOM);

@@ -3,27 +3,28 @@
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
-import { useMemo, useRef } from "react";
+import { createContext, useContext, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { seedContent } from "@/content/seed";
 import type { Experience, Project } from "@/content/schema";
 import { useCityStore, type Seat } from "@/state/useCityStore";
 import type { DistrictId } from "@/world/districts";
 import { worldEnv } from "@/world/env";
-import { parseRoom, ROOM, type RoomScene } from "@/world/interiors";
+import { parseRoom, ROOM, roomSize, type RoomScene, type RoomSize } from "@/world/interiors";
 import { computeDistrictLayout } from "@/world/layout";
 import { accents } from "@/world/palette";
 import { signatureFor } from "@/world/signatures";
 import { Emblem } from "./Emblems";
-import { TradingDesk, TradingFloor } from "./TradingFloor";
+import { marbleTexture } from "./luxury";
+import { SahmeHQ } from "./SahmeHQ";
 import { useGlowMaterial } from "./materials";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Seats } from "./StreetDetails";
 import { useProximity } from "./useProximity";
 
-const W = ROOM.width;
-const D = ROOM.depth;
-const H = ROOM.height;
+/** The size of the room being drawn (rooms differ: Sahme is a whole HQ floor). */
+const RoomContext = createContext<RoomSize>(ROOM);
+export const useRoom = () => useContext(RoomContext);
 const INK = "#1a103d";
 const PAPER = "#fbf8ff";
 
@@ -44,6 +45,8 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
   );
   const job = seedContent.experience.find((e) => e.id === room.id);
   const project = seedContent.projects.find((p) => p.id === room.id);
+  const size = roomSize(room.id);
+  const hq = room.id === "sahme";
   const accent = spec?.color ?? "#7c3aed";
   const label = spec?.label ?? job?.company ?? project?.name ?? "Building";
 
@@ -73,8 +76,8 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
   );
 
   return (
-    <group>
-      <Shell accent={accent} />
+    <RoomContext value={size}>
+      <Shell accent={accent} hq={hq} />
       <OnWall side="front">
         <ExitDoor id={room.id} district={room.district} accent={accent} />
       </OnWall>
@@ -84,13 +87,15 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
         label={label}
         accent={accent}
       />
-      {job ? (
+      {hq && job ? (
+        <SahmeHQ job={job} accent={accent} />
+      ) : job ? (
         <Office job={job} accent={accent} />
       ) : project ? (
         <Studio project={project} accent={accent} />
       ) : null}
-      <Pedestrians walkers={walkers} />
-    </group>
+      {!hq && <Pedestrians walkers={walkers} />}
+    </RoomContext>
   );
 }
 
@@ -104,7 +109,8 @@ type Side = "front" | "back" | "left" | "right";
  * Things mounted on a wall. The walls themselves vanish when the camera is behind
  * them; this hides what hangs on them too, so it never blocks the view from outside.
  */
-function OnWall({ side, children }: { side: Side; children: React.ReactNode }) {
+export function OnWall({ side, children }: { side: Side; children: React.ReactNode }) {
+  const { width: W, depth: D } = useRoom();
   const group = useRef<THREE.Group>(null);
   useFrame(({ camera }) => {
     const p = camera.position;
@@ -121,68 +127,24 @@ function OnWall({ side, children }: { side: Side; children: React.ReactNode }) {
   return <group ref={group}>{children}</group>;
 }
 
-/** Polished marble: warm white with soft grey and gold veins, cut into 1.5 m tiles. */
-let marbleTexture: THREE.CanvasTexture | null = null;
-function marble() {
-  if (marbleTexture) return marbleTexture;
-  const size = 1024;
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  ctx.fillStyle = "#f3eee6";
-  ctx.fillRect(0, 0, size, size);
-  let seed = 11;
-  const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  // Cloudy base
-  for (let i = 0; i < 260; i++) {
-    ctx.fillStyle = `rgba(${200 + random() * 30},${195 + random() * 30},${190 + random() * 30},0.06)`;
-    ctx.beginPath();
-    ctx.arc(random() * size, random() * size, 40 + random() * 140, 0, Math.PI * 2);
-    ctx.fill();
+/** Polished marble floor tiles (1.5 m), one texture per room size. */
+const floors = new Map<string, THREE.Texture>();
+function marble(W: number, D: number) {
+  const key = `${W}x${D}`;
+  let t = floors.get(key);
+  if (!t) {
+    t = marbleTexture();
+    t.repeat.set(W / 3, D / 3);
+    floors.set(key, t);
   }
-  // Veins
-  const vein = (color: string, width: number, alpha: number) => {
-    ctx.strokeStyle = color;
-    ctx.globalAlpha = alpha;
-    ctx.lineWidth = width;
-    let x = random() * size;
-    let y = random() * size;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    for (let k = 0; k < 14; k++) {
-      x += (random() - 0.3) * 110;
-      y += (random() - 0.5) * 90;
-      ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  };
-  for (let i = 0; i < 16; i++) vein("#9a9187", 1 + random() * 2.5, 0.25);
-  for (let i = 0; i < 7; i++) vein("#c9a45a", 1 + random() * 1.5, 0.35);
-  // Tile joints (the texture spans 2 x 2 tiles)
-  ctx.strokeStyle = "rgba(120,110,100,0.45)";
-  ctx.lineWidth = 3;
-  for (const p of [0, size / 2, size]) {
-    ctx.beginPath();
-    ctx.moveTo(p, 0);
-    ctx.lineTo(p, size);
-    ctx.moveTo(0, p);
-    ctx.lineTo(size, p);
-    ctx.stroke();
-  }
-  marbleTexture = new THREE.CanvasTexture(canvas);
-  marbleTexture.colorSpace = THREE.SRGBColorSpace;
-  marbleTexture.wrapS = marbleTexture.wrapT = THREE.RepeatWrapping;
-  marbleTexture.repeat.set(W / 3, D / 3);
-  marbleTexture.anisotropy = 8;
-  return marbleTexture;
+  return t;
 }
 
 const WALNUT = "#4a2e1f";
 const IVORY = "#f6f0e4";
 const GOLD = "#c9a45a";
 
-const WALLS = [
+const wallsOf = (W: number, D: number) => [
   { side: "back", pos: [0, 0, -D / 2], rot: 0, len: W },
   { side: "front", pos: [0, 0, D / 2], rot: Math.PI, len: W },
   { side: "left", pos: [-W / 2, 0, 0], rot: Math.PI / 2, len: D },
@@ -193,7 +155,9 @@ const WALLS = [
  * The room's architecture in a luxury finish: marble floor with a gold inlay, walnut
  * wainscoting under ivory walls, crown molding, and a coffered ceiling with chandeliers.
  */
-function Shell({ accent }: { accent: string }) {
+function Shell({ accent, hq }: { accent: string; hq: boolean }) {
+  const { width: W, depth: D, height: H } = useRoom();
+  const WALLS = wallsOf(W, D);
   const sky = useRef<THREE.MeshStandardMaterial>(null);
   const day = useMemo(() => new THREE.Color("#cfe8ff"), []);
   const night = useMemo(() => new THREE.Color("#241a55"), []);
@@ -201,7 +165,7 @@ function Shell({ accent }: { accent: string }) {
     if (sky.current) sky.current.emissive.lerpColors(day, night, worldEnv.night);
   });
   const gold = useMemo(() => new THREE.MeshStandardMaterial({ color: GOLD, metalness: 0.85, roughness: 0.25 }), []);
-  const floor = useMemo(() => marble(), []);
+  const floor = useMemo(() => marble(W, D), [W, D]);
 
   return (
     <group>
@@ -310,31 +274,39 @@ function Shell({ accent }: { accent: string }) {
         <planeGeometry args={[W, D]} />
         <meshStandardMaterial color="#f1e9da" />
       </mesh>
-      {[-8, -4, 0, 4, 8].map((x) => (
+      {beams(W).map((x) => (
         <mesh key={`bx${x}`} position={[x, H - 0.11, 0]}>
           <boxGeometry args={[0.22, 0.22, D]} />
           <meshStandardMaterial color={IVORY} roughness={0.7} />
         </mesh>
       ))}
-      {[-6, -2, 2, 6].map((z) => (
+      {beams(D).map((z) => (
         <mesh key={`bz${z}`} position={[0, H - 0.11, z]}>
           <boxGeometry args={[W, 0.22, 0.22]} />
           <meshStandardMaterial color={IVORY} roughness={0.7} />
         </mesh>
       ))}
-      {[-6, 6].map((x) => (
-        <Chandelier key={x} position={[x, H, -1]} gold={gold} />
-      ))}
-      <Chandelier position={[0, H, 4]} gold={gold} small />
-      <pointLight position={[0, H - 1.2, -1]} intensity={18} distance={14} decay={2} color="#ffe2b8" />
+      {hq ? (
+        // The HQ lobby; the departments light themselves
+        [-5, 5].map((x) => <Chandelier key={x} position={[x, H, D / 2 - 5]} gold={gold} />)
+      ) : (
+        <>
+          {[-6, 6].map((x) => (
+            <Chandelier key={x} position={[x, H, -1]} gold={gold} />
+          ))}
+          <Chandelier position={[0, H, 4]} gold={gold} small />
+          <pointLight position={[0, H - 1.2, -1]} intensity={18} distance={14} decay={2} color="#ffe2b8" />
+        </>
+      )}
 
-      {/* Tall windows on the right wall with slim black-and-gold frames */}
-      <OnWall side="right">
-        {[-5, 0, 5].map((z) => (
-          <group key={z} position={[W / 2 - 0.02, 3.2, z]} rotation-y={-Math.PI / 2}>
+      {/* Tall windows with slim black-and-gold frames (both side walls in the HQ) */}
+      {(hq ? (["right", "left"] as const) : (["right"] as const)).map((wall) => (
+      <OnWall key={wall} side={wall}>
+        {(hq ? [-12, -2.5, 3.5, 11.5] : [-5, 0, 5]).map((z) => (
+          <group key={z} position={[wall === "right" ? W / 2 - 0.02 : -W / 2 + 0.02, 3.2, z]} rotation-y={wall === "right" ? -Math.PI / 2 : Math.PI / 2}>
             <mesh>
               <planeGeometry args={[3.4, 2.6]} />
-              <meshStandardMaterial ref={z === 0 ? sky : undefined} color="#9fc7ef" emissive="#cfe8ff" emissiveIntensity={0.8} />
+              <meshStandardMaterial ref={z === 0 || (wall === "right" && z === 3.5) ? sky : undefined} color="#9fc7ef" emissive="#cfe8ff" emissiveIntensity={0.8} />
             </mesh>
             {[-1.7, 0, 1.7].map((x) => (
               <mesh key={x} position={[x, 0, 0.02]}>
@@ -354,6 +326,7 @@ function Shell({ accent }: { accent: string }) {
           </group>
         ))}
       </OnWall>
+      ))}
 
       {/* Sconces flanking the door */}
       <OnWall side="front">
@@ -383,7 +356,14 @@ function Shell({ accent }: { accent: string }) {
   );
 }
 
+/** Ceiling beam positions every 4 m, symmetric about the middle. */
+function beams(length: number) {
+  const n = Math.floor((length / 2 - 1) / 4);
+  return Array.from({ length: n * 2 + 1 }, (_, i) => (i - n) * 4);
+}
+
 function Pilaster({ position, gold }: { position: [number, number, number]; gold: THREE.Material }) {
+  const { height: H } = useRoom();
   return (
     <group position={position}>
       <mesh position={[0, H / 2, 0]} castShadow>
@@ -487,7 +467,8 @@ function ExitDoor({
   district: DistrictId;
   accent: string;
 }) {
-  const where = useMemo(() => new THREE.Vector3(0, 0, D / 2 - 1.2), []);
+  const { depth: D } = useRoom();
+  const where = useMemo(() => new THREE.Vector3(0, 0, D / 2 - 1.2), [D]);
   useProximity({
     id: `leave-${id}`,
     label: "Go back outside",
@@ -556,7 +537,8 @@ function InfoKiosk({
   label: string;
   accent: string;
 }) {
-  const where = useMemo(() => new THREE.Vector3(7, 0, D / 2 - 2.6), []);
+  const { depth: D } = useRoom();
+  const where = useMemo(() => new THREE.Vector3(7, 0, D / 2 - 2.6), [D]);
   useProximity({
     id: `kiosk-${id}`,
     label: `Read about ${label}`,
@@ -594,7 +576,7 @@ function InfoKiosk({
 // ---------------------------------------------------------------------------
 
 /** A framed board with a heading and a paragraph. */
-function Board({
+export function Board({
   position,
   rotationY = 0,
   width,
@@ -653,7 +635,7 @@ function Board({
 }
 
 /** The tech stack as colored tiles, two rows along a wall. */
-function TechTiles({
+export function TechTiles({
   tech,
   position,
   rotationY,
@@ -713,7 +695,7 @@ function TechTiles({
 }
 
 /** Highlights as boards on the left wall, in two rows. */
-function HighlightWall({
+export function HighlightWall({
   items,
   accent,
   title,
@@ -722,6 +704,7 @@ function HighlightWall({
   accent: string;
   title: string;
 }) {
+  const { width: W, depth: D } = useRoom();
   const shown = items.slice(0, 6);
   const perRow = Math.max(1, Math.ceil(shown.length / 2));
   const span = D - 4;
@@ -771,8 +754,7 @@ const monthYear = (m: string | null) => {
 };
 
 function Office({ job, accent }: { job: Experience; accent: string }) {
-  // Sahme Trading builds trading platforms: its office is a trading floor.
-  const trading = job.id === "sahme";
+  const { width: W, depth: D } = useRoom();
   const seats = useMemo<Seat[]>(
     () =>
       [-5, 0, 5].flatMap((x) =>
@@ -871,11 +853,7 @@ function Office({ job, accent }: { job: Experience; accent: string }) {
       {/* Desks with monitors and chairs */}
       {[-5, 0, 5].flatMap((x) =>
         [-3, 1].map((z) =>
-          trading ? (
-            <TradingDesk key={`${x}${z}`} x={x} z={z} seed={x * 3 + z + 20} duck={x === 5 && z === 1} />
-          ) : (
-            <Desk key={`${x}${z}`} x={x} z={z} accent={accent} />
-          ),
+          <Desk key={`${x}${z}`} x={x} z={z} accent={accent} />,
         ),
       )}
       <Seats seats={seats} />
@@ -907,8 +885,6 @@ function Office({ job, accent }: { job: Experience; accent: string }) {
           {job.company}
         </Text>
       </group>
-
-      {trading && <TradingFloor wall={(side, node) => <OnWall side={side}>{node}</OnWall>} />}
 
       {job.plaque && (
         <OnWall side="front">
@@ -980,9 +956,10 @@ function Desk({ x, z, accent }: { x: number; z: number; accent: string }) {
   );
 }
 
-function Plaque({ text }: { text: string }) {
+export function Plaque({ text, x = -3.2 }: { text: string; x?: number }) {
+  const { depth: D } = useRoom();
   return (
-    <group position={[-3.2, 2.2, D / 2 - 0.04]} rotation-y={Math.PI}>
+    <group position={[x, 2.2, D / 2 - 0.04]} rotation-y={Math.PI}>
       <mesh position={[0, 0, -0.02]}>
         <boxGeometry args={[2.6, 0.7, 0.04]} />
         <meshStandardMaterial
@@ -1007,6 +984,7 @@ function Plaque({ text }: { text: string }) {
 }
 
 function Studio({ project, accent }: { project: Project; accent: string }) {
+  const { width: W, depth: D } = useRoom();
   const screen = useGlowMaterial(accent, 0.25, 0.5, "#140d2e");
   const signature = useMemo(
     () => signatureFor(project.id, project.name),

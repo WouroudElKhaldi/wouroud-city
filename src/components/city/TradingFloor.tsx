@@ -5,21 +5,17 @@ import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { useCityStore, type Seat } from "@/state/useCityStore";
-import { ROOM } from "@/world/interiors";
+import { useCityStore } from "@/state/useCityStore";
 import { accents } from "@/world/palette";
 import { emitBurst } from "./Particles";
-import { SlotMachine } from "./SlotMachine";
-import { Seats } from "./StreetDetails";
 
 /**
- * Sahme Trading's office as a trading floor that is also an engineering team's home:
- * live candlestick walls, price tickers, a golden bull and crypto coins, world market
- * clocks, server racks, a coffee bar, an architecture whiteboard and a dev lounge.
- * Screens are drawn on canvases (charts and code), so nothing is downloaded.
+ * Trading-floor pieces for Sahme Trading's HQ (SahmeHQ.tsx): live candlestick screens,
+ * price tickers, a golden bull and crypto coins, world market clocks, server racks,
+ * a coffee bar, an architecture whiteboard and a neon sign. Screens are drawn on
+ * canvases (charts and code), so nothing is downloaded.
  */
 
-const D = ROOM.depth;
 const UP = "#22c55e";
 const DOWN = "#ef4444";
 const SCREEN_BG = "#0b1020";
@@ -28,14 +24,14 @@ const SCREEN_BG = "#0b1020";
 // Canvas screens
 // ---------------------------------------------------------------------------
 
-function rng(seed: number) {
+export function rng(seed: number) {
   let s = seed % 2147483647 || 1;
   return () => (s = (s * 16807) % 2147483647) / 2147483647;
 }
 
 type Candle = { o: number; h: number; l: number; c: number };
 
-function walk(
+export function walk(
   count: number,
   start: number,
   vol: number,
@@ -43,12 +39,14 @@ function walk(
 ): Candle[] {
   const out: Candle[] = [];
   let price = start;
-  for (let i = 0; i < count; i++)
-    (out.push(nextCandle(price, vol, random)), (price = out[i].c));
+  for (let i = 0; i < count; i++) {
+    out.push(nextCandle(price, vol, random));
+    price = out[i].c;
+  }
   return out;
 }
 
-function nextCandle(open: number, vol: number, random: () => number): Candle {
+export function nextCandle(open: number, vol: number, random: () => number): Candle {
   const c = open + (random() - 0.48) * vol;
   return {
     o: open,
@@ -59,7 +57,7 @@ function nextCandle(open: number, vol: number, random: () => number): Candle {
 }
 
 /** Candlesticks with a moving average, a grid and a price label. */
-function drawChart(
+export function drawChart(
   ctx: CanvasRenderingContext2D,
   candles: Candle[],
   label: string,
@@ -136,7 +134,7 @@ const CODE = [
   ["    ->middleware(['auth', 'kyc', 'throttle:6,1']);", "#fde68a"],
 ] as const;
 
-function drawCode(ctx: CanvasRenderingContext2D, offset: number) {
+export function drawCode(ctx: CanvasRenderingContext2D, offset: number) {
   const { width: w, height: h } = ctx.canvas;
   ctx.fillStyle = "#151026";
   ctx.fillRect(0, 0, w, h);
@@ -155,7 +153,7 @@ function drawCode(ctx: CanvasRenderingContext2D, offset: number) {
   }
 }
 
-function canvasTexture(w: number, h: number) {
+export function canvasTexture(w: number, h: number) {
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
@@ -166,7 +164,7 @@ function canvasTexture(w: number, h: number) {
 }
 
 /** A static chart or code screen for a desk monitor. */
-function useDeskScreen(kind: "chart" | "code", seed: number) {
+export function useDeskScreen(kind: "chart" | "code", seed: number) {
   return useMemo(() => {
     const { ctx, texture } = canvasTexture(512, 300);
     if (kind === "code") drawCode(ctx, seed);
@@ -192,7 +190,7 @@ function useDeskScreen(kind: "chart" | "code", seed: number) {
 // ---------------------------------------------------------------------------
 
 /** A big wall screen whose chart adds a new candle every second. */
-function LiveChart({
+export function LiveChart({
   position,
   label,
   start,
@@ -263,7 +261,7 @@ const SYMBOLS: [string, number, number][] = [
 ];
 
 /** An LED tape of prices scrolling sideways; the prices wander every few seconds. */
-function Ticker({
+export function Ticker({
   position,
   rotationY = 0,
   length,
@@ -339,111 +337,8 @@ function Ticker({
   );
 }
 
-/** A trading desk: three monitors (chart, code, chart), keyboard, and sometimes a rubber duck. */
-export function TradingDesk({
-  x,
-  z,
-  seed,
-  duck,
-}: {
-  x: number;
-  z: number;
-  seed: number;
-  duck?: boolean;
-}) {
-  const left = useDeskScreen("chart", seed);
-  const middle = useDeskScreen("code", seed);
-  const right = useDeskScreen("chart", seed + 3);
-  return (
-    <group position={[x, 0, z]}>
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[0.95, 0.38, 0.42]} position={[0, 0.38, 0]} />
-      </RigidBody>
-      <mesh position={[0, 0.74, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.9, 0.06, 0.85]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.5} />
-      </mesh>
-      <mesh position={[0, 0.775, 0.36]}>
-        <boxGeometry args={[1.9, 0.012, 0.04]} />
-        <meshStandardMaterial
-          color={accents.gold}
-          emissive={accents.gold}
-          emissiveIntensity={0.5}
-        />
-      </mesh>
-      {[-0.85, 0.85].map((lx) => (
-        <mesh key={lx} position={[lx, 0.36, 0]} castShadow>
-          <boxGeometry args={[0.06, 0.72, 0.75]} />
-          <meshStandardMaterial color="#111827" />
-        </mesh>
-      ))}
-      {[
-        [-0.62, 0.35, left],
-        [0, 0, middle],
-        [0.62, -0.35, right],
-      ].map(([mx, rot, map], i) => (
-        <group
-          key={i}
-          position={[mx as number, 1.13, -0.22 + (i === 1 ? -0.06 : 0)]}
-          rotation-y={rot as number}
-        >
-          <mesh position={[0, 0, -0.025]} castShadow>
-            <boxGeometry args={[0.62, 0.38, 0.03]} />
-            <meshStandardMaterial color="#0f172a" />
-          </mesh>
-          <mesh>
-            <planeGeometry args={[0.58, 0.34]} />
-            <meshBasicMaterial map={map as THREE.Texture} toneMapped={false} />
-          </mesh>
-          <mesh position={[0, -0.27, -0.03]}>
-            <boxGeometry args={[0.04, 0.2, 0.04]} />
-            <meshStandardMaterial color="#111827" />
-          </mesh>
-        </group>
-      ))}
-      {/* Mechanical keyboard with glowing keys */}
-      <mesh position={[0, 0.79, 0.1]}>
-        <boxGeometry args={[0.62, 0.03, 0.2]} />
-        <meshStandardMaterial
-          color="#111827"
-          emissive="#7c3aed"
-          emissiveIntensity={0.35}
-        />
-      </mesh>
-      <mesh position={[0.45, 0.785, 0.12]}>
-        <boxGeometry args={[0.1, 0.02, 0.14]} />
-        <meshStandardMaterial color="#111827" />
-      </mesh>
-      {duck && <RubberDuck position={[-0.7, 0.77, 0.15]} />}
-      {/* Office chair */}
-      <group position={[0, 0, 0.95]}>
-        <mesh position={[0, 0.46, 0]} castShadow>
-          <boxGeometry args={[0.58, 0.09, 0.58]} />
-          <meshStandardMaterial color="#111827" />
-        </mesh>
-        <mesh position={[0, 0.86, 0.27]} castShadow>
-          <boxGeometry args={[0.56, 0.72, 0.08]} />
-          <meshStandardMaterial color="#111827" />
-        </mesh>
-        <mesh position={[0, 0.86, 0.315]}>
-          <boxGeometry args={[0.08, 0.6, 0.01]} />
-          <meshStandardMaterial color={accents.gold} />
-        </mesh>
-        <mesh position={[0, 0.22, 0]}>
-          <cylinderGeometry args={[0.04, 0.04, 0.44, 8]} />
-          <meshStandardMaterial color="#374151" metalness={0.6} />
-        </mesh>
-        <mesh position={[0, 0.03, 0]}>
-          <cylinderGeometry args={[0.3, 0.3, 0.04, 5]} />
-          <meshStandardMaterial color="#374151" metalness={0.6} />
-        </mesh>
-      </group>
-    </group>
-  );
-}
-
 /** Every developer's debugging partner. Click it to squeak. */
-function RubberDuck({ position }: { position: [number, number, number] }) {
+export function RubberDuck({ position }: { position: [number, number, number] }) {
   const group = useRef<THREE.Group>(null);
   const hop = useRef(-10);
   const pending = useRef(false);
@@ -489,7 +384,7 @@ function RubberDuck({ position }: { position: [number, number, number] }) {
 }
 
 /** A golden bull on a plinth, the market's mascot. Click it for a bull run. */
-function Bull({ position }: { position: [number, number, number] }) {
+export function Bull({ position }: { position: [number, number, number] }) {
   const gold = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
@@ -608,7 +503,7 @@ function Bull({ position }: { position: [number, number, number] }) {
 }
 
 /** Floating ₿ and Ξ coins over a plinth. Click a coin to flip it. */
-function CryptoCoins({ position }: { position: [number, number, number] }) {
+export function CryptoCoins({ position }: { position: [number, number, number] }) {
   const coins = [
     { symbol: "₿", color: "#f7931a", x: -0.38, h: 1.75 },
     { symbol: "Ξ", color: "#8b9bd8", x: 0.42, h: 1.45 },
@@ -702,7 +597,7 @@ function Coin({
 }
 
 /** Market clocks: New York, London, Beirut and Tokyo, ticking in real time. */
-function WorldClocks({ position }: { position: [number, number, number] }) {
+export function WorldClocks({ position }: { position: [number, number, number] }) {
   const zones = [
     ["New York", "America/New_York"],
     ["London", "Europe/London"],
@@ -791,7 +686,7 @@ function Clock({ city, zone, x }: { city: string; zone: string; x: number }) {
 }
 
 /** Two server racks with blinking status lights. */
-function ServerRacks({ position }: { position: [number, number, number] }) {
+export function ServerRacks({ position }: { position: [number, number, number] }) {
   const leds = useMemo(
     () =>
       Array.from(
@@ -850,7 +745,7 @@ function ServerRacks({ position }: { position: [number, number, number] }) {
 }
 
 /** The team's coffee bar: counter, espresso machine and mugs. */
-function CoffeeBar({ position }: { position: [number, number, number] }) {
+export function CoffeeBar({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
       <RigidBody type="fixed" colliders={false}>
@@ -904,7 +799,7 @@ function CoffeeBar({ position }: { position: [number, number, number] }) {
 }
 
 /** The whiteboard by reception: the payments architecture the team builds. */
-function Whiteboard({ position }: { position: [number, number, number] }) {
+export function Whiteboard({ position }: { position: [number, number, number] }) {
   const boxes: [string, number, number, string][] = [
     ["Client portal", -1.4, 0.55, "#7c3aed"],
     ["CRM", 0, 0.55, "#0f766e"],
@@ -968,7 +863,7 @@ function Whiteboard({ position }: { position: [number, number, number] }) {
 }
 
 /** A neon "</>" on the wall. */
-function NeonCode({ position }: { position: [number, number, number] }) {
+export function NeonCode({ position, rotationY = Math.PI }: { position: [number, number, number]; rotationY?: number }) {
   const glow = useMemo(
     () => new THREE.MeshBasicMaterial({ color: "#c084fc", toneMapped: false }),
     [],
@@ -977,7 +872,7 @@ function NeonCode({ position }: { position: [number, number, number] }) {
     glow.color.setHSL(0.78, 0.9, 0.62 + Math.sin(clock.elapsedTime * 2) * 0.06);
   });
   return (
-    <group position={position} rotation-y={Math.PI}>
+    <group position={position} rotation-y={rotationY}>
       <Text fontSize={0.9} material={glow} anchorX="center" anchorY="middle">
         {"</>"}
       </Text>
@@ -989,143 +884,6 @@ function NeonCode({ position }: { position: [number, number, number] }) {
       >
         Sahme Engineering
       </Text>
-    </group>
-  );
-}
-
-/** Beanbags around a low table with a laptop and the classic books. */
-function DevLounge() {
-  const seats = useMemo<Seat[]>(
-    () => [
-      { id: "beanbag-1", x: -10.4, y: -0.2, z: -3.6, facing: Math.PI / 2 },
-      { id: "beanbag-2", x: -10.4, y: -0.2, z: 0.8, facing: Math.PI / 2 },
-    ],
-    [],
-  );
-  const laptop = useDeskScreen("code", 4);
-  return (
-    <group>
-      <mesh
-        rotation-x={-Math.PI / 2}
-        position={[-10, 0.01, -1.4]}
-        receiveShadow
-      >
-        <circleGeometry args={[2.6, 40]} />
-        <meshStandardMaterial color="#0f766e" roughness={1} />
-      </mesh>
-      {seats.map((s, i) => (
-        <mesh
-          key={s.id}
-          position={[s.x - 0.1, 0.28, s.z]}
-          scale={[1, 0.6, 1]}
-          castShadow
-        >
-          <sphereGeometry args={[0.55, 20, 16]} />
-          <meshStandardMaterial
-            color={i ? accents.gold : "#7c3aed"}
-            roughness={0.95}
-          />
-        </mesh>
-      ))}
-      <Seats seats={seats} />
-      <group position={[-10.2, 0, -1.4]}>
-        <RigidBody type="fixed" colliders={false}>
-          <CuboidCollider args={[0.5, 0.2, 0.5]} position={[0, 0.2, 0]} />
-        </RigidBody>
-        <mesh position={[0, 0.2, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.55, 0.55, 0.4, 28]} />
-          <meshStandardMaterial color="#e9dcc6" />
-        </mesh>
-        {/* Laptop */}
-        <mesh position={[0.05, 0.415, 0.05]}>
-          <boxGeometry args={[0.42, 0.02, 0.3]} />
-          <meshStandardMaterial color="#9ca3af" metalness={0.7} />
-        </mesh>
-        <group position={[0.05, 0.55, -0.1]} rotation-x={-0.25}>
-          <mesh>
-            <boxGeometry args={[0.42, 0.28, 0.015]} />
-            <meshStandardMaterial color="#9ca3af" metalness={0.7} />
-          </mesh>
-          <mesh position={[0, 0, 0.009]}>
-            <planeGeometry args={[0.39, 0.25]} />
-            <meshBasicMaterial map={laptop} toneMapped={false} />
-          </mesh>
-        </group>
-        {/* Books */}
-        {[
-          ["#7c3aed", 0.06],
-          ["#d69e2e", 0.1],
-          ["#0f766e", 0.14],
-        ].map(([color, y], i) => (
-          <mesh
-            key={i}
-            position={[-0.28, 0.4 + (y as number), 0.15]}
-            rotation-y={i * 0.25}
-          >
-            <boxGeometry args={[0.26, 0.04, 0.19]} />
-            <meshStandardMaterial color={color as string} />
-          </mesh>
-        ))}
-        <RubberDuck position={[0.32, 0.4, 0.25]} />
-      </group>
-    </group>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// The floor
-// ---------------------------------------------------------------------------
-
-/** Everything that makes Sahme Trading's office a trading floor. Wall pieces come through `wall`. */
-export function TradingFloor({
-  wall,
-}: {
-  wall: (
-    side: "front" | "back" | "left" | "right",
-    node: React.ReactNode,
-  ) => React.ReactNode;
-}) {
-  return (
-    <group>
-      {wall(
-        "back",
-        <>
-          <LiveChart
-            position={[-9.4, 3.35, -D / 2 + 0.06]}
-            label="EUR/USD"
-            start={1.084}
-            vol={0.0012}
-            digits={4}
-          />
-          <LiveChart
-            position={[9.4, 3.35, -D / 2 + 0.06]}
-            label="BTC/USD"
-            start={67400}
-            vol={180}
-            digits={0}
-          />
-          <Ticker position={[0, 1.15, -D / 2 + 0.05]} length={13.6} />
-        </>,
-      )}
-      {wall(
-        "front",
-        <>
-          <Ticker
-            position={[0, 4.3, D / 2 - 0.05]}
-            rotationY={Math.PI}
-            length={9}
-          />
-          <Whiteboard position={[-7, 2.45, D / 2 - 0.05]} />
-          <WorldClocks position={[6.6, 3.55, D / 2 - 0.05]} />
-          <NeonCode position={[6.6, 1.85, D / 2 - 0.05]} />
-        </>,
-      )}
-      <ServerRacks position={[9.6, 0, -D / 2 + 0.75]} />
-      <CoffeeBar position={[-9.3, 0, -D / 2 + 0.6]} />
-      <Bull position={[-3.6, 0, 5.4]} />
-      <CryptoCoins position={[3.6, 0, 5.4]} />
-      <DevLounge />
-      <SlotMachine position={[10.3, 0, 5.2]} rotationY={-Math.PI / 2} />
     </group>
   );
 }

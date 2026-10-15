@@ -13,7 +13,42 @@ Big source assets (Rocketbox FBX/TGA, ~3.5 GB) are **not** in git (`.assets-src/
 converted web files in `public/models/rb` are. Re-download them only if you need to convert new avatars.
 
 ### Latest work (newest first)
-0. **Luxury pass + Sahme trading floor + sizing (latest).**
+0. **Sahme Trading HQ + body-fitted furniture (latest).** The owner disliked the first Sahme office and
+   asked for a much bigger office with departments, luxurious and close to real, and for every pose to be
+   checked in screenshots (no knees inside chairs).
+   - `SahmeHQ.tsx`: Sahme's room is now a 44 × 32 × 5.6 m headquarters floor (`HQ_ROOM`; rooms have per-id
+     sizes via `roomSize(id)` and a `useRoom()` context in `InteriorScene.tsx`). Lobby (company wall with
+     roles/summary and "What I do here" on its back, black-marble reception with a seated receptionist,
+     Chesterfield lounge, bull, coins, slots, coffee bar, clocks), a trading floor (12 triple-screen desks
+     under a hanging four-sided live market screen), and 8 glass-walled departments with gold signs:
+     Marketing, Sales, Operations, Risk Management (back row, doors on the corridor), Accounting and HR
+     (left), Software Engineering (Wouroud's desk + nameplate, whiteboard, neon, tech wall, racks, beanbags)
+     and Financial Counseling (right). Each has its own screens (canvas-drawn: campaign, analytics, CRM,
+     ops dashboard, ledger, risk heatmap, world map, sales leaderboard), rug, pendants and a light.
+     Interactive: sales **gong** and accounting **vault** (click), globe (click to spin), plus the old
+     bull/coins/ducks/slots. 12 seated coworkers + 2 walkers; every free chair/sofa seat is sit-able.
+   - `Furniture.tsx`: luxury pieces at real size (walnut desks with brass sled legs and leather pads,
+     executive chairs, guest chairs, Chesterfield sofas/armchairs, bookcases, credenzas, filing cabinets,
+     marble tables, pendants, floor/banker's lamps, plants, rugs, paintings, glass walls with doors).
+     `luxury.ts`: shared walnut/leather/velvet/brass/marble/glass finishes (canvas textures) and
+     `batchStatic` (`<Batch>`): merges static furniture into one mesh per material and takes the
+     originals out of matrix updates/rendering (HQ renders cheaper than the hub).
+   - **Seats are cut to the measured sitting pose** (`SEAT` in `Furniture.tsx`): hips 0.64–0.66 m, knees
+     26–28 cm ahead of the seat point; cushion slopes 0.52 → 0.46 m, backrest face 22 cm behind the seat
+     point, open under the front edge for the calves, chair base turned so no spoke is under the feet.
+     Use these pieces (or that geometry) for any new seat. Checked in side close-ups: office chair
+     (woman, man, coworkers), sofa, guest chair.
+   - `Person.tsx`: the women's Rocketbox chair-sit clip pushed the toes ~7 cm into the floor; while seated,
+     each foot is now tipped up at the ankle until the ball of the foot rests on the floor (skips feet that
+     are already above it, e.g. on the horse).
+   - Indoors the SSAO pass is off (it speckled furniture and glass at room scale); the effect stack remounts
+     when going in/out.
+   - Dev testing tip: bone heights via `skeleton.bones` world positions; side close-ups by sitting the
+     player (`__store.getState().sit({...})`), `controls.rotateTo`, a narrow `camera.fov` and
+     `controls.setFocalOffset(0, 1, 0)`. Merged furniture doesn't hot-reload: reload the page after edits.
+   - Next: give the other offices/studios the new furniture (they still use the old simple desks/sofas),
+     then the luxury look outdoors.
+1. **Luxury pass + Sahme trading floor + sizing.**
    - Every room (`InteriorScene.tsx` → `Shell`): marble floor with gold inlay, walnut wainscoting,
      ivory walls, crown molding, walnut pilasters, coffered ceiling, gold chandeliers, sconces, olive
      trees in brass planters, black-and-gold window frames. Owner wants the **whole city to feel
@@ -67,7 +102,8 @@ converted web files in `public/models/rb` are. Re-download them only if you need
      (keep the `CharacterAnimation` type — move it into `Person.tsx` first), `public/models/people*`.
 
 ### Next up (owner said "work one by one" through this list)
-1. Finish/verify walk-in interiors (above).
+1. Finish/verify walk-in interiors: Sahme HQ is done and checked; move the other offices and studios
+   onto `Furniture.tsx` pieces (real-size, body-fitted seats) and check them the same way.
 2. Crochet toy in the Hobby Quarter.
 3. New robot avatar (still the old primitive model in `Avatar.tsx`).
 4. Jump/fall animations; delete the old character code.

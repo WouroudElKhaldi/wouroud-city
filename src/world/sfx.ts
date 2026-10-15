@@ -80,6 +80,15 @@ export const sfx = {
   sparkle: () => {
     [1568, 2093, 2637].forEach((f, i) => tone(f, 0.18, "sine", 0.05, undefined, i * 0.06));
   },
+  gong: () => {
+    [98, 147, 196, 262, 311].forEach((f, i) => tone(f, 3 - i * 0.4, "sine", 0.14 / (i + 1), f * 0.985));
+    noise(0.25, 0.08, 500);
+  },
+  vault: () => {
+    [0, 0.09, 0.18, 0.27].forEach((d) => tone(1800, 0.03, "square", 0.04, undefined, d));
+    tone(160, 0.35, "square", 0.07, 70, 0.45);
+    noise(0.3, 0.1, 500, 0.45);
+  },
   talk: () => {
     [300, 360, 280, 340].forEach((f, i) => tone(f, 0.07, "triangle", 0.06, undefined, i * 0.08));
   },

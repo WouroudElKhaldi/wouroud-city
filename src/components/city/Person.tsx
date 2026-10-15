@@ -56,6 +56,13 @@ const ONE_SHOT: CharacterAnimation[] = ["pick-up", "emote-yes", "interact-right"
 const GROUND_FRAMES = 30;
 const probe = new THREE.Vector3();
 const inverse = new THREE.Matrix4();
+const ankle = new THREE.Vector3();
+const ball = new THREE.Vector3();
+const flat = new THREE.Vector3();
+const turn = new THREE.Quaternion();
+const parentTurn = new THREE.Quaternion();
+/** Height of the ball of the foot above the floor when it rests flat (inside the shoe). */
+const BALL_HEIGHT = 0.03;
 
 const textures = new Map<string, THREE.Texture>();
 function texture(url: string, color: boolean) {
@@ -216,6 +223,36 @@ function Rig({
       }
     });
     if (g.frames === GROUND_FRAMES && Number.isFinite(g.min)) model.position.y = -g.min;
+  });
+
+  // Seated, the women's chair clip points the feet down through the floor (toes ~7 cm under it).
+  // After the clip poses the body, tip each foot up at the ankle until the ball of the foot
+  // rests on the floor. Feet that are already above the floor (a horse's stirrups) are left alone.
+  const feet = useMemo(
+    () =>
+      (["L", "R"] as const)
+        .map((side) => [model.getObjectByName(`Bip01_${side}_Foot`), model.getObjectByName(`Bip01_${side}_Toe0`)])
+        .filter((pair): pair is [THREE.Object3D, THREE.Object3D] => !!pair[0] && !!pair[1]),
+    [model],
+  );
+  useFrame(() => {
+    if (animation !== "sit") return;
+    for (const [foot, toe] of feet) {
+      foot.getWorldPosition(ankle);
+      toe.getWorldPosition(ball);
+      if (ball.y >= BALL_HEIGHT) continue;
+      const length = ball.distanceTo(ankle);
+      flat.subVectors(ball, ankle).normalize();
+      const drop = THREE.MathUtils.clamp((BALL_HEIGHT - ankle.y) / length, -1, 0);
+      const across = Math.hypot(flat.x, flat.z) || 1;
+      const reach = Math.sqrt(1 - drop * drop);
+      const target = probe.set((flat.x / across) * reach, drop, (flat.z / across) * reach);
+      // World turn → the foot's local space: L' = P⁻¹ · R · P · L
+      turn.setFromUnitVectors(flat, target);
+      foot.parent!.getWorldQuaternion(parentTurn);
+      turn.premultiply(parentTurn.clone().invert()).multiply(parentTurn);
+      foot.quaternion.premultiply(turn);
+    }
   });
 
   // Feet keep pace with the ground instead of sliding.
