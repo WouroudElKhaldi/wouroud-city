@@ -11,7 +11,7 @@ import { useCityStore } from "@/state/useCityStore";
 import { playerState } from "@/world/env";
 import { touchInput } from "@/world/touch";
 import { Avatar } from "./Avatar";
-import type { CharacterAnimation } from "./Character";
+import type { CharacterAnimation } from "./Person";
 import { Person } from "./Person";
 import { playerLook } from "@/world/outfits";
 import { CAR_SCALE, CarModel, type CarMotion } from "./CarModel";

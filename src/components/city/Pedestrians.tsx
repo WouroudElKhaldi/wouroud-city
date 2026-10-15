@@ -11,7 +11,7 @@ import { playerState } from "@/world/env";
 import { sfx } from "@/world/sfx";
 import { NPC_PEOPLE } from "@/world/outfits";
 import { Person, type PersonLook } from "./Person";
-import type { CharacterAnimation } from "./Character";
+import type { CharacterAnimation } from "./Person";
 import { useProximity } from "./useProximity";
 
 export type Walker = {

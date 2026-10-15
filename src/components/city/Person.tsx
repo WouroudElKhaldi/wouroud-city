@@ -6,7 +6,6 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { playerState } from "@/world/env";
-import type { CharacterAnimation } from "./Character";
 
 /**
  * People from Microsoft Rocketbox (MIT): realistic adults wearing real modeled
@@ -20,6 +19,21 @@ export type PersonLook = {
   id: string;
   body: "female" | "male";
 };
+
+/** Everything a body can be doing; each maps to a Rocketbox clip in CLIPS. */
+export type CharacterAnimation =
+  | "idle"
+  | "walk"
+  | "sprint"
+  | "jump"
+  | "fall"
+  | "sit"
+  | "drive"
+  | "pick-up"
+  | "emote-yes"
+  | "emote-no"
+  | "interact-right"
+  | "interact-left";
 
 const MODEL_URL = (id: string) => `/models/rb/${id}/model.glb`;
 const ANIM_URL = (name: string) => `/models/rb/anim/${name}.glb`;
