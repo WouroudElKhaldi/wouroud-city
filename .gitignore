@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .assets-src/
+
+# local Claude Code settings (dev-server preview config)
+/.claude/
