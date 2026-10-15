@@ -16,12 +16,21 @@ import { accents } from "@/world/palette";
 import { signatureFor } from "@/world/signatures";
 import { Emblem } from "./Emblems";
 import { marbleTexture } from "./luxury";
+import { CodiCampus } from "./CodiCampus";
 import { DevelebHub } from "./DevelebHub";
+import { LifeSculptorHub } from "./LifeSculptorHub";
 import { SahmeHQ } from "./SahmeHQ";
 import { useGlowMaterial } from "./materials";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Seats } from "./StreetDetails";
 import { useProximity } from "./useProximity";
+
+/** Rooms designed in their organization's own look (they draw their own shell). */
+const BRANDED: Record<string, { Room: (props: { job: Experience }) => React.ReactNode; accent: string }> = {
+  develeb: { Room: DevelebHub, accent: "#10c38e" },
+  codi: { Room: CodiCampus, accent: "#e6007e" },
+  "life-sculptor": { Room: LifeSculptorHub, accent: "#2bb3a3" },
+};
 
 /** The size of the room being drawn (rooms differ: Sahme is a whole HQ floor). */
 const RoomContext = createContext<RoomSize>(ROOM);
@@ -48,9 +57,9 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
   const project = seedContent.projects.find((p) => p.id === room.id);
   const size = roomSize(room.id);
   const hq = room.id === "sahme";
-  // Develeb brings its own room, in its website's look
-  const develeb = room.id === "develeb";
-  const accent = room.id === "develeb" ? "#10c38e" : (spec?.color ?? "#7c3aed");
+  // These bring their own room, in their brand's look
+  const branded = BRANDED[room.id];
+  const accent = BRANDED[room.id]?.accent ?? spec?.color ?? "#7c3aed";
   const label = spec?.label ?? job?.company ?? project?.name ?? "Building";
 
   // Two people at work, walking a loop around the middle of the room.
@@ -80,7 +89,7 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
 
   return (
     <RoomContext value={size}>
-      {!develeb && <Shell accent={accent} hq={hq} />}
+      {!branded && <Shell accent={accent} hq={hq} />}
       <OnWall side="front">
         <ExitDoor id={room.id} district={room.district} accent={accent} />
       </OnWall>
@@ -92,14 +101,14 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
       />
       {hq && job ? (
         <SahmeHQ job={job} accent={accent} />
-      ) : develeb && job ? (
-        <DevelebHub job={job} />
+      ) : branded && job ? (
+        <branded.Room job={job} />
       ) : job ? (
         <Office job={job} accent={accent} />
       ) : project ? (
         <Studio project={project} accent={accent} />
       ) : null}
-      {!hq && !develeb && <Pedestrians walkers={walkers} />}
+      {!hq && !branded && <Pedestrians walkers={walkers} />}
     </RoomContext>
   );
 }

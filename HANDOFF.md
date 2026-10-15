@@ -13,7 +13,29 @@ Big source assets (Rocketbox FBX/TGA, ~3.5 GB) are **not** in git (`.assets-src/
 converted web files in `public/models/rb` are. Re-download them only if you need to convert new avatars.
 
 ### Latest work (newest first)
-0. **Develeb community hub (latest).** Develeb's room (`DevelebHub.tsx`, 36 × 26 × 5.4 m, `DEVELEB_ROOM`)
+0. **Reltrix in the Sahme HQ, Codi Tech campus, Life Sculptor hub (latest).**
+   - **Reltrix** (`Reltrix.tsx`): the trading-technology infrastructure Wouroud's team builds (SAHMEE
+     Technology = Reltrix's UK brand in the region). Eight product totems on the Sahme trading floor (Web
+     Trader, Invest Trader, AI Trader with animated sentiment bubbles, Prop Trading, CRM & Back Office, OMS,
+     Bridge & Connectivity, Plug-ins), drawn in Reltrix's near-black/cyan look; E or click tells what each
+     does. Engineering dept: Reltrix neon, "Build. Plug. Launch." ecosystem wall, product screens on the
+     team's desks. Lobby: SAHMEE Group panel with its five entities. Sources: reltrix.com (+ /products,
+     /ecosystem), the Reltrix expo brochure, sahmee.com, ai.sahmee.com.
+   - **Codi Tech** (`CodiCampus.tsx`, `CODI_ROOM` 30 × 22): bright campus in the logo's colors; the
+     radiating "C" as a sculpture of colored bars (click: ripple), MERN lesson screen, sprint board,
+     classroom of double desks with laptops (24 seats, 6 students), instructor desk, graduates wall
+     (cohorts Z01/B08/T02/B06 from Codi's Instagram highlights), Talent Expo poster (March 4th 2024),
+     "My bootcamp" wall (5 MERN apps, highlights, tech), graduation cap you can toss.
+   - **Life Sculptor** (`LifeSculptorHub.tsx`, `LIFE_ROOM` 26 × 20): the live site's mint/navy/lavender;
+     hero with count-up stats (3000+ students, 700+ volunteers, 5800+ certificates), virtual-session studio
+     (video-call screen, ring light, host desk), departments (Life Coders, Psychosocial Club, Academics),
+     "Why choose us", volunteer stars (click), study table, lounge, clover sculpture, and her role with a
+     note that **her redesign isn't online: the team went back to the old design** (the wall shows the live
+     old site). Instagram posts need a login (not done); bios were readable without one.
+   - `roomKit.tsx`: shared `ModernShell` (brand colors, concrete/oak/terrazzo floor), canvas helpers
+     (`wrap`, `box`, `dots`, `useCanvas`, `Panel`); Develeb now uses it. Branded rooms are listed in
+     `BRANDED` in `InteriorScene.tsx` (they draw their own shell). Laptops now face their users.
+1. **Develeb community hub.** Develeb's room (`DevelebHub.tsx`, 36 × 26 × 5.4 m, `DEVELEB_ROOM`)
    is designed in the develeb.org look (the owner designed that site's UI/UX): navy #061b2e, green
    #10c38e, off-white, the pixel cedar, green event cards with contour lines and dot grids. It replaces the
    luxury shell for this room (polished concrete, navy wainscoting with a green line, dark ceiling with

@@ -40,6 +40,7 @@ import { Board, OnWall, Plaque, TechTiles } from "./InteriorScene";
 import { finishes } from "./luxury";
 import { emitBurst } from "./Particles";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
+import { EcosystemPanel, GroupPanel, PRODUCTS, ProductTotem, ReltrixNeon, useProductScreen } from "./Reltrix";
 import { SlotMachine } from "./SlotMachine";
 import { Seats } from "./StreetDetails";
 import {
@@ -50,7 +51,6 @@ import {
   drawChart,
   drawCode,
   LiveChart,
-  NeonCode,
   rng,
   RubberDuck,
   ServerRacks,
@@ -383,7 +383,8 @@ type DeskSpec = {
   x: number;
   z: number;
   facing: number;
-  screens: (keyof Screens | `chart${number}` | `code${number}`)[];
+  /** Screens: a drawn screen, a chart or code by number, or a Reltrix product ("rx:web"). */
+  screens: (keyof Screens | `chart${number}` | `code${number}` | `rx:${string}`)[];
   extras?: Parameters<typeof Workstation>[0]["extras"];
   leather?: Leather;
   width?: number;
@@ -428,10 +429,11 @@ const DESKS: DeskSpec[] = [
   // HR: the manager's desk
   { id: "hr-1", x: -15.4, z: 14.7, facing: S, screens: [], extras: ["laptop", "lamp", "papers", "plant"], leather: "cognac" },
   // Software Engineering: Wouroud's team, facing the windows
-  { id: "dev-1", x: 18.6, z: -4.6, facing: E, screens: ["code0", "code1", "chart0"], width: 1.9, leather: "black", duck: true },
-  { id: "dev-2", x: 15.4, z: -4.6, facing: E, screens: ["code2", "code0"], width: 1.9, extras: ["mug"] },
-  { id: "dev-3", x: 15.4, z: -1.6, facing: E, screens: ["code1", "code2"], width: 1.9, who: "Male_Adult_19" },
-  { id: "dev-4", x: 18.6, z: -1.6, facing: E, screens: ["code0", "chart3", "code2"], width: 1.9, extras: ["plant"] },
+  // Software Engineering builds Reltrix: its desks show the products
+  { id: "dev-1", x: 18.6, z: -4.6, facing: E, screens: ["rx:crm", "code0", "rx:web"], width: 1.9, leather: "black", duck: true },
+  { id: "dev-2", x: 15.4, z: -4.6, facing: E, screens: ["rx:ai", "code2"], width: 1.9, extras: ["mug"] },
+  { id: "dev-3", x: 15.4, z: -1.6, facing: E, screens: ["rx:prop", "code1"], width: 1.9, who: "Male_Adult_19" },
+  { id: "dev-4", x: 18.6, z: -1.6, facing: E, screens: ["code0", "rx:invest", "code2"], width: 1.9, extras: ["plant"] },
   // Financial counseling: a partner's desk facing the clients
   { id: "fc-1", x: 20.7, z: 11.0, facing: Wd, screens: [], extras: ["laptop", "lamp", "papers"], leather: "cognac", width: 2, who: "Male_Adult_16" },
 ];
@@ -638,13 +640,21 @@ const DEPARTMENTS: { name: string; line: string; sign: [number, number, number];
   { name: "Risk Management", line: "Exposure · Compliance", sign: [12, 3.55, -6.92], rot: 0, light: [16.5, -11.5], rug: [16.5, -11.2, 8.4, 5.6, "#3a2a1c"] },
   { name: "Accounting", line: "Finance · Payroll · Audit", sign: [-12.92, 3.55, -1.25], rot: E, light: [-17.5, -1.2], rug: [-17.6, -1.2, 5.6, 7.6, "#1f3b33"] },
   { name: "Human Resources", line: "People · Culture · Hiring", sign: [-12.92, 3.55, 10.25], rot: E, light: [-17.5, 10.2], rug: [-18.2, 7.6, 3.6, 3.2, "#5a3a3a"] },
-  { name: "Software Engineering", line: "CRM · Client portal · Payments", sign: [12.92, 3.55, 0.25], rot: Wd, light: [17.5, -1.5], rug: [17, -3.1, 6.6, 5.2, "#1e2a4d"] },
+  { name: "Software Engineering", line: "Reltrix · trading technology", sign: [12.92, 3.55, 0.25], rot: Wd, light: [17.5, -1.5], rug: [17, -3.1, 6.6, 5.2, "#1e2a4d"] },
   { name: "Financial Counseling", line: "Private client advisory", sign: [12.92, 3.55, 11.75], rot: Wd, light: [17.5, 11.8], rug: [18.6, 11, 4.6, 3.6, "#4a1c22"] },
 ];
 
 export function SahmeHQ({ job, accent }: { job: Experience; accent: string }) {
   const screens = useScreens();
+  const rx: Record<string, THREE.Texture> = {
+    web: useProductScreen("web"),
+    crm: useProductScreen("crm"),
+    ai: useProductScreen("ai"),
+    prop: useProductScreen("prop"),
+    invest: useProductScreen("invest"),
+  };
   const screenOf = (k: DeskSpec["screens"][number]) => {
+    if (k.startsWith("rx:")) return rx[k.slice(3)];
     const m = /^(chart|code)(\d+)$/.exec(k);
     if (m) return m[1] === "chart" ? screens.charts[Number(m[2]) % 6] : screens.code[Number(m[2]) % 3];
     return screens[k as keyof Screens] as THREE.Texture;
@@ -666,16 +676,16 @@ export function SahmeHQ({ job, accent }: { job: Experience; accent: string }) {
     () =>
       makeWalkers("room-sahme", "business", [], [
         [
-          [-11, -6],
-          [11, -6],
-          [11, 4.2],
-          [-11, 4.2],
+          [-9.4, -6],
+          [9.4, -6],
+          [9.4, 4.2],
+          [-9.4, 4.2],
         ],
         [
-          [11, 4.2],
-          [-11, 4.2],
-          [-11, -6],
-          [11, -6],
+          [9.4, 4.2],
+          [-9.4, 4.2],
+          [-9.4, -6],
+          [9.4, -6],
         ],
       ]),
     [],
@@ -839,7 +849,7 @@ export function SahmeHQ({ job, accent }: { job: Experience; accent: string }) {
         <Ticker position={[0, 4.3, D / 2 - 0.05]} rotationY={Math.PI} length={9} />
         <WorldClocks position={[7.4, 3.4, D / 2 - 0.05]} />
         {job.plaque && <Plaque text={job.plaque} x={-3.4} />}
-        <Painting position={[-8, 2.4, D / 2 - 0.05]} rotationY={Math.PI} width={2.4} height={1.3} seed={4} palette={PALETTES[0]} />
+        <GroupPanel position={[-8.6, 2.65, D / 2 - 0.06]} rotationY={Math.PI} />
         <Painting position={[-19.4, 2.3, D / 2 - 0.05]} rotationY={Math.PI} width={1.2} height={0.9} seed={8} palette={PALETTES[1]} />
         <Painting position={[-17.4, 2.3, D / 2 - 0.05]} rotationY={Math.PI} width={1.2} height={0.9} seed={9} palette={PALETTES[2]} />
         <Painting position={[17, 2.4, D / 2 - 0.05]} rotationY={Math.PI} width={2.2} height={1.2} seed={11} palette={PALETTES[3]} />
@@ -847,6 +857,15 @@ export function SahmeHQ({ job, accent }: { job: Experience; accent: string }) {
 
       {/* ---------------- Trading floor ---------------- */}
       <MarketScreen position={[0, 4.05, -1.1]} />
+      {/* Reltrix, the trading technology the engineering team builds: one totem per product */}
+      {PRODUCTS.map((product, i) => (
+        <ProductTotem
+          key={product.key}
+          product={product}
+          position={[i < 4 ? 11.4 : -11.4, 0, -5.4 + (i % 4) * 2.8]}
+          rotationY={i < 4 ? -Math.PI / 2 : Math.PI / 2}
+        />
+      ))}
 
       {/* ---------------- Department walls ---------------- */}
       <OnWall side="back">
@@ -863,8 +882,12 @@ export function SahmeHQ({ job, accent }: { job: Experience; accent: string }) {
       <WallScreen position={[17.5, 2.4, -7.12]} rotationY={Math.PI} width={3.6} height={1.83} map={screens.world} />
 
       {/* Engineering: the architecture whiteboard, neon, tech wall, server racks and ducks */}
-      <Whiteboard position={[16.2, 2.0, -6.86]} />
-      <NeonCode position={[20.3, 2.5, -6.86]} rotationY={0} />
+      {/* The whiteboard faces −z by design: turn it to face into the department */}
+      <group position={[16.2, 2.0, -6.86]} rotation-y={Math.PI}>
+        <Whiteboard position={[0, 0, 0]} />
+      </group>
+      <ReltrixNeon position={[16.2, 4.25, -6.86]} />
+      <EcosystemPanel position={[20.45, 2.25, -6.85]} />
       <group position={[17.5, 1.25, 7.36]} rotation-y={Math.PI}>
         <TechTiles tech={job.tech} position={[0, 0, 0]} rotationY={0} length={7.6} />
       </group>

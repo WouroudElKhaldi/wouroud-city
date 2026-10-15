@@ -29,7 +29,7 @@ export function rng(seed: number) {
   return () => (s = (s * 16807) % 2147483647) / 2147483647;
 }
 
-type Candle = { o: number; h: number; l: number; c: number };
+export type Candle = { o: number; h: number; l: number; c: number };
 
 export function walk(
   count: number,

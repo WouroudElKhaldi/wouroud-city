@@ -32,6 +32,7 @@ import { finishes } from "./luxury";
 import { emitBurst } from "./Particles";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Seats } from "./StreetDetails";
+import { box, dots, font, ModernShell, Panel, type ShellLook, useCanvas, wrap } from "./roomKit";
 import { canvasTexture } from "./TradingFloor";
 import { useProximity } from "./useProximity";
 
@@ -57,8 +58,30 @@ const MINT = "#d7f5ea";
 const OFFWHITE = "#fafafa";
 const INK = "#0b1b2b";
 const GREY = "#64748b";
-const FONT = `"Segoe UI", Helvetica, Arial, sans-serif`;
-const font = (px: number, weight = "") => `${weight} ${Math.round(px)}px ${FONT}`;
+
+/** The room: polished concrete, navy wainscoting with a green line, white walls, a dark ceiling with joists. */
+const LOOK: ShellLook = {
+  floor: "concrete",
+  wall: OFFWHITE,
+  wainscot: NAVY,
+  line: GREEN,
+  ceiling: "#0d2236",
+  column: NAVY_2,
+  joists: true,
+  columnsZ: [-11.6, 0, 11.6],
+  windowsZ: [-6.5, 4.5],
+  lightsX: [-8, 0, 8],
+  lightsZ: [-6, 0, 6],
+  lamps: [
+    [0, -4],
+    [-10, -4],
+    [10, -4],
+    [-10, 6],
+    [10, 6],
+    [0, 8],
+  ],
+  lampColor: "#f4fffb",
+};
 
 const STAGE = { x: 7.5, front: -D / 2 + 3.8, height: 0.35 };
 
@@ -124,34 +147,6 @@ const PARTNERS = ["Purpl", "JetBrains", "IEEE Lebanon", "GDG Coast Lebanon", "AW
 // Drawing helpers (the site's look on canvases)
 // ---------------------------------------------------------------------------
 
-function wrap(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, max: number, line: number) {
-  let row = "";
-  for (const word of text.split(" ")) {
-    const next = row ? `${row} ${word}` : word;
-    if (ctx.measureText(next).width > max && row) {
-      ctx.fillText(row, x, y);
-      y += line;
-      row = word;
-    } else row = next;
-  }
-  if (row) ctx.fillText(row, x, y);
-  return y + line;
-}
-
-function box(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, fill?: string, stroke?: string, lineWidth = 2) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
-  if (fill) {
-    ctx.fillStyle = fill;
-    ctx.fill();
-  }
-  if (stroke) {
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = lineWidth;
-    ctx.stroke();
-  }
-}
-
 /** The pixel cedar from Develeb's logo: rows of squares widening toward the base. */
 const CEDAR_ROWS = [1, 3, 3, 5, 5, 7, 7, 9, 9, 11, 1, 1];
 function drawCedar(ctx: CanvasRenderingContext2D, cx: number, top: number, cell: number, color = GREEN) {
@@ -203,29 +198,6 @@ function contours(ctx: CanvasRenderingContext2D, x: number, y: number, w: number
   }
   ctx.restore();
 }
-function dots(ctx: CanvasRenderingContext2D, x: number, y: number, cols: number, rows: number, gap: number, color = "rgba(255,255,255,0.8)") {
-  ctx.fillStyle = color;
-  for (let c = 0; c < cols; c++)
-    for (let r = 0; r < rows; r++) {
-      ctx.beginPath();
-      ctx.arc(x + c * gap, y + r * gap, gap * 0.18, 0, Math.PI * 2);
-      ctx.fill();
-    }
-}
-
-/** A canvas texture drawn once; a new `key` draws it again. */
-function useCanvas(w: number, h: number, draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void, key: string | number = 0) {
-  const made = useMemo(() => {
-    const { ctx, texture } = canvasTexture(w, h);
-    draw(ctx, w, h);
-    texture.needsUpdate = true;
-    return { ctx, texture };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [w, h, key]);
-  useEffect(() => () => made.texture.dispose(), [made]);
-  return made;
-}
-
 function drawEventCard(ctx: CanvasRenderingContext2D, w: number, h: number, [title, speaker, when]: [string, string, string]) {
   ctx.fillStyle = NAVY;
   ctx.fillRect(0, 0, w, h);
@@ -622,156 +594,6 @@ function drawFigma(ctx: CanvasRenderingContext2D, w: number, h: number) {
 // Room
 // ---------------------------------------------------------------------------
 
-let concreteTexture: THREE.CanvasTexture | null = null;
-function concrete() {
-  if (concreteTexture) return concreteTexture;
-  const size = 512;
-  const { ctx, texture } = canvasTexture(size, size);
-  ctx.fillStyle = "#c9ccce";
-  ctx.fillRect(0, 0, size, size);
-  let s = 7;
-  const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
-  // Soft clouds, then fine aggregate speckle
-  for (let i = 0; i < 160; i++) {
-    const v = r() < 0.5 ? 255 : 90;
-    ctx.fillStyle = `rgba(${v},${v},${v + 4},0.025)`;
-    ctx.beginPath();
-    ctx.arc(r() * size, r() * size, 30 + r() * 90, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  for (let i = 0; i < 5000; i++) {
-    const v = r() < 0.5 ? 255 : 70;
-    ctx.fillStyle = `rgba(${v},${v},${v},0.12)`;
-    ctx.fillRect(r() * size, r() * size, 1 + r() * 1.5, 1 + r() * 1.5);
-  }
-  ctx.strokeStyle = "rgba(60,64,70,0.35)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(0, 0, size, size);
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(W / 4, D / 4);
-  texture.needsUpdate = true;
-  return (concreteTexture = texture);
-}
-
-/** The hub itself: polished concrete, navy wainscoting with a green line, white walls, clerestory windows. */
-function CommunityShell() {
-  const f = finishes();
-  const floor = useMemo(() => concrete(), []);
-  const walls = [
-    { side: "back" as const, pos: [0, 0, -D / 2] as const, rot: 0, len: W },
-    { side: "front" as const, pos: [0, 0, D / 2] as const, rot: Math.PI, len: W },
-    { side: "left" as const, pos: [-W / 2, 0, 0] as const, rot: Math.PI / 2, len: D },
-    { side: "right" as const, pos: [W / 2, 0, 0] as const, rot: -Math.PI / 2, len: D },
-  ];
-  const glow = useMemo(() => new THREE.MeshStandardMaterial({ color: GREEN, emissive: GREEN, emissiveIntensity: 1.4, toneMapped: false }), []);
-  const ledBar = useMemo(() => new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: "#f1fff9", emissiveIntensity: 2, toneMapped: false }), []);
-  return (
-    <group>
-      <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[W / 2 + 1, 0.5, D / 2 + 1]} position={[0, -0.5, 0]} />
-        <CuboidCollider args={[W / 2 + 1, H, 0.5]} position={[0, H, -D / 2 - 0.5]} />
-        <CuboidCollider args={[W / 2 + 1, H, 0.5]} position={[0, H, D / 2 + 0.5]} />
-        <CuboidCollider args={[0.5, H, D / 2 + 1]} position={[-W / 2 - 0.5, H, 0]} />
-        <CuboidCollider args={[0.5, H, D / 2 + 1]} position={[W / 2 + 0.5, H, 0]} />
-      </RigidBody>
-      <Batch>
-        <mesh rotation-x={-Math.PI / 2} receiveShadow>
-          <planeGeometry args={[W, D]} />
-          <meshStandardMaterial map={floor} roughness={0.32} metalness={0.05} envMapIntensity={1.2} />
-        </mesh>
-        {walls.map(({ side, pos, rot, len }) => (
-          <group key={side} position={[pos[0], pos[1], pos[2]]} rotation-y={rot}>
-            <mesh position={[0, H / 2, 0]} material={plain(OFFWHITE, 0.85)} receiveShadow>
-              <planeGeometry args={[len, H]} />
-            </mesh>
-            <mesh position={[0, 0.6, 0.012]} material={plain(NAVY, 0.6)}>
-              <planeGeometry args={[len, 1.2]} />
-            </mesh>
-            <mesh position={[0, 0.05, 0.016]} material={plain("#020c16", 0.5)}>
-              <planeGeometry args={[len, 0.1]} />
-            </mesh>
-            <mesh position={[0, H - 0.2, 0.012]} material={plain(NAVY, 0.6)}>
-              <planeGeometry args={[len, 0.4]} />
-            </mesh>
-          </group>
-        ))}
-        {/* Dark ceiling with steel joists */}
-        <mesh rotation-x={Math.PI / 2} position={[0, H, 0]} material={plain("#0d2236", 0.9)}>
-          <planeGeometry args={[W, D]} />
-        </mesh>
-        {Array.from({ length: Math.floor(W / 3) }, (_, i) => -W / 2 + 1.5 + i * 3).map((x) => (
-          <mesh key={x} position={[x, H - 0.18, 0]} material={f.blackMetal}>
-            <boxGeometry args={[0.14, 0.36, D]} />
-          </mesh>
-        ))}
-        {/* Steel columns along the side walls */}
-        {[-11.6, 0, 11.6].flatMap((z) =>
-          [-1, 1].map((s) => (
-            <mesh key={`${z}${s}`} position={[s * (W / 2 - 0.2), H / 2, z]} material={plain(NAVY_2, 0.5)} castShadow>
-              <boxGeometry args={[0.4, H, 0.4]} />
-            </mesh>
-          )),
-        )}
-        {/* Clerestory windows high on both side walls, black steel grid */}
-        {[-1, 1].flatMap((s) =>
-          [-6.5, 4.5].map((z) => (
-            <group key={`${s}${z}`} position={[s * (W / 2 - 0.02), H - 0.72, z]} rotation-y={-s * (Math.PI / 2)}>
-              <mesh>
-                <planeGeometry args={[8, 0.8]} />
-                <meshStandardMaterial color="#a9d6f5" emissive="#d6efff" emissiveIntensity={0.9} />
-              </mesh>
-              {Array.from({ length: 9 }, (_, k) => (
-                <mesh key={k} position={[-4 + k, 0, 0.02]} material={f.blackMetal}>
-                  <boxGeometry args={[0.05, 0.85, 0.04]} />
-                </mesh>
-              ))}
-              {[-0.4, 0, 0.4].map((y) => (
-                <mesh key={y} position={[0, y, 0.02]} material={f.blackMetal}>
-                  <boxGeometry args={[8.05, 0.05, 0.04]} />
-                </mesh>
-              ))}
-            </group>
-          )),
-        )}
-      </Batch>
-      {/* The green line along the wainscoting, glowing faintly */}
-      {walls.map(({ side, pos, rot, len }) => (
-        <mesh key={side} position={[pos[0] + (side === "left" ? 0.02 : side === "right" ? -0.02 : 0), 1.21, pos[2] + (side === "back" ? 0.02 : side === "front" ? -0.02 : 0)]} rotation-y={rot} material={glow}>
-          <planeGeometry args={[len, 0.035]} />
-        </mesh>
-      ))}
-      {/* Linear LED pendants */}
-      {[-6, 0, 6].flatMap((z) =>
-        [-8, 0, 8].map((x) => (
-          <group key={`${x}${z}`} position={[x, H - 1.1, z]}>
-            <mesh material={f.blackMetal}>
-              <boxGeometry args={[4, 0.07, 0.12]} />
-            </mesh>
-            <mesh position={[0, -0.04, 0]} material={ledBar}>
-              <boxGeometry args={[3.9, 0.012, 0.08]} />
-            </mesh>
-            {[-1.8, 1.8].map((dx) => (
-              <mesh key={dx} position={[dx, 0.55, 0]} material={f.blackMetal}>
-                <cylinderGeometry args={[0.004, 0.004, 1.1, 4]} />
-              </mesh>
-            ))}
-          </group>
-        )),
-      )}
-      {[
-        [0, -4],
-        [-10, -4],
-        [10, -4],
-        [-10, 6],
-        [10, 6],
-        [0, 8],
-      ].map(([x, z]) => (
-        <pointLight key={`${x}${z}`} position={[x, H - 1.4, z]} intensity={11} distance={13} decay={2} color="#f4fffb" />
-      ))}
-    </group>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Stage
 // ---------------------------------------------------------------------------
@@ -1074,21 +896,6 @@ function VoxelCedar({ position }: { position: [number, number, number] }) {
 // ---------------------------------------------------------------------------
 // Walls: events, jobs, designs, testimonials, newsletter, founders, partners
 // ---------------------------------------------------------------------------
-
-/** A flat canvas panel with a slim frame. Faces +z. */
-function Panel({ position, rotationY = 0, width, height, map, frame = NAVY, onClick }: { position: [number, number, number]; rotationY?: number; width: number; height: number; map: THREE.Texture; frame?: string; onClick?: (e: ThreeEvent<MouseEvent>) => void }) {
-  return (
-    <group position={position} rotation-y={rotationY}>
-      <mesh position={[0, 0, -0.025]} material={plain(frame, 0.4)}>
-        <boxGeometry args={[width + 0.08, height + 0.08, 0.04]} />
-      </mesh>
-      <mesh onClick={onClick}>
-        <planeGeometry args={[width, height]} />
-        <meshBasicMaterial map={map} toneMapped={false} />
-      </mesh>
-    </group>
-  );
-}
 
 function EventCard({ index, z }: { index: number; z: number }) {
   const event = EVENTS[index];
@@ -1504,7 +1311,7 @@ export function DevelebHub({ job }: { job: Experience }) {
 
   return (
     <group>
-      <CommunityShell />
+      <ModernShell look={LOOK} />
       <HeroWall />
       <Stage />
       <EventsWall />
@@ -1530,7 +1337,7 @@ export function DevelebHub({ job }: { job: Experience }) {
         {COWORK_SEATS.map((s, i) => {
           const [lx, lz] = ahead(s.x, s.z, s.facing, 0.62);
           return (
-            <group key={`lap${s.id}`} position={[lx, 0.74, lz]} rotation-y={s.facing + Math.PI}>
+            <group key={`lap${s.id}`} position={[lx, 0.74, lz]} rotation-y={s.facing}>
               <mesh position={[0, 0.008, 0]} material={f.chrome}>
                 <boxGeometry args={[0.34, 0.015, 0.24]} />
               </mesh>
@@ -1610,7 +1417,7 @@ export function DevelebHub({ job }: { job: Experience }) {
         if (i % 3 === 2) return null;
         const [lx, lz] = ahead(s.x, s.z, s.facing, 0.62);
         return (
-          <group key={`scr${s.id}`} position={[lx, 0.74, lz]} rotation-y={s.facing + Math.PI}>
+          <group key={`scr${s.id}`} position={[lx, 0.74, lz]} rotation-y={s.facing}>
             <mesh position={[0, 0.12, 0.114]} rotation-x={0.25} rotation-y={Math.PI}>
               <planeGeometry args={[0.31, 0.2]} />
               <meshBasicMaterial map={laptop.texture} toneMapped={false} />
