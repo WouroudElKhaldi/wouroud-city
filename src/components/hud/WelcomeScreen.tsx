@@ -108,16 +108,20 @@ export function WelcomeScreen() {
             ))}
           </div>
           {avatar !== "robot" && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="look-grid mt-3" role="radiogroup" aria-label="Outfit">
               {LOOKS[avatar].map((l) => (
                 <button
                   key={l.id}
                   type="button"
+                  role="radio"
+                  aria-checked={outfit === l.id}
                   onClick={() => setOutfit(l.id)}
-                  aria-pressed={outfit === l.id}
-                  className="welcome-chip"
+                  className="look-card"
+                  title={l.label}
                 >
-                  {l.label}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`/models/rb/${l.id}/thumb.webp`} alt="" loading="lazy" width={60} height={100} />
+                  <span>{l.label}</span>
                 </button>
               ))}
             </div>

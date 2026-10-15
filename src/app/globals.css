@@ -194,6 +194,44 @@ kbd {
   background: #805ad5;
   border-color: #f0abfc;
 }
+.look-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 0.5rem;
+  max-height: 15.5rem;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+.look-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.25rem 0.4rem;
+  border-radius: 0.8rem;
+  background: rgb(76 29 149 / 0.4);
+  border: 1px solid rgb(196 181 253 / 0.35);
+  font-size: 0.7rem;
+  line-height: 1.1;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.look-card img {
+  width: 60px;
+  height: 100px;
+  object-fit: contain;
+  border-radius: 0.5rem;
+  background: #f5f0ff;
+}
+.look-card:hover {
+  transform: translateY(-2px);
+}
+.look-card[aria-checked="true"] {
+  background: #805ad5;
+  border-color: #f6c453;
+  box-shadow: 0 0 0 2px rgb(246 196 83 / 0.45);
+}
 .welcome-enter {
   padding: 0.85rem 2.2rem;
   border-radius: 999px;
