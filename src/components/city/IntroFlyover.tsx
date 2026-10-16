@@ -7,14 +7,15 @@ import * as THREE from "three";
 import { useCityStore } from "@/state/useCityStore";
 
 /**
- * A cinematic welcome: the first time someone enters the city in a browser session, the camera
- * sweeps in over the mountains and the districts and lands behind them at the plaza. Any key,
- * click or touch skips it. While it plays, its own camera is the default; when it ends, the
+ * A cinematic welcome: every time the page is opened and someone enters the city, the camera
+ * sweeps in over the mountains and the districts and lands behind them at the plaza (once per
+ * page load, so changing your look doesn't replay it). Any key, click or touch skips it. While it plays, its own camera is the default; when it ends, the
  * follow camera takes over again.
  */
 
 const DURATION = 7.5;
-const KEY = "wouroud-city:intro-seen";
+/** Played already in this page load. */
+let played = false;
 
 export function IntroFlyover() {
   const started = useCityStore((s) => s.started);
@@ -23,14 +24,8 @@ export function IntroFlyover() {
 
   useEffect(() => {
     if (!started || scene !== "hub") return;
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem(KEY) === "1";
-      sessionStorage.setItem(KEY, "1");
-    } catch {
-      // No storage: play it once per page load.
-    }
-    if (seen || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (played || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    played = true;
     const begin = window.setTimeout(() => setActive(true), 0);
     const stop = () => setActive(false);
     window.addEventListener("keydown", stop, { once: true });

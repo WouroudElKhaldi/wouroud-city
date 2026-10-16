@@ -1,11 +1,11 @@
 "use client";
 
 import { Environment, KeyboardControls, PerformanceMonitor, SoftShadows } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Bloom, BrightnessContrast, EffectComposer, HueSaturation, SMAA, SSAO, Vignette } from "@react-three/postprocessing";
 import { Physics } from "@react-three/rapier";
 import type { BloomEffect } from "postprocessing";
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useCityStore } from "@/state/useCityStore";
 import { type DistrictId, landmarkDoorstep } from "@/world/districts";
@@ -48,6 +48,9 @@ export default function CityCanvas() {
   const [maxDpr] = useState(() => (mobile ? 1.25 : Math.min(2, typeof window === "undefined" ? 1.5 : window.devicePixelRatio || 1.5)));
   const [dpr, setDpr] = useState(mobile ? 1 : maxDpr);
   const [effects, setEffects] = useState(!mobile);
+  // Behind the welcome card the city only needs to look alive: a light, throttled preview keeps
+  // the card responsive while the city loads. Full quality starts when the visitor enters.
+  const started = useCityStore((s) => s.started);
 
   // Where the player appears: the plaza, a landmark's doorstep when coming back, or a district's gate.
   const spawn = useMemo(() => {
@@ -77,7 +80,8 @@ export default function CityCanvas() {
     <KeyboardControls map={keyboardMap}>
       <Canvas
         shadows
-        dpr={dpr}
+        frameloop={started ? "always" : "demand"}
+        dpr={started ? dpr : Math.min(dpr, 1)}
         camera={{ fov: 55, near: 0.1, far: 1200, position: [0, 6, 30] }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
         onCreated={(state) => {
@@ -88,13 +92,17 @@ export default function CityCanvas() {
           if (process.env.NODE_ENV === "development") Object.assign(window, { __city: { state, playerPosition, store: useCityStore } });
         }}
       >
-        <PerformanceMonitor
-          onDecline={() => {
-            setDpr(Math.max(1, maxDpr * 0.66));
-            setEffects(false);
-          }}
-          onIncline={() => setDpr(maxDpr)}
-        />
+        {/* Judge the device only once the city runs at full speed (the welcome preview is throttled). */}
+        {started && (
+          <PerformanceMonitor
+            onDecline={() => {
+              setDpr(Math.max(1, maxDpr * 0.66));
+              setEffects(false);
+            }}
+            onIncline={() => setDpr(maxDpr)}
+          />
+        )}
+        {!started && <Throttle fps={20} />}
         {/* Soft, contact-hardening shadows (desktop): sharp near the object, soft further away. */}
         {!mobile && <SoftShadows size={10} samples={8} focus={0.8} />}
         <DayNight followTarget={playerPosition} shadowMapSize={mobile ? 1024 : 4096} />
@@ -114,10 +122,20 @@ export default function CityCanvas() {
         <WaypointGuide />
         <Weather />
         <PhotoCapture />
-        {effects && <Effects indoor={!!parseRoom(scene)} />}
+        {effects && started && <Effects indoor={!!parseRoom(scene)} />}
       </Canvas>
     </KeyboardControls>
   );
+}
+
+/** Draws a frame `fps` times a second (with frameloop "demand"), for the light welcome preview. */
+function Throttle({ fps }: { fps: number }) {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    const t = window.setInterval(() => invalidate(), 1000 / fps);
+    return () => window.clearInterval(t);
+  }, [invalidate, fps]);
+  return null;
 }
 
 /**
