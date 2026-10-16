@@ -8,7 +8,7 @@ import { liveContent } from "@/content/live";
 import type { Skill } from "@/content/schema";
 import { useCityStore } from "@/state/useCityStore";
 import { HOUSES, houseFor, type HouseDef, type RoomSpec } from "@/world/skillHouses/houses";
-import { DOOR, makePlan, type Plan, type PlanRoom, type PlanWall, roomFrame, type Side } from "@/world/skillHouses/plan";
+import { DOOR, makePlan, nestedRings, type Plan, type PlanRoom, type PlanWall, roomFrame, type Side } from "@/world/skillHouses/plan";
 import { worldEnv } from "@/world/env";
 import { signatureFor } from "@/world/signatures";
 import { Batch, TallPlant } from "../Furniture";
@@ -109,6 +109,7 @@ export function SkillHouse({ skill }: { skill: Skill }) {
       <Reception />
       <Lobby />
       <HallDecor />
+      {def.cut === "nested" && <BoxModelSigns />}
       <HouseLights />
       <Pedestrians walkers={walkers} />
     </HouseContext>
@@ -588,6 +589,83 @@ function HallBanner() {
       <Text position={[0, -0.27, 0.04]} fontSize={0.13} color={palette.paper} anchorX="center" anchorY="middle" maxWidth={5.8} textAlign="center">
         {def.concept}
       </Text>
+    </group>
+  );
+}
+
+/**
+ * The box-model house names its rings: "margin" on the floor where you arrive, a board on the border
+ * wall pointing to its doorway, "padding" on the floor inside, "content" over the core.
+ */
+function BoxModelSigns() {
+  const { plan, palette, accent } = useHouse();
+  const { b, c, door1, door2 } = nestedRings(plan.W, plan.D);
+  const floorLabel = (text: string, x: number, z: number, rot = 0) => (
+    <Text position={[x, 0.02, z]} rotation={[-Math.PI / 2, 0, rot]} fontSize={0.7} color={accent} anchorX="center" anchorY="middle" fillOpacity={0.55}>
+      {text}
+    </Text>
+  );
+  return (
+    <group>
+      {floorLabel("margin", plan.W / 2 - 2.1, plan.D / 2 - 3, 0)}
+      {floorLabel("padding", (b.x0 + c.x0) / 2, (c.z0 + c.z1) / 2, Math.PI / 2)}
+      <group position={[(door1 + b.x1) / 2 + 0.6, 0, b.z1 + 0.1]}>
+        <WallBoardPlain
+          width={Math.min(7, b.x1 - door1 - 2.4)}
+          title="You're in the margin"
+          lines={[
+            "Every box: margin, then border, then padding, then content.",
+            "Walk through the border (the doorway on your left),",
+            "cross the padding, and find the content at the heart.",
+          ]}
+          ink={palette.ink}
+          paper={palette.paper}
+          accent={accent}
+        />
+      </group>
+      <group position={[door1, DOOR_H + 0.42, b.z1 + 0.12]}>
+        <mesh material={flat(palette.ink, 0.5)}>
+          <boxGeometry args={[1.8, 0.42, 0.04]} />
+        </mesh>
+        <Text position={[0, 0, 0.03]} fontSize={0.22} color={accent} anchorX="center" anchorY="middle">
+          border
+        </Text>
+      </group>
+      <group position={[door2, plan.H - 1.1, c.z0 - 0.15]} rotation-y={Math.PI}>
+        <Text fontSize={0.36} color={accent} anchorX="center" anchorY="middle">
+          content
+        </Text>
+      </group>
+      <group position={[0, plan.H - 0.7, (c.z0 + c.z1) / 2]}>
+        {[0, Math.PI].map((r) => (
+          <Text key={r} rotation-y={r} position={[0, 0, 0]} fontSize={0.5} color={palette.ink} anchorX="center" anchorY="middle">
+            {"{ content }"}
+          </Text>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+/** A simple board drawn with text meshes (faces +z), for engine signs. */
+function WallBoardPlain({ width, title, lines, ink, paper, accent }: { width: number; title: string; lines: string[]; ink: string; paper: string; accent: string }) {
+  const h = 2;
+  return (
+    <group position={[0, 1.7, 0]}>
+      <mesh material={flat(paper, 0.6)}>
+        <boxGeometry args={[width, h, 0.05]} />
+      </mesh>
+      <mesh position={[0, h / 2 - 0.05, 0.03]} material={flat(accent, 0.4)}>
+        <boxGeometry args={[width, 0.1, 0.01]} />
+      </mesh>
+      <Text position={[-width / 2 + 0.3, 0.55, 0.04]} fontSize={0.3} color={ink} anchorX="left" anchorY="middle" maxWidth={width - 0.6}>
+        {title}
+      </Text>
+      {lines.map((l, i) => (
+        <Text key={i} position={[-width / 2 + 0.3, 0.05 - i * 0.32, 0.04]} fontSize={0.17} color={ink} anchorX="left" anchorY="middle" maxWidth={width - 0.6}>
+          {l}
+        </Text>
+      ))}
     </group>
   );
 }

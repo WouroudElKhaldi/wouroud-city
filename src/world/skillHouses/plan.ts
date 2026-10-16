@@ -232,13 +232,7 @@ export function makePlan(cut: Cut, size: [number, number, number], rooms: number
     }
     case "nested": {
       // Margin band (open zones), the border wall, the padding band, the content core.
-      const m = 4.2;
-      const p = 3.6;
-      const front = 6;
-      const b = { x0: -W / 2 + m, x1: W / 2 - m, z0: -D / 2 + m, z1: D / 2 - front };
-      const c = { x0: b.x0 + p, x1: b.x1 - p, z0: b.z0 + p, z1: b.z1 - p };
-      const door1 = -W * 0.16;
-      const door2 = W * 0.14;
+      const { b, c, door1, door2 } = nestedRings(W, D);
       walls.push({ axis: "x", at: b.z1, from: b.x0, to: b.x1, doors: [door1], style: "solid" });
       walls.push({ axis: "x", at: b.z0, from: b.x0, to: b.x1, doors: [], style: "solid" });
       walls.push({ axis: "z", at: b.x0, from: b.z0, to: b.z1, doors: [], style: "solid" });
@@ -248,8 +242,8 @@ export function makePlan(cut: Cut, size: [number, number, number], rooms: number
       walls.push({ axis: "z", at: c.x0, from: c.z0, to: c.z1, doors: [], style: o.style ?? "glass" });
       walls.push({ axis: "z", at: c.x1, from: c.z0, to: c.z1, doors: [], style: o.style ?? "glass" });
       const zones: [Rect, Side][] = [
-        [rect(-W / 2, b.x0, -D / 2 + 1, D / 2 - front), "e"],
-        [rect(b.x1, W / 2, -D / 2 + 1, D / 2 - front), "w"],
+        [rect(-W / 2, b.x0, -D / 2 + 1, b.z1), "e"],
+        [rect(b.x1, W / 2, -D / 2 + 1, b.z1), "w"],
         [rect(c.x0, c.x1, b.z0, c.z0), "s"],
         [rect(b.x0, c.x0, b.z0 + 1, b.z1 - 1), "e"],
       ];
@@ -294,6 +288,16 @@ export function makePlan(cut: Cut, size: [number, number, number], rooms: number
     out.hero = [out.hero[0], Math.max(out.hero[1], h.z - h.d / 2 + depth + 5.2)];
   }
   return out;
+}
+
+/** The nested cut's rings: the border rectangle, the content rectangle and their doorways (x). */
+export function nestedRings(W: number, D: number) {
+  const m = 4.2;
+  const p = 3.6;
+  const front = 6;
+  const b = { x0: -W / 2 + m, x1: W / 2 - m, z0: -D / 2 + m, z1: D / 2 - front };
+  const c = { x0: b.x0 + p, x1: b.x1 - p, z0: b.z0 + p, z1: b.z1 - p };
+  return { b, c, door1: -W * 0.16, door2: W * 0.14 };
 }
 
 /** Turns a point from a room's local frame (door at +z) into the house's frame. */
