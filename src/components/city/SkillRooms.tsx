@@ -2,7 +2,7 @@
 
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
-import { useMemo, useRef, useState } from "react";
+import { createContext, useContext, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { Skill } from "@/content/schema";
 import { signatureFor } from "@/world/signatures";
@@ -196,11 +196,17 @@ export function SkillCenterpiece({ skill, theme, accent }: { skill: Skill; theme
 }
 
 type DemoProps = { theme: SkillTheme; accent: string; name: string };
-const CENTER: [number, number, number] = [0, 0, -3];
+/** Where the centerpiece stands: the old lab rooms use the default, skill houses set their hall's spot. */
+const CenterContext = createContext<[number, number, number]>([0, 0, -3]);
+const useCenter = () => useContext(CenterContext);
+export function CenterAt({ at, children }: { at: [number, number, number]; children: React.ReactNode }) {
+  return <CenterContext value={at}>{children}</CenterContext>;
+}
 
 /** Everything here is centered on the rug; E near it does the same as a click. */
 function useDemoAction(label: string, run: () => void) {
-  const where = useMemo(() => new THREE.Vector3(CENTER[0], 0, CENTER[2] + 3), []);
+  const c = useCenter();
+  const where = useMemo(() => new THREE.Vector3(c[0], 0, c[2] + 3), [c]);
   useProximity({ id: `demo-${label}`, label, radius: 2.4, where, run });
 }
 
@@ -226,18 +232,19 @@ function Plinth({ accent }: { accent: string }) {
   );
 }
 
-const burst = (y: number, colors: string[], count = 24) =>
-  emitBurst({ position: new THREE.Vector3(CENTER[0], y, CENTER[2]), kind: "sparkle", count, colors, spread: 1 });
+const burst = (c: [number, number, number], y: number, colors: string[], count = 24) =>
+  emitBurst({ position: new THREE.Vector3(c[0], y, c[2]), kind: "sparkle", count, colors, spread: 1 });
 
 // --- Languages: giant letters of the logo that jump when clicked -----------------------------
 
 function LetterBlocks({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const blocks = useRef<(THREE.Group | null)[]>([]);
   const hits = useRef<number[]>(theme.words.map(() => -10));
   const jump = (i: number) => {
     hits.current[i] = performance.now() / 1000;
     sfx.pop();
-    burst(2.4, [accent, "#ffffff"], 12);
+    burst(C, 2.4, [accent, "#ffffff"], 12);
   };
   useDemoAction(`Bounce the ${name} letters`, () => theme.words.forEach((_, i) => window.setTimeout(() => jump(i), i * 150)));
   useFrame(() => {
@@ -251,7 +258,7 @@ function LetterBlocks({ theme, accent, name }: DemoProps) {
   });
   const n = theme.words.length;
   return (
-    <group position={CENTER}>
+    <group position={C}>
       <Plinth accent={accent} />
       {theme.words.map((w, i) => (
         <group
@@ -279,6 +286,7 @@ function LetterBlocks({ theme, accent, name }: DemoProps) {
 // --- HTML: nested tag blocks that open and close ---------------------------------------------
 
 function NestingTags({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const [open, setOpen] = useState(theme.words.length);
   const toggle = () => {
     setOpen((o) => (o <= 1 ? theme.words.length : o - 1));
@@ -286,7 +294,7 @@ function NestingTags({ theme, accent, name }: DemoProps) {
   };
   useDemoAction(`Nest the ${name} tags`, toggle);
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && toggle()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && toggle()} {...pointer}>
       <Plinth accent={accent} />
       {theme.words.slice(0, open).map((tag, i) => {
         const s = 2.6 - i * 0.45;
@@ -315,16 +323,17 @@ const STYLES = [
 ];
 
 function BoxModel({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const [style, setStyle] = useState(0);
   const restyle = () => {
     setStyle((s) => (s + 1) % STYLES.length);
     sfx.sparkle();
-    burst(2, [accent, "#ffffff"]);
+    burst(C, 2, [accent, "#ffffff"]);
   };
   useDemoAction(`Restyle the ${name} box`, restyle);
   const st = STYLES[style];
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && restyle()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && restyle()} {...pointer}>
       <Plinth accent={accent} />
       {theme.words.map((layer, i) => {
         const s = 2.4 - i * 0.5;
@@ -348,6 +357,7 @@ function BoxModel({ theme, accent, name }: DemoProps) {
 // --- React & co: a component tree that re-renders -------------------------------------------
 
 function ComponentTree({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const nodes = useRef<THREE.MeshStandardMaterial[]>([]);
   const renderAt = useRef(-10);
   const layout = useMemo(() => {
@@ -376,7 +386,7 @@ function ComponentTree({ theme, accent, name }: DemoProps) {
     });
   });
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && rerender()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && rerender()} {...pointer}>
       <Plinth accent={accent} />
       {layout.map((n, i) => {
         const p = layout[n.parent];
@@ -410,6 +420,7 @@ function ComponentTree({ theme, accent, name }: DemoProps) {
 // --- APIs and servers: a request flies to the server and the response comes back ------------
 
 function RequestResponse({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const packet = useRef<THREE.Group>(null);
   const sentAt = useRef(-10);
   const [pair, setPair] = useState(0);
@@ -429,7 +440,7 @@ function RequestResponse({ theme, accent, name }: DemoProps) {
     packet.current.position.set(-1.6 + Math.max(0, Math.min(1, k)) * 3.2, 1.5 + Math.sin(Math.min(1, k) * Math.PI) * 0.5, 0);
   });
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && send()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && send()} {...pointer}>
       <Plinth accent={accent} />
       {/* Client laptop */}
       <group position={[-1.7, 0.42, 0]}>
@@ -471,6 +482,7 @@ function RequestResponse({ theme, accent, name }: DemoProps) {
 // --- Databases: drums of tables and a query that lights up rows -----------------------------
 
 function QueryMachine({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const [table, setTable] = useState(0);
   const rows = useRef<THREE.MeshStandardMaterial[]>([]);
   const queriedAt = useRef(-10);
@@ -488,7 +500,7 @@ function QueryMachine({ theme, accent, name }: DemoProps) {
     });
   });
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && query()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && query()} {...pointer}>
       <Plinth accent={accent} />
       {theme.words.map((t, i) => (
         <group key={t} position={[(i - (theme.words.length - 1) / 2) * 1.1, 0.42, 0]}>
@@ -522,6 +534,7 @@ function QueryMachine({ theme, accent, name }: DemoProps) {
 const CONTAINER_COLORS = ["#2496ed", "#f97316", "#22c55e", "#e11d48", "#a855f7"];
 
 function ContainerStack({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const [count, setCount] = useState(2);
   const add = () => {
     setCount((c) => (c >= theme.words.length ? 1 : c + 1));
@@ -529,7 +542,7 @@ function ContainerStack({ theme, accent, name }: DemoProps) {
   };
   useDemoAction(`Start a ${name} container`, add);
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && add()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && add()} {...pointer}>
       <Plinth accent={accent} />
       {theme.words.slice(0, count).map((svc, i) => (
         <group key={svc} position={[(i % 2) * 0.3 - 0.15, 0.7 + i * 0.62, 0]}>
@@ -555,16 +568,17 @@ function ContainerStack({ theme, accent, name }: DemoProps) {
 // --- Git: a branch graph that takes commits --------------------------------------------------
 
 function BranchGraph({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const [commits, setCommits] = useState(4);
   const commit = () => {
     setCommits((c) => (c >= 9 ? 3 : c + 1));
     sfx.pop();
-    burst(2, [accent, "#ffffff"], 10);
+    burst(C, 2, [accent, "#ffffff"], 10);
   };
   useDemoAction(`Commit to ${name}`, commit);
   const lanes = theme.words.length;
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && commit()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && commit()} {...pointer}>
       <Plinth accent={accent} />
       {theme.words.map((branch, lane) => (
         <group key={branch} position={[0, 1 + lane * 0.8, 0]}>
@@ -595,6 +609,7 @@ function BranchGraph({ theme, accent, name }: DemoProps) {
 // --- Jira: a kanban board whose cards move on ------------------------------------------------
 
 function Kanban({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const [cards, setCards] = useState([0, 0, 1, 2]);
   const advance = () => {
     setCards((cs) => {
@@ -609,7 +624,7 @@ function Kanban({ theme, accent, name }: DemoProps) {
   useDemoAction(`Move a ${name} ticket`, advance);
   const cols = theme.words.length;
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && advance()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && advance()} {...pointer}>
       <Plinth accent={accent} />
       <mesh position={[0, 2, -0.1]} castShadow>
         <boxGeometry args={[3.8, 2.6, 0.08]} />
@@ -642,6 +657,7 @@ function Kanban({ theme, accent, name }: DemoProps) {
 // --- Redux / Zustand: actions fly into the store ---------------------------------------------
 
 function StoreOrb({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const orb = useRef<THREE.Mesh>(null);
   const action = useRef<THREE.Group>(null);
   const firedAt = useRef(-10);
@@ -669,7 +685,7 @@ function StoreOrb({ theme, accent, name }: DemoProps) {
     }
   });
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && dispatch()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && dispatch()} {...pointer}>
       <Plinth accent={accent} />
       <mesh ref={orb} position={[0, 1.8, 0]} castShadow>
         <icosahedronGeometry args={[0.7, 2]} />
@@ -694,6 +710,7 @@ function StoreOrb({ theme, accent, name }: DemoProps) {
 // --- Hosting: deploy and watch it go up to the cloud -----------------------------------------
 
 function DeployCloud({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const rocket = useRef<THREE.Group>(null);
   const deployedAt = useRef(-10);
   const [status, setStatus] = useState("ready");
@@ -714,7 +731,7 @@ function DeployCloud({ theme, accent, name }: DemoProps) {
     }
   });
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && deploy()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && deploy()} {...pointer}>
       <Plinth accent={accent} />
       {[-0.7, 0, 0.7].map((x, i) => (
         <mesh key={x} position={[x, 3.6 + (i % 2) * 0.15, 0]} castShadow>
@@ -747,6 +764,7 @@ function DeployCloud({ theme, accent, name }: DemoProps) {
 // --- Figma / UI/UX: frames that take the swatch you pick -------------------------------------
 
 function DesignFrames({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const [pick, setPick] = useState(0);
   const recolor = () => {
     setPick((p) => (p + 1) % theme.words.length);
@@ -755,7 +773,7 @@ function DesignFrames({ theme, accent, name }: DemoProps) {
   useDemoAction(`Apply a ${name} color`, recolor);
   const color = theme.words[pick];
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && recolor()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && recolor()} {...pointer}>
       <Plinth accent={accent} />
       {[
         [-1, 2, 1.1, 1.8],
@@ -790,6 +808,7 @@ function DesignFrames({ theme, accent, name }: DemoProps) {
 // --- n8n / AI: a workflow whose signal runs node to node -------------------------------------
 
 function Workflow({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const lights = useRef<THREE.MeshStandardMaterial[]>([]);
   const runAt = useRef(-10);
   const run = () => {
@@ -805,7 +824,7 @@ function Workflow({ theme, accent, name }: DemoProps) {
   });
   const n = theme.words.length;
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && run()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && run()} {...pointer}>
       <Plinth accent={accent} />
       {theme.words.map((node, i) => {
         const x = -1.8 + (i / (n - 1)) * 3.6;
@@ -835,6 +854,7 @@ function Workflow({ theme, accent, name }: DemoProps) {
 // --- Architecture: layers with a request path that lights up ---------------------------------
 
 function LayerStack({ theme, accent, name }: DemoProps) {
+  const C = useCenter();
   const mats = useRef<THREE.MeshStandardMaterial[]>([]);
   const at = useRef(-10);
   const trace = () => {
@@ -850,7 +870,7 @@ function LayerStack({ theme, accent, name }: DemoProps) {
   });
   const n = theme.words.length;
   return (
-    <group position={CENTER} onClick={(e) => clicked(e) && trace()} {...pointer}>
+    <group position={C} onClick={(e) => clicked(e) && trace()} {...pointer}>
       <Plinth accent={accent} />
       {theme.words.map((layer, i) => (
         <group key={layer} position={[0, 3.6 - i * (2.8 / n), 0]}>

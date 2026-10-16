@@ -24,6 +24,7 @@ import { FreelanceStudio } from "./FreelanceStudio";
 import { HyperfocusStudio } from "./HyperfocusStudio";
 import { SahmeHQ } from "./SahmeHQ";
 import { ThemedRoom } from "./ThemedRooms";
+import { hasHouse, SkillHouse } from "./skillhouse/SkillHouse";
 import { useGlowMaterial } from "./materials";
 import { makeWalkers, Pedestrians } from "./Pedestrians";
 import { Seats } from "./StreetDetails";
@@ -61,8 +62,10 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
   );
   const job = liveContent.experience.find((e) => e.id === room.id);
   const project = liveContent.projects.find((p) => p.id === room.id);
-  const size = roomSize(room.id);
+  const size = roomSize(room.id, room.district);
   const hq = room.id === "sahme";
+  // Skills each have their own building (skillhouse/): their own plan, finishes and rooms.
+  const skill = room.district === "skills" && hasHouse(room.id) ? liveContent.skills.find((s) => s.id === room.id) : undefined;
   // These bring their own room, in their brand's look
   const branded = BRANDED[room.id];
   const accent = BRANDED[room.id]?.accent ?? spec?.color ?? "#7c3aed";
@@ -92,6 +95,16 @@ export function InteriorScene({ scene }: { scene: RoomScene }) {
       ),
     [room.id, room.district],
   );
+
+  if (skill)
+    return (
+      <RoomContext value={size}>
+        <OnWall side="front">
+          <ExitDoor id={room.id} district={room.district} accent={accent} />
+        </OnWall>
+        <SkillHouse skill={skill} />
+      </RoomContext>
+    );
 
   return (
     <RoomContext value={size}>

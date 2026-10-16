@@ -55,7 +55,7 @@ export default function CityCanvas() {
   // Where the player appears: the plaza, a landmark's doorstep when coming back, or a district's gate.
   const spawn = useMemo(() => {
     const room = parseRoom(scene);
-    if (room) return { position: [0, 2, roomSize(room.id).depth / 2 - 4] as [number, number, number], facing: Math.PI };
+    if (room) return { position: [0, 2, roomSize(room.id, room.district).depth / 2 - 4] as [number, number, number], facing: Math.PI };
     if (scene !== "hub") {
       const layout = computeDistrictLayout(liveContent, scene as DistrictId);
       // Walking out of a building puts you on its doorstep, facing away from it.

@@ -73,7 +73,7 @@ export function Hud() {
   const nextStop = () => {
     if (!p) return;
     if (room) {
-      setWaypoint({ x: 0, z: roomSize(room.id).depth / 2 - 1, label: "the way out" });
+      setWaypoint({ x: 0, z: roomSize(room.id, room.district).depth / 2 - 1, label: "the way out" });
       return;
     }
     if (district) {

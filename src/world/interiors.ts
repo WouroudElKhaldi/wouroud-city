@@ -1,4 +1,5 @@
 import type { DistrictId } from "./districts";
+import { HOUSES } from "./skillHouses/houses";
 
 /**
  * Buildings you can walk into. A room is its own scene, `room:<district>:<building id>`,
@@ -42,5 +43,11 @@ export const LIFE_ROOM: RoomSize = { width: 26, depth: 20, height: 4.6 };
 
 const SIZES: Record<string, RoomSize> = { sahme: HQ_ROOM, develeb: DEVELEB_ROOM, codi: CODI_ROOM, "life-sculptor": LIFE_ROOM };
 
-/** The size of a building's room. */
-export const roomSize = (id: string): RoomSize => SIZES[id] ?? ROOM;
+/** The size of a building's room (skill buildings are sized by their house plan). */
+export const roomSize = (id: string, district?: DistrictId): RoomSize => {
+  if (district === "skills" && HOUSES[id]) {
+    const [width, depth, height] = HOUSES[id].size;
+    return { width, depth, height };
+  }
+  return SIZES[id] ?? ROOM;
+};
