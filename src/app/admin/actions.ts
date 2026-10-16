@@ -2,8 +2,9 @@
 
 import { ObjectId } from "mongodb";
 import { updateTag } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
-import { isAdmin, signIn, signOut } from "@/auth";
+import { isAdmin, signInWithPassword, signOutAdmin as endSession } from "@/auth";
 import { type Content, contentSchema } from "@/content/schema";
 import { seedContent } from "@/content/seed";
 import { db } from "@/server/db";
@@ -59,12 +60,18 @@ export async function resetToSeed(): Promise<PublishResult> {
   return { ok: true, at: new Date().toISOString() };
 }
 
-export async function signInWithGoogle() {
-  await signIn("google", { redirectTo: "/admin" });
+export type SignInState = { error: string | null };
+
+/** The sign-in form's action: on success the page reloads signed in. */
+export async function signIn(_: SignInState, form: FormData): Promise<SignInState> {
+  const error = await signInWithPassword(String(form.get("email") ?? ""), String(form.get("password") ?? ""));
+  if (error) return { error };
+  redirect("/admin");
 }
 
 export async function signOutAdmin() {
-  await signOut({ redirectTo: "/admin" });
+  await endSession();
+  redirect("/admin");
 }
 
 export type AdminNote = { id: string; name: string; from?: string; message: string; at: string; hidden: boolean };

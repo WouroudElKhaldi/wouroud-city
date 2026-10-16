@@ -26,13 +26,16 @@ converted web files in `public/models/rb` are. Re-download them only if you need
    with walkers, the hub's oud player, and the Ring Line bus + stop in each district (ride it with E).
    `useProximity` now refreshes a prompt whose label changes while you stand in it. Facades (`Facades.tsx`):
    balconies aligned to the facade texture's window columns (`windowColumns`), shop awnings and blade signs.
--4. **Admin + live content (cloud).** `/admin` (`src/app/admin/*`, `src/auth.ts`, Auth.js v5 beta with Google;
+-4. **Admin + live content (cloud).** `/admin` (`src/app/admin/*`, `src/auth.ts`, email + password since 2026-10-16;
    only ADMIN_EMAIL, default the owner's address) edits content sections as JSON (live Zod check), publishes to
    MongoDB and calls `updateTag("content")`. `getContent()` (`src/server/content.ts`) is `"use cache"` +
    `cacheTag("content")` and feeds `/` and `/resume`; `CityClient` gets it as a prop and calls
    `setLiveContent`; **client code reads `liveContent` from `@/content/live`, never `seedContent`**
    (`seed.ts` is only the fallback and the default). JSON-LD/OG image still use the seed (profile rarely changes).
-   Env: AUTH_SECRET, AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET, MONGO_DB_URL (+ optional ADMIN_EMAIL, MONGO_DB_NAME).
+   Sign-in: the owner's email + a password whose scrypt hash is ADMIN_PASSWORD_HASH (`npm run admin:password`
+   prints it and an AUTH_SECRET); session = HMAC-signed httpOnly cookie `wc_admin` (7 days; changing the password
+   ends all sessions); 5 wrong tries per 15 min per IP. Auth.js/Google were removed at the owner's request.
+   Env: ADMIN_PASSWORD_HASH, AUTH_SECRET, MONGO_DB_URL (+ optional ADMIN_EMAIL, MONGO_DB_NAME).
 -3. **Order of tasks.md, continued (cloud).** Lobby fronts on every building (`lobbyFront` in `Building.tsx`),
    LOD (`NearOnly`), chairs in cafés and lecture halls, Arabic 3D text in `/fonts/inter-arabic-400.woff`
    (Inter + Noto Sans Arabic merged with fontTools; `Text3D` picks it for Arabic strings), benches fitted to
@@ -215,7 +218,7 @@ converted web files in `public/models/rb` are. Re-download them only if you need
 5. Fast travel between districts, wet-ground look in rain, statues / kids playing in plazas.
 6. Performance: KTX2/Draco (gltf-transform), LOD, batch the ~43 skill labels.
 7. Never checked by a human: per-district music; the car rows in the 7 districts other than Business.
-Blocked on the owner's free accounts: admin `/admin` (Auth.js + Google), MongoDB Atlas, Cloudflare R2
+Blocked on the owner's free accounts: admin `/admin` (email + password), MongoDB Atlas, Cloudflare R2
 uploads (paintings, project screenshots), leaderboard, Vercel deploy.
 
 ### Testing tips (dev only)
@@ -440,7 +443,7 @@ Known issues / polish:
    React → Node → MongoDB…, leaderboard in MongoDB.
 7. **Driving**: pick a car at a garage (Kenney Car Kit, Ecctrl vehicle module `ecctrl/vehicle`),
    metro/fast travel between districts.
-8. **Admin dashboard + data**: `/admin` (Auth.js, only `wouroudelkhaldi@gmail.com`), content in MongoDB
+8. **Admin dashboard + data**: `/admin` (email + password, only `wouroudelkhaldi@gmail.com`), content in MongoDB
    Atlas M0 validated by `src/content/schema.ts`, served via static generation + on-demand revalidation
    so visitors never wait on the database (seed.ts stays as the fallback). Media (paintings,
    screenshots, videos) on **Cloudflare R2**, compressed on upload. Live 3D preview of a building
