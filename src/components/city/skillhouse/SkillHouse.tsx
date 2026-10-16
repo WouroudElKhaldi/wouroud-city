@@ -1,5 +1,6 @@
 "use client";
 
+import { useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { createContext, useContext, useMemo } from "react";
 import * as THREE from "three";
@@ -8,8 +9,11 @@ import type { Skill } from "@/content/schema";
 import { useCityStore } from "@/state/useCityStore";
 import { HOUSES, houseFor, type HouseDef, type RoomSpec } from "@/world/skillHouses/houses";
 import { DOOR, makePlan, type Plan, type PlanRoom, type PlanWall, roomFrame, type Side } from "@/world/skillHouses/plan";
+import { worldEnv } from "@/world/env";
 import { signatureFor } from "@/world/signatures";
-import { Batch } from "../Furniture";
+import { Batch, TallPlant } from "../Furniture";
+import { Seats } from "../StreetDetails";
+import type { Seat } from "@/state/useCityStore";
 import { OnWall } from "../InteriorScene";
 import { makeWalkers, Pedestrians } from "../Pedestrians";
 import { type SkillTheme, skillTheme } from "../SkillRooms";
@@ -103,6 +107,7 @@ export function SkillHouse({ skill }: { skill: Skill }) {
       <Hero />
       <HallBanner />
       <Reception />
+      <Lobby />
       <HouseLights />
       <Pedestrians walkers={walkers} />
     </HouseContext>
@@ -152,8 +157,55 @@ function Shell() {
           </group>
         </OnWall>
       ))}
+      <Windows />
       <Ceiling />
     </group>
+  );
+}
+
+/** High windows along both side walls: daylight by day, deep blue at night. */
+function Windows() {
+  const { def, plan } = useHouse();
+  const { D, W, H } = plan;
+  const glass = useMemo(() => new THREE.MeshStandardMaterial({ color: "#a9d6f5", emissive: "#d6efff", emissiveIntensity: 0.9, roughness: 0.1 }), []);
+  const day = useMemo(() => new THREE.Color("#d6efff"), []);
+  const night = useMemo(() => new THREE.Color("#1d2550"), []);
+  useFrame(() => {
+    glass.emissive.lerpColors(day, night, worldEnv.night);
+    glass.emissiveIntensity = 0.9 - worldEnv.night * 0.5;
+  });
+  const frame = flat(def.trim, 0.45, 0.4);
+  const top = H - 0.45;
+  const bottom = Math.max(2.9, H - 2);
+  if (top - bottom < 0.8) return null;
+  const count = Math.max(1, Math.floor((D - 2) / 3.4));
+  const zs = Array.from({ length: count }, (_, i) => -D / 2 + 1 + (D - 2) * ((i + 0.5) / count));
+  return (
+    <>
+      {(["left", "right"] as const).map((side) => (
+        <OnWall key={side} side={side}>
+          <group position={[side === "left" ? -W / 2 + 0.02 : W / 2 - 0.02, (top + bottom) / 2, 0]} rotation-y={side === "left" ? Math.PI / 2 : -Math.PI / 2}>
+            {zs.map((z) => (
+              <group key={z} position={[side === "left" ? -z : z, 0, 0]}>
+                <mesh material={glass}>
+                  <planeGeometry args={[2.4, top - bottom]} />
+                </mesh>
+                {[-1.2, 0, 1.2].map((x) => (
+                  <mesh key={x} position={[x, 0, 0.02]} material={frame}>
+                    <boxGeometry args={[0.06, top - bottom + 0.06, 0.04]} />
+                  </mesh>
+                ))}
+                {[-1, 1].map((s) => (
+                  <mesh key={s} position={[0, (s * (top - bottom)) / 2, 0.02]} material={frame}>
+                    <boxGeometry args={[2.46, 0.06, 0.04]} />
+                  </mesh>
+                ))}
+              </group>
+            ))}
+          </group>
+        </OnWall>
+      ))}
+    </>
   );
 }
 
@@ -535,6 +587,50 @@ function HallBanner() {
       <Text position={[0, -0.27, 0.04]} fontSize={0.13} color={palette.paper} anchorX="center" anchorY="middle" maxWidth={5.8} textAlign="center">
         {def.concept}
       </Text>
+    </group>
+  );
+}
+
+/** The entrance: a welcome rug, plants beside the doors and, where there's room, benches to sit on. */
+function Lobby() {
+  const { plan, palette, accent, skill } = useHouse();
+  const { W, D } = plan;
+  const benches = useMemo(() => {
+    const z = D / 2 - 1.3;
+    const clear = (x: number) => !plan.rooms.some((r) => Math.abs(x - r.x) < r.w / 2 + 1.4 && Math.abs(z - r.z) < r.d / 2 + 1.1);
+    return [-(W / 2 - 3), W / 2 - 3].filter((x) => Math.abs(x) > 6 && clear(x));
+  }, [plan, W, D]);
+  const seats = useMemo<Seat[]>(() => benches.flatMap((x, i) => [-0.5, 0.5].map((dx, k) => ({ id: `lobby-${skill.id}-${i}-${k}`, x: x + dx, y: 0, z: D / 2 - 1.3, facing: Math.PI }))), [benches, D, skill.id]);
+  return (
+    <group>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.007, D / 2 - 2.2]} material={flat(palette.ink, 0.95)} receiveShadow>
+        <planeGeometry args={[3.2, 2.6]} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.009, D / 2 - 2.2]} material={flat(accent, 0.8)}>
+        <ringGeometry args={[0.9, 0.98, 6]} />
+      </mesh>
+      {[-1, 1].map((s) => (
+        <TallPlant key={s} position={[s * 2.1, 0, D / 2 - 0.6]} seed={s + 9} />
+      ))}
+      {benches.map((x) => (
+        <group key={x} position={[x, 0, D / 2 - 1.3]} rotation-y={Math.PI}>
+          <mesh position={[0, 0.44, 0]} material={flat("#7a5536", 0.6)} castShadow>
+            <boxGeometry args={[1.8, 0.07, 0.48]} />
+          </mesh>
+          <mesh position={[0, 0.78, -0.22]} rotation-x={-0.12} material={flat("#7a5536", 0.6)}>
+            <boxGeometry args={[1.8, 0.4, 0.05]} />
+          </mesh>
+          {[-0.8, 0.8].map((dx) => (
+            <mesh key={dx} position={[dx, 0.3, -0.05]} material={flat(palette.ink, 0.5, 0.5)}>
+              <boxGeometry args={[0.06, 0.6, 0.5]} />
+            </mesh>
+          ))}
+          <RigidBody type="fixed" colliders={false}>
+            <CuboidCollider args={[0.9, 0.25, 0.26]} position={[0, 0.25, 0]} />
+          </RigidBody>
+        </group>
+      ))}
+      <Seats seats={seats} />
     </group>
   );
 }
