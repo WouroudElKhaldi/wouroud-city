@@ -108,6 +108,7 @@ export function SkillHouse({ skill }: { skill: Skill }) {
       <HallBanner />
       <Reception />
       <Lobby />
+      <HallDecor />
       <HouseLights />
       <Pedestrians walkers={walkers} />
     </HouseContext>
@@ -589,6 +590,92 @@ function HallBanner() {
       </Text>
     </group>
   );
+}
+
+/**
+ * Along the hall's edges, away from doorways, the centerpiece, the entrance and the deck: benches and
+ * planters in most houses, pallets of crates in the sheds and workshops.
+ */
+function HallDecor() {
+  const { def, plan, palette, accent, skill } = useHouse();
+  const industrial = def.lights === "industrial";
+  const spots = useMemo(() => hallDecorSpots(plan), [plan]);
+  const seats = useMemo<Seat[]>(
+    () => (industrial ? [] : spots.filter((_, i) => i % 2 === 0).map((sp, i) => ({ id: `hall-${skill.id}-${i}`, x: sp.x, y: 0, z: sp.z, facing: sp.facing }))),
+    [spots, industrial, skill.id],
+  );
+  return (
+    <group>
+      {spots.map((sp, i) => (
+        <group key={i} position={[sp.x, 0, sp.z]} rotation-y={sp.facing}>
+          {industrial ? (
+            <>
+              <mesh position={[0, 0.07, 0]} material={flat("#9a7b52", 0.8)} castShadow>
+                <boxGeometry args={[1.2, 0.14, 1]} />
+              </mesh>
+              {[
+                [-0.28, 0.42, -0.2, 0.55],
+                [0.3, 0.42, 0.15, 0.55],
+                [0.0, 0.92, -0.05, 0.45],
+              ].slice(0, 2 + (i % 2)).map(([x, y, z, sz], k) => (
+                <mesh key={k} position={[x, y, z]} rotation-y={k * 0.3} material={flat(k === 2 ? accent : "#c4995f", 0.75)} castShadow>
+                  <boxGeometry args={[sz, sz, sz]} />
+                </mesh>
+              ))}
+              <RigidBody type="fixed" colliders={false}>
+                <CuboidCollider args={[0.6, 0.6, 0.5]} position={[0, 0.6, 0]} />
+              </RigidBody>
+            </>
+          ) : i % 2 === 0 ? (
+            <>
+              <mesh position={[0, 0.44, 0]} material={flat(palette.ink, 0.5, 0.3)} castShadow>
+                <boxGeometry args={[1.6, 0.08, 0.46]} />
+              </mesh>
+              {[-0.7, 0.7].map((dx) => (
+                <mesh key={dx} position={[dx, 0.2, 0]} material={flat(accent, 0.4, 0.4)}>
+                  <boxGeometry args={[0.07, 0.4, 0.42]} />
+                </mesh>
+              ))}
+              <RigidBody type="fixed" colliders={false}>
+                <CuboidCollider args={[0.8, 0.24, 0.23]} position={[0, 0.24, 0]} />
+              </RigidBody>
+            </>
+          ) : (
+            <TallPlant position={[0, 0, 0]} height={1.8} seed={i + 3} />
+          )}
+        </group>
+      ))}
+      <Seats seats={seats} />
+    </group>
+  );
+}
+
+/** Free spots along the hall's long edges, facing into the hall. */
+function hallDecorSpots(plan: Plan) {
+  const h = plan.hall;
+  const doors = plan.rooms.map((r) => doorPoint(r));
+  const out: { x: number; z: number; facing: number }[] = [];
+  const free = (x: number, z: number) =>
+    doors.every((d) => Math.hypot(d.x - x, d.z - z) > 2.4) &&
+    Math.hypot(x - plan.hero[0], z - plan.hero[1]) > 5 &&
+    !(Math.abs(x) < 3.5 && z > plan.D / 2 - 6.5) &&
+    Math.abs(x - receptionSpot(plan)[0]) + Math.abs(z - receptionSpot(plan)[1]) > 2.5 &&
+    plan.platforms.every((p) => Math.abs(x - p.x) > p.w / 2 + 1 || Math.abs(z - p.z) > p.d / 2 + 4.5) &&
+    plan.rooms.every((r) => Math.abs(x - r.x) > r.w / 2 + 0.6 || Math.abs(z - r.z) > r.d / 2 + 0.6);
+  for (const alongZ of [true, false]) {
+    const len = alongZ ? h.d : h.w;
+    const n = Math.floor((len - 2) / 4.5);
+    for (const side of [-1, 1])
+      for (let i = 0; i < n; i++) {
+        const t = -len / 2 + 1 + (len - 2) * ((i + 0.5) / n);
+        const x = alongZ ? h.x + side * (h.w / 2 - 0.75) : h.x + t;
+        const z = alongZ ? h.z + t : h.z + side * (h.d / 2 - 0.75);
+        // Keep off the lobby (its benches) and away from spots already taken.
+        if (z > plan.D / 2 - 3 || !free(x, z) || out.some((o) => Math.hypot(o.x - x, o.z - z) < 2.2)) continue;
+        out.push({ x, z, facing: alongZ ? (side < 0 ? Math.PI / 2 : -Math.PI / 2) : side < 0 ? 0 : Math.PI });
+      }
+  }
+  return out;
 }
 
 /** The entrance: a welcome rug, plants beside the doors and, where there's room, benches to sit on. */
