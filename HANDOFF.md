@@ -13,6 +13,17 @@ Big source assets (Rocketbox FBX/TGA, ~3.5 GB) are **not** in git (`.assets-src/
 converted web files in `public/models/rb` are. Re-download them only if you need to convert new avatars.
 
 ### Latest work (newest first)
+-6. **Skill houses (tasks.md P17).** Skills no longer share the old lab room: `InteriorScene` routes a skill to
+   `skillhouse/SkillHouse.tsx` when `HOUSES[id]` exists (`roomSize(id, district)` sizes the scene from the house).
+   A house = data in `world/skillHouses/houses.ts` (concept, size, cut + options, floor/wall/inner finishes, trim,
+   ceiling, light style, palette, `hero`, rooms, quiz) → `makePlan()` (`plan.ts`: hall, hero spot, rooms with their
+   door side, interior walls with doorways, optional mezzanine deck) → drawn by SkillHouse (shell, inner walls in 5
+   styles: solid/glass/frame/half/shelf, signs over doors, reception kiosk, hall banner, lights, two walkers).
+   Rooms are drawn in a local frame (doorway at +z) via `roomFrame()`; `toHouse` maps to world for prompts/seats.
+   `hero: "demo"` and rooms of kind "demo" reuse the classic centerpieces (`SkillRooms.tsx`, now placeable via
+   `CenterAt`). Bespoke pieces live in `skillhouse/signatures/<family>.tsx`, registered in `signatures/index.ts`;
+   a missing id shows a labelled placeholder. Check every plan headless with
+   `npx tsx --tsconfig tsconfig.json scripts/check-houses.ts` (room sizes, entrance strip clear, hero clear of walls).
 -5. **"Next level" (tasks.md P16, cloud).** A living city: live day cycle (`DayNight.tsx`, 🌇 Live), waving
    passers-by and chatting groups (`Pedestrians.tsx`), bird flocks (`Birds.tsx`), more vehicle types, birdsong
    and crickets. A story: 17 quests, XP, levels and a journal (`state/progress.ts`, `hud/Journal.tsx`, J key),

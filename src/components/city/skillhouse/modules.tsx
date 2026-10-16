@@ -4,6 +4,7 @@ import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { track } from "@/state/progress";
 import { useCityStore, type Seat } from "@/state/useCityStore";
 import type { RoomSpec } from "@/world/skillHouses/houses";
 import type { PlanRoom } from "@/world/skillHouses/plan";
@@ -994,6 +995,7 @@ function Quiz({ d, toHouse }: ModuleProps) {
     setPicked(i);
     if (i === cur.ok) {
       setScore((s) => s + 1);
+      track({ type: "quiz" });
       sfx.coin();
       burstAt(toHouse, 0, 2.2, -d / 2 + 0.4, [accent, "#ffffff", "#fde047"], 24);
     } else sfx.clunk();
